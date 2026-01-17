@@ -67,14 +67,14 @@ const FilmesPage = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center pt-20">
+      <div className="min-h-screen bg-[var(--bg-primary)] flex items-center justify-center pt-20">
         <LoadingSpinner />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] pb-12 pt-20" data-app-element>
+    <div className="min-h-screen bg-[var(--bg-primary)] pb-12 pt-20" data-app-element>
       {/* Header da página */}
       <div className="pt-10 pb-8 px-4 md:px-12">
         <div className="flex items-center gap-4">

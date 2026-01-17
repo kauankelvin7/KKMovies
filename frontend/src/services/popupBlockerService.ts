@@ -248,7 +248,7 @@ class PopupBlockerService {
         self.blockedCount++;
         return 0;
       }
-      return self.originalSetTimeout!.call(window, callback, delay, ...args);
+      return self.originalSetTimeout!.apply(window, [callback, delay, ...args] as any);
     };
 
     // Wrap setInterval
@@ -257,7 +257,7 @@ class PopupBlockerService {
         self.blockedCount++;
         return 0;
       }
-      return self.originalSetInterval!.call(window, callback, delay, ...args);
+      return self.originalSetInterval!.apply(window, [callback, delay, ...args] as any);
     };
   }
 

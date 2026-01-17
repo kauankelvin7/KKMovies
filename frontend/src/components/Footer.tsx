@@ -1,11 +1,13 @@
 import { Link } from 'react-router-dom';
 import { Github, Twitter, MessageCircle, Navigation, Heart } from 'lucide-react';
+import { useTheme } from '@/App';
 
 /**
  * Footer component moderno com glassmorphism e gradientes
  */
 const Footer = () => {
   const currentYear = new Date().getFullYear();
+  const { isDarkMode } = useTheme();
 
   const footerLinks = {
     navegacao: [
@@ -22,9 +24,9 @@ const Footer = () => {
   };
 
   return (
-    <footer className="relative mt-20 border-t border-white/5">
+    <footer className={`relative mt-20 border-t transition-colors duration-300 ${isDarkMode ? 'border-white/5' : 'border-black/5'}`}>
       {/* Gradiente de fundo */}
-      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-dark-900/50 to-dark-950 -z-10"></div>
+      <div className={`absolute inset-0 -z-10 ${isDarkMode ? 'bg-gradient-to-b from-transparent via-dark-900/50 to-dark-950' : 'bg-gradient-to-b from-transparent via-gray-100/50 to-gray-200'}`}></div>
       
       <div className="container-custom py-12">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-8">
@@ -39,7 +41,7 @@ const Footer = () => {
                       <stop offset="100%" style={{stopColor: '#ea580c'}} />
                     </linearGradient>
                   </defs>
-                  <circle cx="20" cy="20" r="18" fill="#1a1a1a" stroke="url(#footerLogoGradient)" strokeWidth="2"/>
+                  <circle cx="20" cy="20" r="18" fill={isDarkMode ? "#1a1a1a" : "#ffffff"} stroke="url(#footerLogoGradient)" strokeWidth="2"/>
                   <path d="M12 8 L12 32 L16 32 L16 22 L16 8 Z" fill="url(#footerLogoGradient)"/>
                   <path d="M16 18 L22 8 L27 8 L19 20 Z" fill="url(#footerLogoGradient)"/>
                   <path d="M16 22 L16 32 L30 27 Z" fill="#f97316"/>
@@ -47,10 +49,10 @@ const Footer = () => {
               </div>
               <div className="flex flex-col">
                 <span className="text-xl font-bold bg-gradient-to-r from-orange-400 to-orange-500 text-transparent bg-clip-text">KKMovies</span>
-                <span className="text-xs text-gray-400 -mt-1">Filmes & Séries</span>
+                <span className={`text-xs -mt-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Filmes & Séries</span>
               </div>
             </div>
-            <p className="text-gray-400 max-w-md mb-6">
+            <p className={`max-w-md mb-6 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
               Seu destino definitivo para assistir aos filmes e séries mais recentes online. 
               Descubra conteúdos em alta, explore categorias e aproveite streaming sem interrupções.
             </p>
@@ -61,10 +63,10 @@ const Footer = () => {
                   <a
                     key={social.label}
                     href={social.url}
-                    className="glass p-3 rounded-xl hover:bg-white/10 transition-all hover:scale-110"
+                    className={`glass p-3 rounded-xl transition-all hover:scale-110 ${isDarkMode ? 'hover:bg-white/10' : 'hover:bg-black/10'}`}
                     aria-label={social.label}
                   >
-                    <IconComponent size={20} className="text-gray-400" />
+                    <IconComponent size={20} className={isDarkMode ? 'text-gray-400' : 'text-gray-600'} />
                   </a>
                 );
               })}
@@ -73,7 +75,7 @@ const Footer = () => {
 
           {/* Navegação */}
           <div>
-            <h3 className="text-lg font-bold mb-4 text-white flex items-center gap-2">
+            <h3 className={`text-lg font-bold mb-4 flex items-center gap-2 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
               <Navigation size={18} className="text-primary-400" /> Navegação
             </h3>
             <ul className="space-y-2">
@@ -81,7 +83,7 @@ const Footer = () => {
                 <li key={link.path}>
                   <Link
                     to={link.path}
-                    className="text-gray-400 hover:text-primary-400 transition-colors inline-flex items-center gap-2 group"
+                    className={`hover:text-primary-400 transition-colors inline-flex items-center gap-2 group ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}
                   >
                     <span className="w-0 group-hover:w-2 h-0.5 bg-primary-500 transition-all duration-300"></span>
                     {link.label}
@@ -93,10 +95,10 @@ const Footer = () => {
 
           {/* Informações */}
           <div>
-            <h3 className="text-lg font-bold mb-4 text-white flex items-center gap-2">
+            <h3 className={`text-lg font-bold mb-4 flex items-center gap-2 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
               <Heart size={18} className="text-red-400" /> Informações
             </h3>
-            <p className="text-gray-400 text-sm mb-4">
+            <p className={`text-sm mb-4 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
               Este produto usa a API do TMDb mas não é endossado ou certificado pelo TMDb.
             </p>
             <a
@@ -115,11 +117,11 @@ const Footer = () => {
         </div>
 
         {/* Linha divisória com gradiente */}
-        <div className="h-px bg-gradient-to-r from-transparent via-white/10 to-transparent mb-8"></div>
+        <div className={`h-px bg-gradient-to-r from-transparent to-transparent mb-8 ${isDarkMode ? 'via-white/10' : 'via-black/10'}`}></div>
 
         {/* Copyright */}
         <div className="text-center">
-          <p className="text-gray-400 text-sm flex items-center justify-center gap-2 flex-wrap">
+          <p className={`text-sm flex items-center justify-center gap-2 flex-wrap ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
             <span>© {currentYear} KauanKelvinDev.</span>
             <span className="hidden sm:inline">•</span>
             <span>Todos os direitos reservados.</span>

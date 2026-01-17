@@ -47,7 +47,7 @@ const SearchPageSimple = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a]">
+    <div className="min-h-screen bg-[var(--bg-primary)] pt-20" data-app-element>
       {/* Header */}
       <div className="pt-10 pb-8 px-4 md:px-12">
         <div className="flex items-center gap-4 mb-8">

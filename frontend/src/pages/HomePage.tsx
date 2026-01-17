@@ -331,14 +331,14 @@ const HomePage = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center">
+      <div className="min-h-screen bg-[var(--bg-primary)] flex items-center justify-center">
         <LoadingSpinner />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a]" data-app-element data-app-content>
+    <div className="min-h-screen bg-[var(--bg-primary)]" data-app-element data-app-content>
       {/* Hero Banner */}
       <HeroBanner
         items={heroItems}

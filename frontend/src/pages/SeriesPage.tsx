@@ -247,7 +247,7 @@ const SeriesPage = () => {
   if (loading) return <LoadingSpinner />;
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] pb-12">
+    <div className="min-h-screen bg-[var(--bg-primary)] pb-12 pt-20" data-app-element>
       {/* Header */}
       <div className="pt-8 pb-6 px-4 md:px-12">
         <h1 className="text-3xl md:text-4xl font-black text-white flex items-center gap-3">

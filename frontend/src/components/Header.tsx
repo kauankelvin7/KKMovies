@@ -1,11 +1,13 @@
 import { Link, useLocation } from 'react-router-dom';
 import { useState, useEffect } from 'react';
-import { Home, Film, Tv, Search, Menu, X } from 'lucide-react';
+import { Home, Film, Tv, Search, Menu, X, Sun, Moon } from 'lucide-react';
+import { useTheme } from '@/App';
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const location = useLocation();
+  const { isDarkMode, toggleTheme } = useTheme();
 
   // Handle scroll effect
   useEffect(() => {
@@ -29,8 +31,12 @@ const Header = () => {
     <header 
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
         isScrolled 
-          ? 'bg-[#0a0a0a]/95 backdrop-blur-xl shadow-lg shadow-black/20' 
-          : 'bg-gradient-to-b from-black/80 to-transparent'
+          ? isDarkMode 
+            ? 'bg-[#0a0a0a]/95 backdrop-blur-xl shadow-lg shadow-black/20' 
+            : 'bg-white/95 backdrop-blur-xl shadow-lg shadow-black/10'
+          : isDarkMode
+            ? 'bg-gradient-to-b from-black/80 to-transparent'
+            : 'bg-gradient-to-b from-white/80 to-transparent'
       }`}
       data-app-element
     >
@@ -54,7 +60,7 @@ const Header = () => {
                     </feMerge>
                   </filter>
                 </defs>
-                <circle cx="20" cy="20" r="18" fill="#1a1a1a" stroke="url(#logoGradient)" strokeWidth="2" filter="url(#glow)"/>
+                <circle cx="20" cy="20" r="18" fill={isDarkMode ? "#1a1a1a" : "#ffffff"} stroke="url(#logoGradient)" strokeWidth="2" filter="url(#glow)"/>
                 {/* K + Play */}
                 <path d="M12 8 L12 32 L16 32 L16 22 L16 8 Z" fill="url(#logoGradient)"/>
                 <path d="M16 18 L22 8 L27 8 L19 20 Z" fill="url(#logoGradient)"/>
@@ -69,7 +75,9 @@ const Header = () => {
           </Link>
 
           {/* Desktop Navigation - Center */}
-          <div className="hidden md:flex items-center gap-1 bg-dark-800/60 backdrop-blur-md rounded-full p-1.5 border border-white/5">
+          <div className={`hidden md:flex items-center gap-1 backdrop-blur-md rounded-full p-1.5 border ${
+            isDarkMode ? 'bg-dark-800/60 border-white/5' : 'bg-white/60 border-black/5'
+          }`}>
             {navItems.map((item) => (
               <Link
                 key={item.path}
@@ -79,7 +87,9 @@ const Header = () => {
                   flex items-center gap-2.5 overflow-hidden
                   ${isActive(item.path)
                     ? 'bg-primary-500 text-white shadow-lg shadow-primary-500/30'
-                    : 'text-gray-300 hover:text-white hover:bg-white/10'
+                    : isDarkMode 
+                      ? 'text-gray-300 hover:text-white hover:bg-white/10'
+                      : 'text-gray-700 hover:text-black hover:bg-black/10'
                   }
                 `}
               >
@@ -96,13 +106,28 @@ const Header = () => {
 
           {/* Right Actions */}
           <div className="hidden md:flex items-center gap-3">
+            {/* Theme Toggle */}
+            <button
+              onClick={toggleTheme}
+              className={`p-3 rounded-full transition-all duration-300 ${
+                isDarkMode 
+                  ? 'bg-white/5 text-gray-300 hover:bg-white/10 hover:text-white border border-white/10'
+                  : 'bg-black/5 text-gray-700 hover:bg-black/10 hover:text-black border border-black/10'
+              }`}
+              title={isDarkMode ? 'Modo Claro' : 'Modo Escuro'}
+            >
+              {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
+            </button>
+            
             <Link
               to="/search"
               className={`
                 p-3 rounded-full transition-all duration-300
                 ${isActive('/search')
                   ? 'bg-primary-500 text-white shadow-lg shadow-primary-500/30'
-                  : 'bg-white/5 text-gray-300 hover:bg-white/10 hover:text-white border border-white/10'
+                  : isDarkMode
+                    ? 'bg-white/5 text-gray-300 hover:bg-white/10 hover:text-white border border-white/10'
+                    : 'bg-black/5 text-gray-700 hover:bg-black/10 hover:text-black border border-black/10'
                 }
               `}
               title="Pesquisar"
@@ -112,16 +137,32 @@ const Header = () => {
           </div>
 
           {/* Mobile Menu Button */}
-          <button
-            className="md:hidden p-3 rounded-full bg-dark-800/80 text-white transition-all duration-300 hover:bg-dark-700 active:scale-95 backdrop-blur-sm"
-            onClick={() => setIsMenuOpen(!isMenuOpen)}
-          >
-            {isMenuOpen ? (
-              <X size={24} className="transition-transform duration-300" />
-            ) : (
-              <Menu size={24} className="transition-transform duration-300" />
-            )}
-          </button>
+          <div className="flex md:hidden items-center gap-2">
+            {/* Theme Toggle Mobile */}
+            <button
+              onClick={toggleTheme}
+              className={`p-3 rounded-full transition-all duration-300 ${
+                isDarkMode 
+                  ? 'bg-dark-800/80 text-white'
+                  : 'bg-white/80 text-gray-800'
+              } backdrop-blur-sm`}
+            >
+              {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
+            </button>
+            
+            <button
+              className={`p-3 rounded-full transition-all duration-300 active:scale-95 backdrop-blur-sm ${
+                isDarkMode ? 'bg-dark-800/80 text-white hover:bg-dark-700' : 'bg-white/80 text-gray-800 hover:bg-gray-200'
+              }`}
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+            >
+              {isMenuOpen ? (
+                <X size={24} className="transition-transform duration-300" />
+              ) : (
+                <Menu size={24} className="transition-transform duration-300" />
+              )}
+            </button>
+          </div>
         </div>
 
         {/* Mobile Navigation */}
@@ -130,7 +171,9 @@ const Header = () => {
             isMenuOpen ? 'max-h-96 opacity-100 mt-4' : 'max-h-0 opacity-0'
           }`}
         >
-          <div className="bg-dark-800/90 backdrop-blur-xl rounded-2xl p-2 border border-white/5 space-y-1">
+          <div className={`backdrop-blur-xl rounded-2xl p-2 border space-y-1 ${
+            isDarkMode ? 'bg-dark-800/90 border-white/5' : 'bg-white/90 border-black/5'
+          }`}>
             {navItems.map((item, index) => (
               <Link
                 key={item.path}
@@ -140,7 +183,9 @@ const Header = () => {
                   flex items-center gap-3 px-4 py-3.5 rounded-xl font-medium transition-all duration-300
                   ${isActive(item.path)
                     ? 'bg-primary-500 text-white'
-                    : 'text-gray-300 hover:bg-white/5 active:bg-white/10'
+                    : isDarkMode
+                      ? 'text-gray-300 hover:bg-white/5 active:bg-white/10'
+                      : 'text-gray-700 hover:bg-black/5 active:bg-black/10'
                   }
                 `}
                 style={{ 
@@ -152,7 +197,7 @@ const Header = () => {
                 <span>{item.label}</span>
               </Link>
             ))}
-            <div className="border-t border-white/10 my-2" />
+            <div className={`border-t my-2 ${isDarkMode ? 'border-white/10' : 'border-black/10'}`} />
             <Link
               to="/search"
               onClick={() => setIsMenuOpen(false)}
@@ -160,7 +205,9 @@ const Header = () => {
                 flex items-center gap-3 px-4 py-3.5 rounded-xl font-medium transition-all duration-300
                 ${isActive('/search')
                   ? 'bg-primary-500 text-white'
-                  : 'text-gray-300 hover:bg-white/5'
+                  : isDarkMode
+                    ? 'text-gray-300 hover:bg-white/5'
+                    : 'text-gray-700 hover:bg-black/5'
                 }
               `}
             >

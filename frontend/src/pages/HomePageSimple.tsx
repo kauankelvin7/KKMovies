@@ -90,7 +90,7 @@ const HomePageSimple = () => {
   const currentFeatured = featuredMovies[currentSlide];
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a]">
+    <div className="min-h-screen bg-[var(--bg-primary)]" data-app-element>
       {/* Hero Slider Section */}
       {featuredMovies.length > 0 && (
         <section 
