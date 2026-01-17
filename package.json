@@ -9,7 +9,10 @@
     "dev:frontend": "cd frontend && npm run dev",
     "install:all": "npm install && cd backend && npm install && cd ../frontend && npm install",
     "build": "cd frontend && npm run build",
-    "start": "cd backend && npm start"
+    "build:backend": "cd backend && npm run build",
+    "build:all": "npm run build:backend && npm run build",
+    "start": "cd backend && npm start",
+    "deploy:help": "type DEPLOY_VERCEL.md"
   },
   "devDependencies": {
     "concurrently": "^8.2.2"
@@ -22,5 +25,8 @@
     "node"
   ],
   "author": "Kauan",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "vite": "^7.3.1"
+  }
 }

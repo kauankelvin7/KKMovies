@@ -116,12 +116,12 @@ const Footer = () => {
         {/* Copyright */}
         <div className="text-center">
           <p className="text-gray-400 text-sm flex items-center justify-center gap-2 flex-wrap">
-            <span>© {currentYear} KKMovies.</span>
+            <span>© {currentYear} KauanKelvinDev.</span>
             <span className="hidden sm:inline">•</span>
             <span>Todos os direitos reservados.</span>
             <span className="hidden sm:inline">•</span>
             <span className="inline-flex items-center gap-1">
-              Feito com <span className="text-orange-500 animate-pulse">❤️</span>
+              Feito com <span className="text-orange-500 animate-pulse">inteligência!</span>
             </span>
           </p>
         </div>
