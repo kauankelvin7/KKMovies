@@ -2,15 +2,18 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ===== RESET BASE ===== */
+/* ===== PERFORMANCE OPTIMIZATIONS ===== */
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
 }
 
+/* GPU acceleration for smoother animations */
 html {
   scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 body {
@@ -19,20 +22,23 @@ body {
   color: #ffffff;
   min-height: 100vh;
   overflow-x: hidden;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  /* Padding for fixed header */
+  /* Enable hardware acceleration */
+  transform: translateZ(0);
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
   padding-top: 0;
 }
 
-/* Títulos com fonte especial */
+/* Optimize font rendering */
 h1, h2, h3, h4, h5, h6 {
   font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
   font-weight: 700;
   letter-spacing: -0.02em;
+  /* Prevent layout shift */
+  contain: layout style;
 }
 
-/* ===== SELECTION STYLING ===== */
+/* Reduce repaints on selection */
 ::selection {
   background: rgba(249, 115, 22, 0.3);
   color: #fff;
@@ -41,8 +47,9 @@ h1, h2, h3, h4, h5, h6 {
 /* ===== HERO BANNER STYLES ===== */
 .hero-banner {
   position: relative;
-  will-change: transform;
-  /* Account for fixed header - push content down */
+  /* Use transform instead of will-change for better perf */
+  transform: translateZ(0);
+  contain: layout style paint;
   margin-top: 0;
   padding-top: 80px;
 }
@@ -54,12 +61,16 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .hero-slide {
-  will-change: opacity, transform;
+  /* Only use will-change during transitions */
+  transform: translateZ(0);
+  backface-visibility: hidden;
 }
 
 .hero-badge {
   @apply inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-full;
-  animation: fadeSlideUp 0.6s ease-out;
+  /* Simplified animation */
+  opacity: 0;
+  animation: fadeIn 0.4s ease-out forwards;
 }
 
 .hero-badge-primary {
@@ -72,18 +83,21 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .hero-title {
-  animation: fadeSlideUp 0.7s ease-out 0.1s backwards;
+  opacity: 0;
+  animation: fadeIn 0.5s ease-out 0.1s forwards;
   text-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
 }
 
 .hero-overview {
-  animation: fadeSlideUp 0.7s ease-out 0.2s backwards;
+  opacity: 0;
+  animation: fadeIn 0.5s ease-out 0.15s forwards;
 }
 
 .hero-btn {
   @apply inline-flex items-center gap-3 px-8 py-4 font-bold rounded-xl;
-  @apply transition-all duration-300 transform;
-  animation: fadeSlideUp 0.7s ease-out 0.3s backwards;
+  @apply transition-colors duration-200;
+  opacity: 0;
+  animation: fadeIn 0.5s ease-out 0.2s forwards;
 }
 
 .hero-btn-primary {
@@ -92,7 +106,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .hero-btn-primary:hover {
-  @apply bg-primary-400 scale-105;
+  @apply bg-primary-400;
   box-shadow: 0 12px 40px rgba(249, 115, 22, 0.5);
 }
 
@@ -249,12 +263,16 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .media-card-inner {
-  @apply transition-all duration-300;
+  @apply transition-shadow duration-200;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  /* Performance optimization */
+  contain: layout style paint;
 }
 
 .media-card-image {
-  will-change: transform;
+  /* Remove will-change for better memory usage */
+  transform: translateZ(0);
+  backface-visibility: hidden;
 }
 
 /* ===== RESPONSIVE BREAKPOINTS ===== */
@@ -933,5 +951,68 @@ html, body {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+  }
+}
+
+/* ===== PERFORMANCE LAYER OPTIMIZATIONS ===== */
+/* Use contain for better rendering performance */
+.content-carousel,
+.category-row {
+  contain: layout style;
+}
+
+/* Optimize cards for compositing */
+.media-card,
+.movie-card {
+  contain: layout style paint;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+/* Lazy render off-screen content */
+.carousel-slider > *:not(:first-child):not(:nth-child(2)):not(:nth-child(3)):not(:nth-child(4)):not(:nth-child(5)) {
+  content-visibility: auto;
+  contain-intrinsic-size: 180px 270px;
+}
+
+/* Optimize image rendering */
+img {
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
+}
+
+/* GPU acceleration for smooth transitions */
+.hero-slide,
+.carousel-arrow,
+.media-card-overlay {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  perspective: 1000px;
+}
+
+/* Reduce paint areas */
+.hero-banner::before,
+.hero-banner::after {
+  contain: strict;
+}
+
+/* Optimize scrolling containers */
+.carousel-slider {
+  contain: layout;
+  transform: translateZ(0);
+}
+
+/* Faster hover transitions on desktop */
+@media (hover: hover) {
+  .media-card {
+    transition: transform 0.15s ease-out;
+  }
+  
+  .carousel-arrow-inner {
+    transition: transform 0.15s ease-out, background 0.15s ease-out;
+  }
+  
+  .hero-btn {
+    transition: background-color 0.15s ease-out, box-shadow 0.15s ease-out;
   }
 }

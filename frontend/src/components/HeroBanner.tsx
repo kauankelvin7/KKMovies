@@ -66,9 +66,15 @@ const HeroBanner = memo(({
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
   const [isTransitioning, setIsTransitioning] = useState(false);
+  const [isOverviewExpanded, setIsOverviewExpanded] = useState(false);
 
   const featuredItems = items.slice(0, 8);
   const currentItem = featuredItems[currentIndex];
+
+  // Reset expanded state when slide changes
+  useEffect(() => {
+    setIsOverviewExpanded(false);
+  }, [currentIndex]);
 
   const goToSlide = useCallback((index: number) => {
     if (isTransitioning) return;
@@ -181,10 +187,22 @@ const HeroBanner = memo(({
               )}
             </div>
 
-            {/* Overview - hidden on very small screens */}
-            <p className="hero-overview text-gray-300 text-sm sm:text-base md:text-lg leading-relaxed line-clamp-2 sm:line-clamp-3 max-w-xl hidden xs:block">
-              {currentItem.overview || 'Assista agora em alta qualidade.'}
-            </p>
+            {/* Overview with Read More */}
+            <div className="hidden xs:block max-w-xl">
+              <p className={`hero-overview text-gray-300 text-sm sm:text-base md:text-lg leading-relaxed transition-all duration-300 ${
+                isOverviewExpanded ? '' : 'line-clamp-2'
+              }`}>
+                {currentItem.overview || 'Assista agora em alta qualidade.'}
+              </p>
+              {currentItem.overview && currentItem.overview.length > 120 && (
+                <button
+                  onClick={() => setIsOverviewExpanded(!isOverviewExpanded)}
+                  className="text-primary-400 hover:text-primary-300 text-sm font-medium mt-1 transition-colors"
+                >
+                  {isOverviewExpanded ? 'Ler menos' : 'Ler mais...'}
+                </button>
+              )}
+            </div>
 
             {/* Action Buttons */}
             <div className="flex flex-wrap gap-2 sm:gap-4 pt-1 sm:pt-2">
