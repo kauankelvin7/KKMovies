@@ -42,9 +42,15 @@ h1, h2, h3, h4, h5, h6 {
 .hero-banner {
   position: relative;
   will-change: transform;
-  /* Account for fixed header */
-  margin-top: -72px;
-  padding-top: 72px;
+  /* Account for fixed header - push content down */
+  margin-top: 0;
+  padding-top: 80px;
+}
+
+@media (max-width: 767px) {
+  .hero-banner {
+    padding-top: 70px;
+  }
 }
 
 .hero-slide {
