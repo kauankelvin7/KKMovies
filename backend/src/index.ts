@@ -58,4 +58,4 @@ app.use(notFoundHandler);
 app.use(errorHandler);
 
 // Export for Vercel Serverless
-export default app;
+module.exports = app;
