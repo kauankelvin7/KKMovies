@@ -262,37 +262,31 @@ class PopupBlockerService {
   }
 
   /**
-   * Bloqueia redirecionamentos suspeitos
+   * Bloqueia redirecionamentos suspeitos via History API
    */
   private blockRedirects(): void {
-    // Intercepta mudanças de location
-    const originalAssign = window.location.assign.bind(window.location);
-    const originalReplace = window.location.replace.bind(window.location);
+    // Intercepta apenas pushState e replaceState que são seguros de sobrescrever
+    const originalPushState = history.pushState.bind(history);
+    const originalReplaceState = history.replaceState.bind(history);
     const self = this;
 
-    Object.defineProperty(window.location, 'assign', {
-      value: function(url: string) {
-        if (self.shouldBlock(url)) {
-          self.blockedCount++;
-          console.log('[PopupBlocker] Redirecionamento bloqueado:', url.substring(0, 50));
-          return;
-        }
-        return originalAssign(url);
-      },
-      writable: false
-    });
+    history.pushState = function(state: any, unused: string, url?: string | URL | null) {
+      if (url && self.shouldBlock(url.toString())) {
+        self.blockedCount++;
+        console.log('[PopupBlocker] Navegação bloqueada:', url.toString().substring(0, 50));
+        return;
+      }
+      return originalPushState(state, unused, url);
+    };
 
-    Object.defineProperty(window.location, 'replace', {
-      value: function(url: string) {
-        if (self.shouldBlock(url)) {
-          self.blockedCount++;
-          console.log('[PopupBlocker] Redirecionamento bloqueado:', url.substring(0, 50));
-          return;
-        }
-        return originalReplace(url);
-      },
-      writable: false
-    });
+    history.replaceState = function(state: any, unused: string, url?: string | URL | null) {
+      if (url && self.shouldBlock(url.toString())) {
+        self.blockedCount++;
+        console.log('[PopupBlocker] Navegação bloqueada:', url.toString().substring(0, 50));
+        return;
+      }
+      return originalReplaceState(state, unused, url);
+    };
   }
 
   private interceptWindowOpen(): void {
