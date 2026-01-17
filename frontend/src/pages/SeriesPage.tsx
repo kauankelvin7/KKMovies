@@ -639,7 +639,7 @@ interface CategoryRowProps {
   title: string;
   series: Serie[];
   onSelect: (serie: Serie) => void;
-  titleIcon?: React.ComponentType<{ size?: number; className?: string }>;
+  titleIcon?: any;
 }
 
 const CategoryRow = ({ title, series, onSelect, titleIcon: TitleIcon }: CategoryRowProps) => {
