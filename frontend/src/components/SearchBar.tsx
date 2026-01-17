@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Search, Lightbulb } from 'lucide-react';
 
 /**
  * Search bar component moderno com glassmorphism
@@ -59,14 +60,14 @@ const SearchBar = () => {
             className="absolute right-2 btn-primary px-8 py-3 flex items-center gap-2"
           >
             <span className="hidden sm:inline font-semibold">Buscar</span>
-            <span className="text-xl">🔍</span>
+            <Search size={20} />
           </button>
         </div>
 
         {/* Hint text */}
         <p className="text-gray-400 text-sm mt-3 text-center">
-          <span className="inline-flex items-center gap-1">
-            <span>💡</span>
+          <span className="inline-flex items-center gap-1.5">
+            <Lightbulb size={14} className="text-yellow-500" />
             Dica: Pressione Enter para buscar rapidamente
           </span>
         </p>

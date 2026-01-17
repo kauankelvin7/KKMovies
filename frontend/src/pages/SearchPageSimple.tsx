@@ -49,7 +49,7 @@ const SearchPageSimple = () => {
   return (
     <div className="min-h-screen bg-[#0a0a0a]">
       {/* Header */}
-      <div className="pt-10 pb-8 px-4 md:px-12 border-b border-white/5">
+      <div className="pt-10 pb-8 px-4 md:px-12">
         <div className="flex items-center gap-4 mb-8">
           <div className="w-14 h-14 bg-primary-500/20 rounded-2xl flex items-center justify-center">
             <Search size={28} className="text-primary-400" />
@@ -117,7 +117,7 @@ const SearchPageSimple = () => {
                         />
                       ) : (
                         <div className="w-full h-full bg-dark-700 flex items-center justify-center">
-                          <span className="text-5xl">🎬</span>
+                          <Film size={48} className="text-gray-600 opacity-50" />
                         </div>
                       )}
                       
@@ -152,7 +152,7 @@ const SearchPageSimple = () => {
               </div>
             ) : (
               <div className="text-center py-20">
-                <div className="text-6xl mb-4">🔍</div>
+                <Search size={64} className="inline-block mb-4 text-gray-600" />
                 <p className="text-xl text-gray-400">Nenhum resultado encontrado</p>
                 <p className="text-gray-600 mt-2">Tente buscar por outro termo</p>
               </div>
@@ -163,7 +163,7 @@ const SearchPageSimple = () => {
         {/* Initial State */}
         {!loading && !searched && (
           <div className="text-center py-20">
-            <div className="text-6xl mb-4">🎬</div>
+            <Film size={64} className="inline-block mb-4 text-primary-400" />
             <p className="text-xl text-gray-400">Busque por filmes e séries</p>
             <p className="text-gray-600 mt-2">Digite o nome no campo acima para começar</p>
           </div>

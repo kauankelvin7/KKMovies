@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { X, ExternalLink, Maximize2, Loader2, Lightbulb } from 'lucide-react';
 
 interface PlayerModalProps {
   isOpen: boolean;
@@ -9,6 +10,7 @@ interface PlayerModalProps {
 
 const PlayerModal = ({ isOpen, onClose, streamUrl, title }: PlayerModalProps) => {
   const [showPlayer, setShowPlayer] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   // Fechar com ESC
   useEffect(() => {
@@ -18,8 +20,12 @@ const PlayerModal = ({ isOpen, onClose, streamUrl, title }: PlayerModalProps) =>
     if (isOpen) {
       document.addEventListener('keydown', handleEsc);
       document.body.style.overflow = 'hidden';
+      setIsLoading(true);
       // Delay para evitar detecção
-      const timer = setTimeout(() => setShowPlayer(true), 100);
+      const timer = setTimeout(() => {
+        setShowPlayer(true);
+        setIsLoading(false);
+      }, 300);
       return () => {
         clearTimeout(timer);
         document.removeEventListener('keydown', handleEsc);
@@ -27,6 +33,7 @@ const PlayerModal = ({ isOpen, onClose, streamUrl, title }: PlayerModalProps) =>
       };
     }
     setShowPlayer(false);
+    setIsLoading(true);
     return () => {
       document.removeEventListener('keydown', handleEsc);
       document.body.style.overflow = 'unset';
@@ -39,42 +46,55 @@ const PlayerModal = ({ isOpen, onClose, streamUrl, title }: PlayerModalProps) =>
     window.open(streamUrl, '_blank', 'noopener,noreferrer');
   };
 
+  const openFullscreen = () => {
+    const iframe = document.querySelector('iframe');
+    if (iframe?.requestFullscreen) {
+      iframe.requestFullscreen();
+    }
+  };
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <div className="fixed inset-0 z-50 flex items-center justify-center animate-fade-in" data-app-modal data-app-element>
       {/* Backdrop */}
       <div 
-        className="absolute inset-0 bg-black/95"
+        className="absolute inset-0 bg-black/98 backdrop-blur-sm"
         onClick={onClose}
       />
       
       {/* Modal */}
-      <div className="relative w-full max-w-6xl mx-4 z-10">
+      <div className="relative w-full max-w-7xl mx-4 z-10 animate-scale-in">
         {/* Header */}
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-bold text-white truncate pr-4">{title}</h2>
+        <div className="flex items-center justify-between mb-4 px-2">
+          <div className="flex items-center gap-4">
+            <div className="w-1 h-8 bg-primary-500 rounded-full" />
+            <h2 className="text-xl md:text-2xl font-bold text-white truncate">{title}</h2>
+          </div>
           <div className="flex items-center gap-2">
             <button
-              onClick={openInNewTab}
-              className="px-4 py-2 rounded-lg bg-primary-600 hover:bg-primary-500 text-white text-sm font-medium transition-colors flex items-center gap-2"
+              onClick={openFullscreen}
+              className="p-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-gray-300 hover:text-white transition-all duration-300 border border-white/10"
+              title="Tela cheia"
             >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-              </svg>
-              Abrir em Nova Aba
+              <Maximize2 size={20} />
+            </button>
+            <button
+              onClick={openInNewTab}
+              className="px-5 py-2.5 rounded-xl bg-primary-500/20 hover:bg-primary-500 text-primary-400 hover:text-white text-sm font-medium transition-all duration-300 flex items-center gap-2 border border-primary-500/30"
+            >
+              <ExternalLink size={16} />
+              <span className="hidden sm:inline">Nova Aba</span>
             </button>
             <button
               onClick={onClose}
-              className="p-2 rounded-lg bg-dark-700 hover:bg-red-600 text-white transition-colors"
+              className="p-2.5 rounded-xl bg-white/5 hover:bg-red-500 text-gray-300 hover:text-white transition-all duration-300 border border-white/10"
             >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
+              <X size={22} />
             </button>
           </div>
         </div>
         
-        {/* Player */}
-        <div className="relative bg-black rounded-xl overflow-hidden" style={{ paddingTop: '56.25%' }}>
+        {/* Player Container */}
+        <div className="relative bg-black rounded-2xl overflow-hidden shadow-2xl shadow-black/50 ring-1 ring-white/10" style={{ paddingTop: '56.25%' }}>
           {showPlayer ? (
             <iframe
               src={streamUrl}
@@ -83,19 +103,28 @@ const PlayerModal = ({ isOpen, onClose, streamUrl, title }: PlayerModalProps) =>
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
               allowFullScreen
               referrerPolicy="no-referrer"
+              onLoad={() => setIsLoading(false)}
             />
-          ) : (
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="w-12 h-12 border-4 border-primary-500 border-t-transparent rounded-full animate-spin" />
+          ) : null}
+          
+          {/* Loading Overlay */}
+          {isLoading && (
+            <div className="absolute inset-0 flex flex-col items-center justify-center bg-dark-900/90 gap-4">
+              <Loader2 size={48} className="text-primary-500 animate-spin" />
+              <p className="text-gray-400 text-sm">Carregando player...</p>
             </div>
           )}
         </div>
         
-        {/* Dica */}
-        <div className="mt-4 p-4 bg-dark-800/80 rounded-lg border border-dark-700">
-          <p className="text-center text-gray-300 text-sm">
-            💡 <strong>Dica:</strong> Se o player não carregar, clique em "Abrir em Nova Aba" para assistir diretamente.
+        {/* Footer Tips */}
+        <div className="mt-4 p-4 bg-dark-800/60 backdrop-blur-sm rounded-xl border border-white/5 flex items-center justify-between flex-wrap gap-4">
+          <p className="text-gray-400 text-sm flex items-center gap-2">
+            <Lightbulb size={20} className="text-yellow-500" />
+            <span><strong className="text-white">Dica:</strong> Se o player não carregar, clique em "Nova Aba".</span>
           </p>
+          <div className="flex items-center gap-4 text-xs text-gray-500">
+            <span>Pressione <kbd className="px-2 py-1 bg-dark-700 rounded text-gray-300">ESC</kbd> para fechar</span>
+          </div>
         </div>
       </div>
     </div>

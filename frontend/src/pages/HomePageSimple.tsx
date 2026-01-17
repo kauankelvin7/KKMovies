@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef, useCallback, memo } from 'react';
-import { ChevronLeft, ChevronRight, Play, Info, Star, Clock, TrendingUp, Award, Calendar } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Play, Info, Star, Clock, TrendingUp, Award, Calendar, Film } from 'lucide-react';
 import movieService from '@/services/movieService';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import ErrorMessage from '@/components/ErrorMessage';
@@ -135,8 +135,9 @@ const HomePageSimple = () => {
                       <TrendingUp size={14} />
                       Em Alta
                     </span>
-                    <span className="px-3 py-1.5 bg-white/10 backdrop-blur-sm text-gray-200 text-sm rounded-full">
-                      🎬 Filme
+                    <span className="px-3 py-1.5 bg-white/10 backdrop-blur-sm text-gray-200 text-sm rounded-full flex items-center gap-1.5">
+                      <Film size={14} />
+                      Filme
                     </span>
                   </div>
 
@@ -359,7 +360,7 @@ const MovieCard = memo(({ movie, onPlay }: MovieCardProps) => {
           />
         ) : (
           <div className="w-full h-full bg-dark-700 flex items-center justify-center">
-            <span className="text-5xl">🎬</span>
+            <Film size={48} className="text-gray-600 opacity-50" />
           </div>
         )}
         

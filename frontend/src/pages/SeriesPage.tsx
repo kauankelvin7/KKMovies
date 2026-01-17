@@ -1,7 +1,9 @@
 import { useEffect, useState, useRef, memo } from 'react';
+import { Tv, Sparkles, Sword, Laugh, Search as SearchIcon, Drama, Users, Baby, Eye, Newspaper, Film, Rocket, Heart, Mic, Flag, TrendingUp, Star, X } from 'lucide-react';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import ErrorMessage from '@/components/ErrorMessage';
 import api from '@/services/api';
+import { watchHistoryService } from '@/services/watchHistoryService';
 
 const SUPERFLIX_BASE = 'https://superflixapi.bond';
 const TMDB_IMAGE_BASE = 'https://image.tmdb.org/t/p/w500';
@@ -15,6 +17,7 @@ interface Serie {
   overview: string;
   first_air_date: string;
   number_of_seasons?: number;
+  genre_ids?: number[];
 }
 
 interface Episode {
@@ -31,23 +34,23 @@ interface Genre {
 }
 
 // Mapa de ícones para gêneros
-const genreIcons: Record<number, string> = {
-  16: '🎌', // Animação (Anime)
-  10759: '⚔️', // Action & Adventure
-  35: '😂', // Comédia
-  80: '🔍', // Crime
-  99: '📹', // Documentário
-  18: '🎭', // Drama
-  10751: '👨‍👩‍👧', // Família
-  10762: '👶', // Kids
-  9648: '🔮', // Mistério
-  10763: '📰', // News
-  10764: '🎬', // Reality
-  10765: '🚀', // Sci-Fi & Fantasy
-  10766: '💕', // Soap
-  10767: '🎤', // Talk
-  10768: '⚔️', // War & Politics
-  37: '🤠', // Faroeste
+const genreIconComponents: Record<number, React.ComponentType<{ size?: number; className?: string }>> = {
+  16: Sparkles, // Animação (Anime)
+  10759: Sword, // Action & Adventure
+  35: Laugh, // Comédia
+  80: SearchIcon, // Crime
+  99: Film, // Documentário
+  18: Drama, // Drama
+  10751: Users, // Família
+  10762: Baby, // Kids
+  9648: Eye, // Mistério
+  10763: Newspaper, // News
+  10764: Film, // Reality
+  10765: Rocket, // Sci-Fi & Fantasy
+  10766: Heart, // Soap
+  10767: Mic, // Talk
+  10768: Flag, // War & Politics
+  37: Flag, // Faroeste
 };
 
 const SeriesPage = () => {
@@ -182,6 +185,20 @@ const SeriesPage = () => {
     setSelectedEpisode(1);
     setPlayerOpen(true);
     
+    // Add to watch history
+    watchHistoryService.addToHistory({
+      id: serie.id,
+      type: 'series',
+      title: serie.name,
+      poster_path: serie.poster_path ? `${TMDB_IMAGE_BASE}${serie.poster_path}` : null,
+      backdrop_path: serie.backdrop_path ? `${TMDB_IMAGE_BASE}${serie.backdrop_path}` : null,
+      vote_average: serie.vote_average,
+      genre_ids: serie.genre_ids || [],
+      progress: 5,
+      season: 1,
+      episode: 1,
+    });
+    
     // Buscar detalhes da série para saber quantas temporadas tem
     try {
       const response = await api.get(`/series/${serie.id}`);
@@ -234,7 +251,7 @@ const SeriesPage = () => {
       {/* Header */}
       <div className="pt-8 pb-6 px-4 md:px-12">
         <h1 className="text-3xl md:text-4xl font-black text-white flex items-center gap-3">
-          <span className="text-4xl">📺</span>
+          <Tv size={36} className="text-primary-400" />
           Séries
         </h1>
         <p className="text-gray-400 mt-2">Assista suas séries favoritas</p>
@@ -247,7 +264,7 @@ const SeriesPage = () => {
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="🔍 Buscar série por nome..."
+                placeholder="Buscar série por nome..."
                 className="w-full px-4 py-3 bg-dark-800 border border-dark-600 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 transition-all"
               />
               {searchQuery && (
@@ -287,7 +304,7 @@ const SeriesPage = () => {
         <div className="px-4 md:px-12 mb-8">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-bold text-white">
-              🔍 Resultados para "{searchQuery}"
+              <SearchIcon size={20} className="inline mr-2" />Resultados para "{searchQuery}"
               <span className="text-gray-400 font-normal ml-2">({searchResults.length} encontrados)</span>
             </h2>
             <button
@@ -306,7 +323,7 @@ const SeriesPage = () => {
             </div>
           ) : (
             <div className="text-center py-12 bg-dark-800/50 rounded-xl">
-              <span className="text-5xl mb-4 block">😕</span>
+              <SearchIcon size={48} className="mx-auto mb-4 text-gray-600" />
               <p className="text-gray-400">Nenhuma série encontrada para "{searchQuery}"</p>
             </div>
           )}
@@ -317,26 +334,29 @@ const SeriesPage = () => {
       {!hasSearched && (
         <div className="px-4 md:px-12 mb-6">
           <h2 className="text-xl md:text-2xl font-bold text-white mb-4 flex items-center gap-3">
-            🎭 Explorar por Gênero
+            <Drama size={24} className="inline mr-2 text-purple-400" />Explorar por Gênero
             <span className="flex-1 h-px bg-gradient-to-r from-primary-500/30 to-transparent" />
           </h2>
           
           {/* Grid de Gêneros */}
           <div className="flex flex-wrap gap-2 mb-6">
-            {genres.map((genre) => (
-              <button
-                key={genre.id}
-                onClick={() => handleGenreSelect(genre)}
-                className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 flex items-center gap-2 ${
-                  selectedGenre?.id === genre.id
-                    ? 'bg-primary-500 text-white shadow-lg shadow-primary-500/30'
-                    : 'bg-dark-700 text-gray-300 hover:bg-dark-600 hover:text-white'
-                }`}
-              >
-                <span>{genreIcons[genre.id] || '📺'}</span>
-                {genre.name}
-              </button>
-            ))}
+            {genres.map((genre) => {
+              const IconComponent = genreIconComponents[genre.id] || Tv;
+              return (
+                <button
+                  key={genre.id}
+                  onClick={() => handleGenreSelect(genre)}
+                  className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 flex items-center gap-2 ${
+                    selectedGenre?.id === genre.id
+                      ? 'bg-primary-500 text-white shadow-lg shadow-primary-500/30'
+                      : 'bg-dark-700 text-gray-300 hover:bg-dark-600 hover:text-white'
+                  }`}
+                >
+                  <IconComponent size={16} />
+                  {genre.name}
+                </button>
+              );
+            })}
           </div>
 
           {/* Resultados do Gênero Selecionado */}
@@ -345,14 +365,18 @@ const SeriesPage = () => {
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                 <div className="flex items-center gap-3">
                   <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                    <span className="text-2xl">{genreIcons[selectedGenre.id] || '📺'}</span>
+                    {(() => {
+                      const IconComponent = genreIconComponents[selectedGenre.id] || Tv;
+                      return <IconComponent size={24} className="text-primary-400" />;
+                    })()}
                     {selectedGenre.name}
                     <span className="text-gray-400 font-normal text-sm">({genreSeries.length} resultados)</span>
                   </h3>
                   <button
                     onClick={clearGenreFilter}
-                    className="px-3 py-1 bg-dark-700 hover:bg-dark-600 text-gray-300 rounded-lg transition-colors text-sm"
+                    className="px-3 py-1 bg-dark-700 hover:bg-dark-600 text-gray-300 rounded-lg transition-colors text-sm flex items-center gap-1"
                   >
+                    <X size={14} />
                     ✕ Limpar
                   </button>
                 </div>
@@ -365,12 +389,12 @@ const SeriesPage = () => {
                     onChange={(e) => handleSortChange(e.target.value)}
                     className="px-3 py-2 bg-dark-700 border border-dark-600 rounded-lg text-white text-sm focus:outline-none focus:border-primary-500"
                   >
-                    <option value="popularity.desc">🔥 Mais Populares</option>
-                    <option value="vote_average.desc">⭐ Melhor Avaliados</option>
-                    <option value="first_air_date.desc">📅 Mais Recentes</option>
-                    <option value="first_air_date.asc">📅 Mais Antigos</option>
-                    <option value="name.asc">🔤 A-Z</option>
-                    <option value="name.desc">🔤 Z-A</option>
+                    <option value="popularity.desc">Mais Populares</option>
+                    <option value="vote_average.desc">Melhor Avaliados</option>
+                    <option value="first_air_date.desc">Mais Recentes</option>
+                    <option value="first_air_date.asc">Mais Antigos</option>
+                    <option value="name.asc">A-Z</option>
+                    <option value="name.desc">Z-A</option>
                   </select>
                 </div>
               </div>
@@ -412,7 +436,7 @@ const SeriesPage = () => {
                 </>
               ) : (
                 <div className="text-center py-12 bg-dark-800/50 rounded-xl">
-                  <span className="text-5xl mb-4 block">😕</span>
+                  <SearchIcon size={48} className="mx-auto mb-4 text-gray-600" />
                   <p className="text-gray-400">Nenhuma série encontrada para este gênero</p>
                 </div>
               )}
@@ -423,10 +447,10 @@ const SeriesPage = () => {
 
       {/* Categorias (mostrar apenas se não estiver buscando e não tiver gênero selecionado) */}
       {!hasSearched && !selectedGenre && (
-        <div className="space-y-2">
-          <CategoryRow title="🔥 Em Alta" series={trendingSeries} onSelect={openSeriePlayer} />
-          <CategoryRow title="⭐ Populares" series={popularSeries} onSelect={openSeriePlayer} />
-          <CategoryRow title="🏆 Mais Bem Avaliadas" series={topRatedSeries} onSelect={openSeriePlayer} />
+        <div className="space-y-8">
+          <CategoryRow title="Em Alta" titleIcon={TrendingUp} series={trendingSeries} onSelect={openSeriePlayer} />
+          <CategoryRow title="Populares" titleIcon={Star} series={popularSeries} onSelect={openSeriePlayer} />
+          <CategoryRow title="Mais Bem Avaliadas" titleIcon={Star} series={topRatedSeries} onSelect={openSeriePlayer} />
         </div>
       )}
 
@@ -615,9 +639,10 @@ interface CategoryRowProps {
   title: string;
   series: Serie[];
   onSelect: (serie: Serie) => void;
+  titleIcon?: React.ComponentType<{ size?: number; className?: string }>;
 }
 
-const CategoryRow = ({ title, series, onSelect }: CategoryRowProps) => {
+const CategoryRow = ({ title, series, onSelect, titleIcon: TitleIcon }: CategoryRowProps) => {
   const sliderRef = useRef<HTMLDivElement>(null);
 
   const scroll = (direction: 'left' | 'right') => {
@@ -634,6 +659,7 @@ const CategoryRow = ({ title, series, onSelect }: CategoryRowProps) => {
   return (
     <div className="relative group/row py-4">
       <h2 className="text-lg md:text-xl font-bold text-white mb-4 px-4 md:px-12 flex items-center gap-3">
+        {TitleIcon && <TitleIcon size={20} className="text-primary-400" />}
         {title}
         <span className="flex-1 h-px bg-gradient-to-r from-primary-500/30 to-transparent" />
       </h2>
@@ -690,7 +716,9 @@ const SerieCard = memo(({ serie, onSelect }: SerieCardProps) => {
             decoding="async"
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center text-5xl">📺</div>
+          <div className="w-full h-full flex items-center justify-center">
+            <Tv size={48} className="text-gray-600 opacity-50" />
+          </div>
         )}
         
         {/* Hover Overlay */}

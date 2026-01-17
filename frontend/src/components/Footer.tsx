@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { Github, Twitter, MessageCircle, Navigation, Heart } from 'lucide-react';
 
 /**
  * Footer component moderno com glassmorphism e gradientes
@@ -14,9 +15,9 @@ const Footer = () => {
       { label: 'Buscar', path: '/search' },
     ],
     social: [
-      { label: 'GitHub', icon: '💻', url: '#' },
-      { label: 'Twitter', icon: '🐦', url: '#' },
-      { label: 'Discord', icon: '💬', url: '#' },
+      { label: 'GitHub', icon: Github, url: '#' },
+      { label: 'Twitter', icon: Twitter, url: '#' },
+      { label: 'Discord', icon: MessageCircle, url: '#' },
     ],
   };
 
@@ -54,23 +55,26 @@ const Footer = () => {
               Descubra conteúdos em alta, explore categorias e aproveite streaming sem interrupções.
             </p>
             <div className="flex gap-3">
-              {footerLinks.social.map((social) => (
-                <a
-                  key={social.label}
-                  href={social.url}
-                  className="glass p-3 rounded-xl hover:bg-white/10 transition-all hover:scale-110"
-                  aria-label={social.label}
-                >
-                  <span className="text-2xl">{social.icon}</span>
-                </a>
-              ))}
+              {footerLinks.social.map((social) => {
+                const IconComponent = social.icon;
+                return (
+                  <a
+                    key={social.label}
+                    href={social.url}
+                    className="glass p-3 rounded-xl hover:bg-white/10 transition-all hover:scale-110"
+                    aria-label={social.label}
+                  >
+                    <IconComponent size={20} className="text-gray-400" />
+                  </a>
+                );
+              })}
             </div>
           </div>
 
           {/* Navegação */}
           <div>
             <h3 className="text-lg font-bold mb-4 text-white flex items-center gap-2">
-              <span>🧭</span> Navegação
+              <Navigation size={18} className="text-primary-400" /> Navegação
             </h3>
             <ul className="space-y-2">
               {footerLinks.navegacao.map((link) => (
@@ -90,7 +94,7 @@ const Footer = () => {
           {/* Informações */}
           <div>
             <h3 className="text-lg font-bold mb-4 text-white flex items-center gap-2">
-              <span>ℹ️</span> Informações
+              <Heart size={18} className="text-red-400" /> Informações
             </h3>
             <p className="text-gray-400 text-sm mb-4">
               Este produto usa a API do TMDb mas não é endossado ou certificado pelo TMDb.
@@ -121,7 +125,7 @@ const Footer = () => {
             <span>Todos os direitos reservados.</span>
             <span className="hidden sm:inline">•</span>
             <span className="inline-flex items-center gap-1">
-              Feito com <span className="text-orange-500 animate-pulse">inteligência!</span>
+              Feito com <Heart size={14} className="text-orange-500 animate-pulse" /> inteligência!
             </span>
           </p>
         </div>
