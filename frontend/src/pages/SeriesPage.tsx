@@ -34,7 +34,7 @@ interface Genre {
 }
 
 // Mapa de ícones para gêneros
-const genreIconComponents: Record<number, React.ComponentType<{ size?: number; className?: string }>> = {
+const genreIconComponents: Record<number, any> = {
   16: Sparkles, // Animação (Anime)
   10759: Sword, // Action & Adventure
   35: Laugh, // Comédia

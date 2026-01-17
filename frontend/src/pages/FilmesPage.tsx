@@ -1,5 +1,5 @@
-import { useEffect, useState, memo } from 'react';
-import { Play, Star, Clock, TrendingUp, Award, Calendar, Film } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Clock, TrendingUp, Award, Calendar, Film } from 'lucide-react';
 import movieService from '@/services/movieService';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import ErrorMessage from '@/components/ErrorMessage';
