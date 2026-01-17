@@ -220,6 +220,156 @@ class WatchHistoryService {
       favoriteGenres: this.getTopGenres(5),
     };
   }
+
+  /**
+   * Obtém um seed de rotação baseado no tempo (muda a cada 4 horas)
+   * Isso faz o conteúdo variar ao longo do dia sem precisar de refresh
+   */
+  getRotationSeed(): number {
+    const now = Date.now();
+    const fourHours = 4 * 60 * 60 * 1000;
+    return Math.floor(now / fourHours);
+  }
+
+  /**
+   * Shuffle determinístico baseado em seed
+   * Mesmo seed = mesma ordem, diferente seed = ordem diferente
+   */
+  shuffleWithSeed<T>(array: T[], seed: number): T[] {
+    const result = [...array];
+    let currentSeed = seed;
+    
+    // Algoritmo de shuffle simples baseado em seed
+    const random = () => {
+      currentSeed = (currentSeed * 9301 + 49297) % 233280;
+      return currentSeed / 233280;
+    };
+
+    for (let i = result.length - 1; i > 0; i--) {
+      const j = Math.floor(random() * (i + 1));
+      [result[i], result[j]] = [result[j], result[i]];
+    }
+    
+    return result;
+  }
+
+  /**
+   * Obtém gêneros para descoberta (que o usuário NÃO assistiu muito)
+   * Ajuda a diversificar as recomendações
+   */
+  getDiscoveryGenres(allGenres: number[], limit: number = 2): number[] {
+    const watchedGenres = new Set(this.getTopGenres(10));
+    const discoveryGenres = allGenres.filter(g => !watchedGenres.has(g));
+    
+    // Shuffle com seed para variar ao longo do tempo
+    const shuffled = this.shuffleWithSeed(discoveryGenres, this.getRotationSeed());
+    return shuffled.slice(0, limit);
+  }
+
+  /**
+   * Retorna a hora do dia para ajustar recomendações
+   * 0 = madrugada, 1 = manhã, 2 = tarde, 3 = noite
+   */
+  getTimeOfDay(): number {
+    const hour = new Date().getHours();
+    if (hour >= 0 && hour < 6) return 0;  // Madrugada
+    if (hour >= 6 && hour < 12) return 1; // Manhã
+    if (hour >= 12 && hour < 18) return 2; // Tarde
+    return 3; // Noite
+  }
+
+  /**
+   * Gêneros recomendados por hora do dia
+   */
+  getTimeBasedGenreBoost(): number[] {
+    const timeOfDay = this.getTimeOfDay();
+    
+    // Gêneros mais populares por período
+    switch (timeOfDay) {
+      case 0: // Madrugada - Terror, Thriller, Suspense
+        return [27, 53, 9648];
+      case 1: // Manhã - Família, Animação, Comédia
+        return [10751, 16, 35];
+      case 2: // Tarde - Ação, Aventura, Ficção
+        return [28, 12, 878];
+      case 3: // Noite - Drama, Romance, Crime
+        return [18, 10749, 80];
+      default:
+        return [];
+    }
+  }
+
+  /**
+   * Gera um mix inteligente de gêneros para recomendação
+   * Combina: favoritos (60%) + hora do dia (20%) + descoberta (20%)
+   */
+  getSmartGenreMix(allGenres: number[]): number[] {
+    const favorites = this.getTopGenres(3);
+    const timeBoost = this.getTimeBasedGenreBoost();
+    const discovery = this.getDiscoveryGenres(allGenres, 2);
+    
+    // Se não tem histórico, usa hora do dia + popular
+    if (favorites.length === 0) {
+      const popularGenres = [28, 12, 35, 18, 878]; // Ação, Aventura, Comédia, Drama, Sci-Fi
+      return [...timeBoost.slice(0, 2), ...this.shuffleWithSeed(popularGenres, this.getRotationSeed()).slice(0, 3)];
+    }
+    
+    // Mix inteligente sem duplicatas
+    const mix = new Set<number>();
+    
+    // 60% favoritos (3 gêneros)
+    favorites.forEach(g => mix.add(g));
+    
+    // 20% hora do dia (1 gênero que não está nos favoritos)
+    timeBoost.filter(g => !mix.has(g)).slice(0, 1).forEach(g => mix.add(g));
+    
+    // 20% descoberta (1 gênero novo)
+    discovery.filter(g => !mix.has(g)).slice(0, 1).forEach(g => mix.add(g));
+    
+    return Array.from(mix);
+  }
+
+  /**
+   * Diversifica uma lista de conteúdo para não repetir gêneros seguidos
+   */
+  diversifyContent<T extends { genre_ids?: number[] }>(items: T[]): T[] {
+    if (items.length <= 2) return items;
+    
+    const result: T[] = [];
+    const remaining = [...items];
+    const usedGenres = new Set<number>();
+    
+    while (remaining.length > 0) {
+      // Encontra o próximo item que não compartilha gêneros recentes
+      let bestIndex = 0;
+      let bestScore = -1;
+      
+      for (let i = 0; i < remaining.length; i++) {
+        const item = remaining[i];
+        const genres = item.genre_ids || [];
+        
+        // Conta quantos gêneros NÃO foram usados recentemente
+        const uniqueGenres = genres.filter(g => !usedGenres.has(g)).length;
+        const score = uniqueGenres / (genres.length || 1);
+        
+        if (score > bestScore) {
+          bestScore = score;
+          bestIndex = i;
+        }
+      }
+      
+      const chosen = remaining.splice(bestIndex, 1)[0];
+      result.push(chosen);
+      
+      // Atualiza gêneros usados (mantém apenas os últimos 3 itens)
+      if (result.length > 3) {
+        usedGenres.clear();
+      }
+      (chosen.genre_ids || []).forEach(g => usedGenres.add(g));
+    }
+    
+    return result;
+  }
 }
 
 export const watchHistoryService = new WatchHistoryService();

@@ -204,34 +204,43 @@ const HomePage = () => {
     fetchAllData();
   }, []);
 
-  // Generate smart recommendations
+  // Generate smart recommendations with intelligent logic
   const generateRecommendations = useCallback(async () => {
-    const topGenres = watchHistoryService.getTopGenres(3);
+    // Lista de todos os gêneros disponíveis
+    const allGenres = [28, 12, 16, 35, 80, 99, 18, 10751, 14, 36, 27, 10402, 9648, 10749, 878, 10770, 53, 10752, 37];
     
-    if (topGenres.length === 0) {
-      // No history, use trending
+    // Obtém mix inteligente de gêneros (favoritos + hora do dia + descoberta)
+    const smartGenres = watchHistoryService.getSmartGenreMix(allGenres);
+    const rotationSeed = watchHistoryService.getRotationSeed();
+    
+    if (smartGenres.length === 0) {
+      // Sem gêneros, não faz nada
       return;
     }
     
     try {
       const recommendedItems: ContentItem[] = [];
       
-      // Get recommendations based on favorite genres
-      for (const genreId of topGenres.slice(0, 2)) {
+      // Busca conteúdo de cada gênero do mix inteligente (limitado a 3 para performance)
+      const genresToFetch = smartGenres.slice(0, 3);
+      
+      await Promise.all(genresToFetch.map(async (genreId) => {
         try {
           const [movieRecs, seriesRecs] = await Promise.all([
             movieService.getByGenre(genreId, 1),
             api.get('/series/discover', { params: { genreId } }).catch(() => ({ data: { results: [] } })),
           ]);
           
-          movieRecs.results.slice(0, 5).forEach((movie: Movie) => {
+          // Adiciona filmes
+          movieRecs.results.slice(0, 4).forEach((movie: Movie) => {
             recommendedItems.push({
               ...movie,
               media_type: 'movie',
             });
           });
           
-          (seriesRecs.data.results || []).slice(0, 5).forEach((serie: Serie) => {
+          // Adiciona séries
+          (seriesRecs.data.results || []).slice(0, 4).forEach((serie: Serie) => {
             recommendedItems.push({
               id: serie.id,
               title: serie.name,
@@ -247,14 +256,20 @@ const HomePage = () => {
         } catch (e) {
           console.log('Error fetching recommendations for genre:', genreId);
         }
-      }
+      }));
       
-      // Shuffle and dedupe
+      // Remove duplicatas
       const uniqueItems = recommendedItems.filter((item, index, self) => 
         index === self.findIndex((t) => t.id === item.id && t.media_type === item.media_type)
       );
       
-      setRecommendations(uniqueItems.sort(() => Math.random() - 0.5).slice(0, 20));
+      // Shuffle determinístico baseado no seed de rotação (muda a cada 4 horas)
+      const shuffled = watchHistoryService.shuffleWithSeed(uniqueItems, rotationSeed);
+      
+      // Diversifica para não ter gêneros repetidos seguidos
+      const diversified = watchHistoryService.diversifyContent(shuffled);
+      
+      setRecommendations(diversified.slice(0, 20));
     } catch (err) {
       console.error('Error generating recommendations:', err);
     }
