@@ -15,7 +15,6 @@ class PopupBlockerService {
   private touchStartTime: number = 0;
   private lastTouchTarget: EventTarget | null = null;
   private isMobile: boolean = false;
-  private clickGuardActive: boolean = false;
   private legitimateClicks: WeakSet<Event> = new WeakSet();
 
   // Padrões de URLs de anúncios/popups
