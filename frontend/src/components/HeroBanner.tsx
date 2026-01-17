@@ -140,69 +140,71 @@ const HeroBanner = memo(({
 
       {/* Content */}
       <div className="relative z-20 h-full flex items-center">
-        <div className="container-custom">
-          <div className="max-w-2xl space-y-6 animate-slide-up">
+        <div className="container-custom px-4 sm:px-6 lg:px-8">
+          <div className="max-w-xl lg:max-w-2xl space-y-3 sm:space-y-4 md:space-y-6 animate-slide-up">
             {/* Badge */}
-            <div className="flex items-center gap-3 flex-wrap">
-              <span className="hero-badge hero-badge-primary">
-                <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
+            <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+              <span className="hero-badge hero-badge-primary text-xs sm:text-sm">
+                <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-white animate-pulse" />
                 RECOMENDADO
               </span>
-              <span className="hero-badge hero-badge-secondary flex items-center gap-1.5">
+              <span className="hero-badge hero-badge-secondary flex items-center gap-1 sm:gap-1.5 text-xs sm:text-sm">
                 {currentItem.media_type === 'series' ? (
-                  <><Tv size={14} /> Série</>
+                  <><Tv size={12} className="sm:w-[14px] sm:h-[14px]" /> Série</>
                 ) : (
-                  <><Film size={14} /> Filme</>
+                  <><Film size={12} className="sm:w-[14px] sm:h-[14px]" /> Filme</>
                 )}
               </span>
             </div>
 
             {/* Title */}
-            <h1 className="hero-title text-4xl md:text-6xl lg:text-7xl font-black text-white leading-tight tracking-tight">
+            <h1 className="hero-title text-2xl sm:text-3xl md:text-5xl lg:text-6xl xl:text-7xl font-black text-white leading-tight tracking-tight">
               {getTitle(currentItem)}
             </h1>
 
             {/* Meta Info */}
-            <div className="flex items-center gap-4 flex-wrap text-gray-300">
-              <span className="flex items-center gap-1.5 text-amber-400 font-bold text-lg">
-                <Star size={20} fill="currentColor" />
+            <div className="flex items-center gap-2 sm:gap-4 flex-wrap text-gray-300 text-sm sm:text-base">
+              <span className="flex items-center gap-1 sm:gap-1.5 text-amber-400 font-bold text-base sm:text-lg">
+                <Star size={16} className="sm:w-5 sm:h-5" fill="currentColor" />
                 {currentItem.vote_average?.toFixed(1)}
               </span>
               {getYear(currentItem) && (
-                <span className="flex items-center gap-1.5">
-                  <Calendar size={16} />
+                <span className="flex items-center gap-1 sm:gap-1.5">
+                  <Calendar size={14} className="sm:w-4 sm:h-4" />
                   {getYear(currentItem)}
                 </span>
               )}
               {getGenres(currentItem) && (
-                <span className="text-gray-400">
+                <span className="text-gray-400 hidden sm:inline">
                   {getGenres(currentItem)}
                 </span>
               )}
             </div>
 
-            {/* Overview */}
-            <p className="hero-overview text-gray-300 text-base md:text-lg leading-relaxed line-clamp-3 max-w-xl">
+            {/* Overview - hidden on very small screens */}
+            <p className="hero-overview text-gray-300 text-sm sm:text-base md:text-lg leading-relaxed line-clamp-2 sm:line-clamp-3 max-w-xl hidden xs:block">
               {currentItem.overview || 'Assista agora em alta qualidade.'}
             </p>
 
             {/* Action Buttons */}
-            <div className="flex flex-wrap gap-4 pt-2">
+            <div className="flex flex-wrap gap-2 sm:gap-4 pt-1 sm:pt-2">
               <button
                 onClick={() => onPlay(currentItem)}
-                className="hero-btn hero-btn-primary"
+                className="hero-btn hero-btn-primary text-sm sm:text-base px-4 sm:px-8 py-2.5 sm:py-4"
               >
-                <Play size={22} fill="white" />
-                Assistir Agora
+                <Play size={18} className="sm:w-[22px] sm:h-[22px]" fill="white" />
+                <span className="hidden xs:inline">Assistir</span>
+                <span className="xs:hidden">▶</span>
               </button>
               
               {onInfo && (
                 <button
                   onClick={() => onInfo(currentItem)}
-                  className="hero-btn hero-btn-secondary"
+                  className="hero-btn hero-btn-secondary text-sm sm:text-base px-4 sm:px-8 py-2.5 sm:py-4"
                 >
-                  <Info size={22} />
-                  Mais Detalhes
+                  <Info size={18} className="sm:w-[22px] sm:h-[22px]" />
+                  <span className="hidden sm:inline">Mais Detalhes</span>
+                  <span className="sm:hidden">Info</span>
                 </button>
               )}
             </div>
@@ -210,24 +212,24 @@ const HeroBanner = memo(({
         </div>
       </div>
 
-      {/* Navigation Arrows */}
+      {/* Navigation Arrows - hidden on mobile */}
       <button
         onClick={prevSlide}
-        className="hero-arrow hero-arrow-left"
+        className="hero-arrow hero-arrow-left hidden sm:flex"
         aria-label="Anterior"
       >
-        <ChevronLeft size={32} strokeWidth={2.5} />
+        <ChevronLeft size={28} strokeWidth={2.5} className="md:w-8 md:h-8" />
       </button>
       <button
         onClick={nextSlide}
-        className="hero-arrow hero-arrow-right"
+        className="hero-arrow hero-arrow-right hidden sm:flex"
         aria-label="Próximo"
       >
-        <ChevronRight size={32} strokeWidth={2.5} />
+        <ChevronRight size={28} strokeWidth={2.5} className="md:w-8 md:h-8" />
       </button>
 
       {/* Slide Indicators */}
-      <div className="absolute bottom-16 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2">
+      <div className="absolute bottom-14 sm:bottom-16 left-1/2 -translate-x-1/2 z-30 flex items-center gap-1.5 sm:gap-2">
         {featuredItems.map((_, index) => (
           <button
             key={index}
@@ -238,8 +240,8 @@ const HeroBanner = memo(({
             }}
             className={`hero-indicator transition-all duration-300 ${
               index === currentIndex
-                ? 'hero-indicator-active'
-                : 'hero-indicator-inactive'
+                ? 'hero-indicator-active w-8 sm:w-12 h-2 sm:h-3'
+                : 'hero-indicator-inactive w-2 sm:w-3 h-2 sm:h-3'
             }`}
             aria-label={`Ir para slide ${index + 1}`}
           />
@@ -248,8 +250,8 @@ const HeroBanner = memo(({
 
       {/* Progress Bar - com fundo para ficar sempre visível */}
       <div className="absolute bottom-0 left-0 right-0 z-50">
-        <div className="bg-gradient-to-t from-black/80 to-transparent pt-8 pb-4 px-4">
-          <div className="h-1 bg-white/10 rounded-full overflow-hidden">
+        <div className="bg-gradient-to-t from-black/80 to-transparent pt-6 sm:pt-8 pb-3 sm:pb-4 px-4">
+          <div className="h-0.5 sm:h-1 bg-white/10 rounded-full overflow-hidden">
             <div
               className="h-full bg-gradient-to-r from-primary-400 to-primary-600 transition-all duration-300"
               style={{ width: `${((currentIndex + 1) / featuredItems.length) * 100}%` }}
@@ -258,8 +260,8 @@ const HeroBanner = memo(({
         </div>
       </div>
 
-      {/* Thumbnail Preview (Right Side) */}
-      <div className="hidden lg:flex absolute right-8 top-1/2 -translate-y-1/2 z-20 flex-col gap-3">
+      {/* Thumbnail Preview (Right Side) - Only on large screens */}
+      <div className="hidden xl:flex absolute right-8 top-1/2 -translate-y-1/2 z-20 flex-col gap-3">
         {featuredItems.slice(0, 4).map((item, index) => (
           <button
             key={item.id}

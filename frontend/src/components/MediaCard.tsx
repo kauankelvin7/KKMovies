@@ -46,10 +46,11 @@ const MediaCard = memo(({
     ? new Date(release_date || first_air_date || '').getFullYear() 
     : null;
 
+  // Responsive size classes
   const sizeClasses = {
-    small: 'w-[140px] md:w-[160px]',
-    medium: 'w-[160px] md:w-[185px]',
-    large: 'w-[180px] md:w-[200px]',
+    small: 'w-[120px] xs:w-[130px] sm:w-[140px] md:w-[150px] lg:w-[160px]',
+    medium: 'w-[130px] xs:w-[140px] sm:w-[155px] md:w-[170px] lg:w-[185px] xl:w-[200px]',
+    large: 'w-[150px] xs:w-[160px] sm:w-[175px] md:w-[190px] lg:w-[210px] xl:w-[230px]',
   };
 
   const item = {
