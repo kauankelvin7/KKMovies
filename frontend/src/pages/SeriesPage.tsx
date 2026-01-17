@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef, memo } from 'react';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import ErrorMessage from '@/components/ErrorMessage';
+import api from '@/services/api';
 
 const SUPERFLIX_BASE = 'https://superflixapi.bond';
 const TMDB_IMAGE_BASE = 'https://image.tmdb.org/t/p/w500';
@@ -85,9 +86,8 @@ const SeriesPage = () => {
 
   const fetchGenres = async () => {
     try {
-      const response = await fetch('/api/series/genres');
-      const data = await response.json();
-      setGenres(data.genres || []);
+      const response = await api.get('/series/genres');
+      setGenres(response.data.genres || []);
     } catch (err) {
       console.error('Error fetching genres:', err);
     }
@@ -96,10 +96,9 @@ const SeriesPage = () => {
   const fetchSeriesByGenre = async (genreId: number, page: number = 1, sort: string = sortBy) => {
     setLoadingGenre(true);
     try {
-      const response = await fetch(`/api/series/discover?genreId=${genreId}&page=${page}&sortBy=${sort}`);
-      const data = await response.json();
-      setGenreSeries(data.results || []);
-      setTotalGenrePages(data.total_pages || 1);
+      const response = await api.get('/series/discover', { params: { genreId, page, sortBy: sort } });
+      setGenreSeries(response.data.results || []);
+      setTotalGenrePages(response.data.total_pages || 1);
       setGenrePage(page);
     } catch (err) {
       console.error('Error fetching series by genre:', err);
@@ -138,14 +137,14 @@ const SeriesPage = () => {
     try {
       setLoading(true);
       const [popularRes, topRatedRes, trendingRes] = await Promise.all([
-        fetch('/api/series/popular').then(r => r.json()),
-        fetch('/api/series/top-rated').then(r => r.json()),
-        fetch('/api/series/trending').then(r => r.json()),
+        api.get('/series/popular'),
+        api.get('/series/top-rated'),
+        api.get('/series/trending'),
       ]);
       
-      setPopularSeries(popularRes.results || []);
-      setTopRatedSeries(topRatedRes.results || []);
-      setTrendingSeries(trendingRes.results || []);
+      setPopularSeries(popularRes.data.results || []);
+      setTopRatedSeries(topRatedRes.data.results || []);
+      setTrendingSeries(trendingRes.data.results || []);
     } catch (err) {
       console.error('Error fetching series:', err);
       setError('Falha ao carregar séries.');
@@ -161,9 +160,8 @@ const SeriesPage = () => {
     setIsSearching(true);
     setHasSearched(true);
     try {
-      const response = await fetch(`/api/series/search?query=${encodeURIComponent(searchQuery.trim())}`);
-      const data = await response.json();
-      setSearchResults(data.results || []);
+      const response = await api.get('/series/search', { params: { query: searchQuery.trim() } });
+      setSearchResults(response.data.results || []);
     } catch (err) {
       console.error('Error searching series:', err);
       setSearchResults([]);
@@ -186,8 +184,8 @@ const SeriesPage = () => {
     
     // Buscar detalhes da série para saber quantas temporadas tem
     try {
-      const details = await fetch(`/api/series/${serie.id}`).then(r => r.json());
-      setTotalSeasons(details.number_of_seasons || 1);
+      const response = await api.get(`/series/${serie.id}`);
+      setTotalSeasons(response.data.number_of_seasons || 1);
       
       // Buscar episódios da primeira temporada
       await fetchEpisodes(serie.id, 1);
@@ -200,9 +198,8 @@ const SeriesPage = () => {
   const fetchEpisodes = async (serieId: number, season: number) => {
     setLoadingEpisodes(true);
     try {
-      const response = await fetch(`/api/series/${serieId}/season/${season}`);
-      const data = await response.json();
-      setEpisodes(data.episodes || []);
+      const response = await api.get(`/series/${serieId}/season/${season}`);
+      setEpisodes(response.data.episodes || []);
     } catch (err) {
       console.error('Error fetching episodes:', err);
       setEpisodes([]);
