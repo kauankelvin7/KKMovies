@@ -112,6 +112,7 @@ const SearchPageSimple = () => {
                     key={movie.id}
                     className="cursor-pointer group"
                     onClick={() => openPlayer(movie)}
+                    data-app-element
                   >
                     <div className={`aspect-[2/3] relative rounded-xl overflow-hidden ${isDarkMode ? 'bg-dark-800' : 'bg-gray-200'}`}>
                       {movie.poster_path ? (

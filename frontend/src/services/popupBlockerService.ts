@@ -150,15 +150,28 @@ class PopupBlockerService {
     let lastClick = 0;
     document.addEventListener('click', (e) => {
       const now = Date.now();
-      // Cliques muito rápidos em sequência são suspeitos
+      const target = e.target as HTMLElement;
+      
+      // Nunca bloqueia elementos do app
+      if (target.closest('[data-app-element]') || 
+          target.closest('[data-app-modal]') ||
+          target.closest('[data-app-content]') ||
+          target.closest('button') || 
+          target.closest('a') ||
+          target.closest('.media-card') ||
+          target.closest('.hero-banner') ||
+          target.tagName === 'BUTTON' ||
+          target.tagName === 'A') {
+        lastClick = now;
+        return;
+      }
+      
+      // Cliques muito rápidos em sequência são suspeitos (apenas para elementos não-app)
       if (now - lastClick < 100) {
-        const target = e.target as HTMLElement;
-        if (!target.closest('[data-app-element]') && !target.closest('button') && !target.closest('a')) {
-          e.preventDefault();
-          e.stopPropagation();
-          this.blockedCount++;
-          return false;
-        }
+        e.preventDefault();
+        e.stopPropagation();
+        this.blockedCount++;
+        return false;
       }
       lastClick = now;
     }, { capture: true });
@@ -190,16 +203,27 @@ class PopupBlockerService {
     document.addEventListener('click', (e) => {
       const target = e.target as HTMLElement;
       
-      // Se é um elemento do app, permite
+      // Se é um elemento do app, SEMPRE permite
       if (target.closest('[data-app-element]') || 
           target.closest('[data-app-modal]') ||
+          target.closest('[data-app-content]') ||
+          target.closest('[data-app-overlay]') ||
           target.closest('button') ||
-          target.closest('a[href^="/"]') ||
+          target.closest('a') ||
+          target.closest('input') ||
+          target.closest('textarea') ||
+          target.closest('select') ||
+          target.closest('.media-card') ||
+          target.closest('.hero-banner') ||
+          target.closest('.content-carousel') ||
+          target.tagName === 'BUTTON' ||
+          target.tagName === 'A' ||
+          target.tagName === 'INPUT' ||
           this.legitimateClicks.has(e)) {
         return;
       }
 
-      // Verifica se o clique é em elemento suspeito
+      // Verifica se o clique é em elemento suspeito (apenas para elementos não-interativos)
       const isSuspicious = this.isSuspiciousElement(target);
       
       if (isSuspicious) {
@@ -213,6 +237,27 @@ class PopupBlockerService {
   }
 
   private isSuspiciousElement(element: HTMLElement): boolean {
+    // Nunca bloqueia elementos do app
+    if (element.closest('[data-app-element]') ||
+        element.closest('[data-app-modal]') ||
+        element.closest('[data-app-content]') ||
+        element.closest('.media-card') ||
+        element.closest('.hero-banner') ||
+        element.closest('.player-modal')) {
+      return false;
+    }
+
+    // Nunca bloqueia elementos interativos
+    if (element.tagName === 'BUTTON' ||
+        element.tagName === 'A' ||
+        element.tagName === 'INPUT' ||
+        element.tagName === 'TEXTAREA' ||
+        element.tagName === 'SELECT' ||
+        element.closest('button') ||
+        element.closest('a')) {
+      return false;
+    }
+
     // Verifica se é invisível ou fora da tela
     const rect = element.getBoundingClientRect();
     const style = window.getComputedStyle(element);

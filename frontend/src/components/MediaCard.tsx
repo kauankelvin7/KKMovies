@@ -128,15 +128,17 @@ const MediaCard = memo(({
           </div>
         )}
 
-        {/* Remove Button - Always visible for better UX */}
-        {onRemove && progress !== undefined && (
+        {/* Remove Button - Always visible when onRemove is provided */}
+        {onRemove && (
           <button
             onClick={(e) => {
               e.stopPropagation();
+              e.preventDefault();
               onRemove(id, media_type || 'movie');
             }}
             className="absolute top-2 left-2 w-7 h-7 bg-red-500/95 hover:bg-red-600 text-white rounded-full flex items-center justify-center transition-all duration-200 z-20 shadow-lg hover:scale-110 backdrop-blur-sm"
-            title="Remover"
+            title="Remover do histórico"
+            data-app-element
           >
             <X size={14} strokeWidth={3} />
           </button>

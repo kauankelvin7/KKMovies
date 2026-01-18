@@ -464,7 +464,7 @@ const SeriesPage = () => {
 
       {/* Player Modal com Seletor de Episódios */}
       {playerOpen && selectedSerie && (
-        <div className="fixed inset-0 z-50 bg-black/95 flex flex-col">
+        <div className="fixed inset-0 z-50 bg-black/95 flex flex-col" data-app-modal data-app-element>
           {/* Header do Player */}
           <div className="flex items-center justify-between p-4 bg-dark-900/80">
             <div className="flex items-center gap-4">
@@ -713,6 +713,7 @@ const SerieCard = memo(({ serie, onSelect }: SerieCardProps) => {
     <div 
       className="flex-shrink-0 w-[140px] sm:w-[160px] md:w-[180px] cursor-pointer group"
       onClick={() => onSelect(serie)}
+      data-app-element
     >
       <div className="aspect-[2/3] relative rounded-xl overflow-hidden bg-dark-800 transition-transform duration-300 group-hover:scale-105 group-hover:shadow-xl group-hover:shadow-primary-500/20">
         {imageUrl ? (

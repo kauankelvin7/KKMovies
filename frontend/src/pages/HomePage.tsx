@@ -636,6 +636,11 @@ const HomePage = () => {
                   title={item.title}
                   isWatched
                   onPlay={() => openPlayer(item as unknown as ContentItem, item.type)}
+                  onRemove={(id, type) => {
+                    watchHistoryService.removeFromHistory(id, type);
+                    setContinueWatching(watchHistoryService.getContinueWatching());
+                    setRecentlyWatched(watchHistoryService.getRecentlyWatched(10));
+                  }}
                 />
               ))}
             </ContentCarousel>
