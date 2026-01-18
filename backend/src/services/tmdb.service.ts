@@ -275,17 +275,30 @@ class TMDBService {
   }
 
   /**
-   * Get movie details by ID
+   * Get movie details by ID (includes IMDB ID)
    */
   async getMovieDetails(movieId: number): Promise<MovieDetails> {
     await this.ensureInitialized();
-    const response = await this.api.get<MovieDetails>(`/movie/${movieId}`);
-    const movie = response.data;
-    return {
-      ...movie,
-      poster_path: this.getImageUrl(movie.poster_path),
-      backdrop_path: this.getImageUrl(movie.backdrop_path, 'w1280'),
-    };
+    
+    return this.getCached(`movie_details_${movieId}`, async () => {
+      // Adiciona external_ids para obter o imdb_id
+      const response = await this.api.get<MovieDetails & { external_ids?: { imdb_id?: string } }>(`/movie/${movieId}`, {
+        params: {
+          append_to_response: 'external_ids'
+        }
+      });
+      const movie = response.data;
+      
+      // O imdb_id pode estar na raiz ou dentro de external_ids
+      const imdb_id = movie.imdb_id || movie.external_ids?.imdb_id;
+      
+      return {
+        ...movie,
+        imdb_id,
+        poster_path: this.getImageUrl(movie.poster_path),
+        backdrop_path: this.getImageUrl(movie.backdrop_path, 'w1280'),
+      };
+    });
   }
 
   /**

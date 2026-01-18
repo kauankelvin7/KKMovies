@@ -23,6 +23,7 @@ const FilmesPage = () => {
   
   const [playerOpen, setPlayerOpen] = useState(false);
   const [currentMovie, setCurrentMovie] = useState<Movie | null>(null);
+  const [streamUrl, setStreamUrl] = useState<string>('');
 
   useEffect(() => {
     const fetchData = async () => {
@@ -50,9 +51,9 @@ const FilmesPage = () => {
 
   const openPlayer = (movie: Movie) => {
     setCurrentMovie(movie);
+    setStreamUrl(`${SUPERFLIX_BASE}/filme/${movie.id}`);
     setPlayerOpen(true);
     
-    // Add to watch history
     watchHistoryService.addToHistory({
       id: movie.id,
       type: 'movie',
@@ -64,8 +65,6 @@ const FilmesPage = () => {
       progress: 5,
     });
   };
-
-  const getStreamUrl = (movieId: number) => `${SUPERFLIX_BASE}/filme/${movieId}`;
 
   if (loading) {
     return (
@@ -182,8 +181,11 @@ const FilmesPage = () => {
 
       <PlayerModal
         isOpen={playerOpen}
-        onClose={() => setPlayerOpen(false)}
-        streamUrl={currentMovie ? getStreamUrl(currentMovie.id) : ''}
+        onClose={() => {
+          setPlayerOpen(false);
+          setStreamUrl('');
+        }}
+        streamUrl={streamUrl}
         title={currentMovie?.title || ''}
       />
     </div>

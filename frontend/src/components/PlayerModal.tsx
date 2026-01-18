@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react';
-import { X, ExternalLink, Maximize2, Loader2, Lightbulb } from 'lucide-react';
+import { useEffect, useState, useRef } from 'react';
+import { createPortal } from 'react-dom';
+import { X, ExternalLink, Loader2 } from 'lucide-react';
 
 interface PlayerModalProps {
   isOpen: boolean;
@@ -9,126 +10,115 @@ interface PlayerModalProps {
 }
 
 const PlayerModal = ({ isOpen, onClose, streamUrl, title }: PlayerModalProps) => {
-  const [showPlayer, setShowPlayer] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [mounted, setMounted] = useState(false);
+  const modalRef = useRef<HTMLDivElement>(null);
 
-  // Fechar com ESC
+  useEffect(() => {
+    setMounted(true);
+    return () => setMounted(false);
+  }, []);
+
+  // Handle ESC key
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
     };
     if (isOpen) {
-      document.addEventListener('keydown', handleEsc);
-      document.body.style.overflow = 'hidden';
-      setIsLoading(true);
-      // Delay para evitar detecção
-      const timer = setTimeout(() => {
-        setShowPlayer(true);
-        setIsLoading(false);
-      }, 300);
-      return () => {
-        clearTimeout(timer);
-        document.removeEventListener('keydown', handleEsc);
-        document.body.style.overflow = 'unset';
-      };
+      window.addEventListener('keydown', handleEsc);
     }
-    setShowPlayer(false);
-    setIsLoading(true);
     return () => {
-      document.removeEventListener('keydown', handleEsc);
-      document.body.style.overflow = 'unset';
+      window.removeEventListener('keydown', handleEsc);
     };
   }, [isOpen, onClose]);
 
-  if (!isOpen) return null;
-
-  const openInNewTab = () => {
-    window.open(streamUrl, '_blank', 'noopener,noreferrer');
-  };
-
-  const openFullscreen = () => {
-    const iframe = document.querySelector('iframe');
-    if (iframe?.requestFullscreen) {
-      iframe.requestFullscreen();
+  // Auto-scroll to player when opened (UX improvement)
+  useEffect(() => {
+    if (isOpen && modalRef.current) {
+      // Small delay to ensure render layout is complete
+      const timer = setTimeout(() => {
+        modalRef.current?.scrollIntoView({ 
+          behavior: 'smooth', 
+          block: 'center',
+          inline: 'center'
+        });
+      }, 100);
+      return () => clearTimeout(timer);
     }
-  };
+  }, [isOpen]);
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center animate-fade-in" data-app-modal data-app-element>
-      {/* Backdrop */}
-      <div 
-        className="absolute inset-0 bg-black/98 backdrop-blur-sm"
-        onClick={onClose}
-      />
-      
-      {/* Modal */}
-      <div className="relative w-full max-w-7xl mx-2 sm:mx-4 z-10 animate-scale-in">
+  if (!isOpen || !mounted) return null;
+
+  // Portal renderizado diretamente no body
+  // Estrutura atualizada para garantir scroll correto e evitar cortes (clipping) em telas pequenas
+  return createPortal(
+    <div className="fixed inset-0 z-[9999] overflow-y-auto bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
+      <div className="flex min-h-full items-center justify-center p-4 sm:p-6">
+        {/* Overlay click to close */}
+        <div 
+          className="fixed inset-0 transition-opacity" 
+          onClick={onClose}
+          aria-hidden="true"
+        />
+        
+        {/* Modal Container - Responsive Card - Glassmorphism Updated */}
+        <div 
+          ref={modalRef}
+          className="relative w-[90vw] sm:w-[85vw] max-w-sm md:max-w-xl lg:max-w-2xl flex flex-col bg-black/40 backdrop-blur-2xl border border-white/20 rounded-2xl shadow-2xl animate-in zoom-in-95 duration-200 z-10 ring-1 ring-white/10 my-auto"
+          style={{ WebkitBackdropFilter: 'blur(24px)' }}
+        >
+        
         {/* Header */}
-        <div className="flex items-center justify-between mb-2 sm:mb-4 px-1 sm:px-2">
-          <div className="flex items-center gap-2 sm:gap-4 flex-1 min-w-0">
-            <div className="w-1 h-6 sm:h-8 bg-primary-500 rounded-full flex-shrink-0" />
-            <h2 className="text-base sm:text-xl md:text-2xl font-bold text-white truncate">{title}</h2>
-          </div>
-          <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
-            <button
-              onClick={openFullscreen}
-              className="p-2 sm:p-2.5 rounded-lg sm:rounded-xl bg-white/5 hover:bg-white/10 text-gray-300 hover:text-white transition-all duration-300 border border-white/10"
-              title="Tela cheia"
-            >
-              <Maximize2 size={18} className="sm:w-5 sm:h-5" />
-            </button>
-            <button
-              onClick={openInNewTab}
-              className="p-2 sm:px-5 sm:py-2.5 rounded-lg sm:rounded-xl bg-primary-500/20 hover:bg-primary-500 text-primary-400 hover:text-white text-sm font-medium transition-all duration-300 flex items-center gap-2 border border-primary-500/30"
-            >
-              <ExternalLink size={16} />
-              <span className="hidden sm:inline">Nova Aba</span>
-            </button>
-            <button
-              onClick={onClose}
-              className="p-2 sm:p-2.5 rounded-lg sm:rounded-xl bg-white/5 hover:bg-red-500 text-gray-300 hover:text-white transition-all duration-300 border border-white/10"
-            >
-              <X size={20} className="sm:w-[22px] sm:h-[22px]" />
-            </button>
-          </div>
+        <div className="flex items-center justify-between px-4 py-3 bg-white/5 border-b border-white/10 backdrop-blur-md shrink-0 rounded-t-2xl">
+           <h2 className="text-sm md:text-base font-medium text-white/90 truncate flex-1 mr-4 drop-shadow-sm">
+             {title}
+           </h2>
+           <button 
+             onClick={onClose} 
+             className="p-1.5 text-zinc-300 hover:text-white bg-white/5 hover:bg-white/20 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500/50" 
+             title="Fechar"
+           >
+             <X size={18} />
+           </button>
         </div>
-        
-        {/* Player Container */}
-        <div className="relative bg-black rounded-xl sm:rounded-2xl overflow-hidden shadow-2xl shadow-black/50 ring-1 ring-white/10" style={{ paddingTop: '56.25%' }}>
-          {showPlayer ? (
-            <iframe
-              src={streamUrl}
-              title={title}
-              className="absolute top-0 left-0 w-full h-full border-0"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
-              allowFullScreen
-              referrerPolicy="no-referrer"
-              onLoad={() => setIsLoading(false)}
-            />
-          ) : null}
-          
-          {/* Loading Overlay */}
+
+        {/* Player Wrapper - Aspect Ratio (Mobile Portrait / Desktop Landscape) */}
+        <div className="relative w-full aspect-[9/16] sm:aspect-video bg-black/50 group shrink-0 overflow-hidden">
           {isLoading && (
-            <div className="absolute inset-0 flex flex-col items-center justify-center bg-dark-900/90 gap-3 sm:gap-4">
-              <Loader2 size={36} className="sm:w-12 sm:h-12 text-primary-500 animate-spin" />
-              <p className="text-gray-400 text-xs sm:text-sm">Carregando player...</p>
-            </div>
+             <div className="absolute inset-0 flex flex-col items-center justify-center z-10 bg-black/60 backdrop-blur-md">
+                <Loader2 className="w-8 h-8 md:w-10 md:h-10 text-primary-500 animate-spin mb-2" />
+                <p className="text-xs text-zinc-400">Carregando...</p>
+             </div>
           )}
+          <iframe 
+            src={streamUrl} 
+            title={title}
+            className="w-full h-full border-0 absolute inset-0"
+            allowFullScreen
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            onLoad={() => setIsLoading(false)}
+          />
         </div>
         
-        {/* Footer Tips - simpler on mobile */}
-        <div className="mt-2 sm:mt-4 p-3 sm:p-4 bg-dark-800/60 backdrop-blur-sm rounded-lg sm:rounded-xl border border-white/5 flex items-center justify-between flex-wrap gap-2 sm:gap-4">
-          <p className="text-gray-400 text-xs sm:text-sm flex items-center gap-2">
-            <Lightbulb size={16} className="sm:w-5 sm:h-5 text-yellow-500 flex-shrink-0" />
-            <span className="hidden xs:inline"><strong className="text-white">Dica:</strong> Se o player não carregar, clique em "Nova Aba".</span>
-            <span className="xs:hidden">Não carregou? Use "Nova Aba"</span>
-          </p>
-          <div className="hidden sm:flex items-center gap-4 text-xs text-gray-500">
-            <span>Pressione <kbd className="px-2 py-1 bg-dark-700 rounded text-gray-300">ESC</kbd> para fechar</span>
-          </div>
+        {/* Footer / Controls */}
+        <div className="bg-white/5 backdrop-blur-md px-4 py-3 border-t border-white/5 flex items-center justify-between gap-4 shrink-0">
+           <button 
+             onClick={() => window.open(streamUrl, '_blank')} 
+             className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-zinc-300 bg-white/5 hover:bg-white/10 border border-white/5 rounded-lg transition-colors shadow-sm whitespace-nowrap" 
+             title="Caso não carregue, clique aqui"
+           >
+             <ExternalLink size={14} />
+             <span>Assistir em Nova Aba</span>
+           </button>
+
+           <div className="hidden sm:block text-[10px] text-zinc-600">
+             Pressione ESC para fechar
+           </div>
         </div>
       </div>
     </div>
+    </div>,
+    document.body
   );
 };
 

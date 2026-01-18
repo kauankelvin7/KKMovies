@@ -40,6 +40,7 @@ export interface MovieDetails extends Omit<Movie, 'genre_ids'> {
   tagline: string;
   homepage: string;
   production_companies: ProductionCompany[];
+  imdb_id?: string;
 }
 
 // Production company

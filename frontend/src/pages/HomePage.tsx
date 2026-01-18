@@ -355,29 +355,6 @@ const HomePage = () => {
 
       {/* Main Content */}
       <div className="relative z-20 mt-4 sm:mt-8 md:mt-12 pb-8 sm:pb-12 space-y-2 sm:space-y-3 md:space-y-4">
-        
-        {/* Continue Watching */}
-        {continueWatching.length > 0 && (
-          <ContentCarousel
-            title="Continuar Assistindo"
-            subtitle="De onde você parou"
-            icon={<History size={22} />}
-            className="animate-fade-slide-up"
-          >
-            {continueWatching.map((item) => (
-              <MediaCard
-                key={`continue-${item.id}-${item.type}`}
-                {...item}
-                title={item.title}
-                onPlay={() => openPlayer(item as unknown as ContentItem, item.type)}
-                onRemove={(id, type) => {
-                  watchHistoryService.removeFromHistory(id, type);
-                  setContinueWatching(watchHistoryService.getContinueWatching());
-                }}
-              />
-            ))}
-          </ContentCarousel>
-        )}
 
         {/* Smart Recommendations */}
         {recommendations.length > 0 && (
@@ -620,32 +597,7 @@ const HomePage = () => {
           </>
         )}
 
-        {/* Recently Watched */}
-        {recentlyWatched.length > 0 && (
-          <>
-            <div className="section-divider" />
-            <ContentCarousel
-              title="Assistidos Recentemente"
-              subtitle="Seu histórico"
-              icon={<History size={22} className="text-gray-400" />}
-            >
-              {recentlyWatched.map((item) => (
-                <MediaCard
-                  key={`recent-${item.id}-${item.type}`}
-                  {...item}
-                  title={item.title}
-                  isWatched
-                  onPlay={() => openPlayer(item as unknown as ContentItem, item.type)}
-                  onRemove={(id, type) => {
-                    watchHistoryService.removeFromHistory(id, type);
-                    setContinueWatching(watchHistoryService.getContinueWatching());
-                    setRecentlyWatched(watchHistoryService.getRecentlyWatched(10));
-                  }}
-                />
-              ))}
-            </ContentCarousel>
-          </>
-        )}
+
       </div>
 
       {/* Player Modal */}

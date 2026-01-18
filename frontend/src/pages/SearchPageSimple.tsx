@@ -20,6 +20,7 @@ const SearchPageSimple = () => {
   // Player state
   const [playerOpen, setPlayerOpen] = useState(false);
   const [currentMovie, setCurrentMovie] = useState<Movie | null>(null);
+  const [streamUrl, setStreamUrl] = useState<string>('');
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -41,11 +42,8 @@ const SearchPageSimple = () => {
 
   const openPlayer = (movie: Movie) => {
     setCurrentMovie(movie);
+    setStreamUrl(`${SUPERFLIX_BASE}/filme/${movie.id}`);
     setPlayerOpen(true);
-  };
-
-  const getStreamUrl = (movieId: number) => {
-    return `${SUPERFLIX_BASE}/filme/${movieId}?quality=1080p`;
   };
 
   return (
@@ -180,8 +178,11 @@ const SearchPageSimple = () => {
       {/* Player Modal */}
       <PlayerModal
         isOpen={playerOpen}
-        onClose={() => setPlayerOpen(false)}
-        streamUrl={currentMovie ? getStreamUrl(currentMovie.id) : ''}
+        onClose={() => {
+          setPlayerOpen(false);
+          setStreamUrl('');
+        }}
+        streamUrl={streamUrl}
         title={currentMovie?.title || ''}
       />
     </div>

@@ -23,6 +23,7 @@ const HomePageSimple = () => {
   // Player state
   const [playerOpen, setPlayerOpen] = useState(false);
   const [currentMovie, setCurrentMovie] = useState<Movie | null>(null);
+  const [streamUrl, setStreamUrl] = useState<string>('');
 
   // Top 6 filmes para o slider
   const featuredMovies = nowPlaying.slice(0, 6);
@@ -76,13 +77,29 @@ const HomePageSimple = () => {
     fetchData();
   }, []);
 
-  const openPlayer = (movie: Movie) => {
+  const openPlayer = async (movie: Movie) => {
     setCurrentMovie(movie);
+    setStreamUrl(''); // Reset URL
     setPlayerOpen(true);
-  };
-
-  const getStreamUrl = (movieId: number) => {
-    return `${SUPERFLIX_BASE}/filme/${movieId}?quality=1080p`;
+    
+    try {
+      const details = await movieService.getDetails(movie.id);
+      console.log('Movie details:', details); // Debug log
+      if (details.imdb_id) {
+        console.log('Using IMDB ID:', details.imdb_id); // Debug log
+        setStreamUrl(`${SUPERFLIX_BASE}/filme/${details.imdb_id}`);
+      } else {
+        console.warn('IMDB ID não encontrado para o filme:', movie.title);
+        // Usar TMDB ID como fallback
+        setStreamUrl(`${SUPERFLIX_BASE}/filme/${movie.id}`);
+        return;
+      }
+    } catch (error) {
+      console.error('Erro ao buscar detalhes:', error);
+      // Usar TMDB ID como fallback
+      setStreamUrl(`${SUPERFLIX_BASE}/filme/${movie.id}`);
+      return;
+    }
   };
 
   if (loading) return <LoadingSpinner />;
@@ -266,8 +283,11 @@ const HomePageSimple = () => {
       {/* Player Modal */}
       <PlayerModal
         isOpen={playerOpen}
-        onClose={() => setPlayerOpen(false)}
-        streamUrl={currentMovie ? getStreamUrl(currentMovie.id) : ''}
+        onClose={() => {
+          setPlayerOpen(false);
+          setStreamUrl('');
+        }}
+        streamUrl={streamUrl}
         title={currentMovie?.title || ''}
       />
     </div>
