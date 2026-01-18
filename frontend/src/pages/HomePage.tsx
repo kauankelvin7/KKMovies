@@ -9,7 +9,6 @@ import {
   Tv, 
   Sparkles, 
   Heart,
-  History,
   Flame,
   Zap,
   Globe2
@@ -22,7 +21,7 @@ import PlayerModal from '@/components/PlayerModal';
 import HeroBanner from '@/components/HeroBanner';
 import ContentCarousel from '@/components/ContentCarousel';
 import MediaCard from '@/components/MediaCard';
-import { watchHistoryService, WatchedItem } from '@/services/watchHistoryService';
+import { watchHistoryService } from '@/services/watchHistoryService';
 import { popupBlocker } from '@/services/popupBlockerService';
 import { Movie } from '@/types/movie';
 import { useTheme } from '@/App';
@@ -88,8 +87,6 @@ const HomePage = () => {
   
   // States for recommendations
   const [recommendations, setRecommendations] = useState<ContentItem[]>([]);
-  const [continueWatching, setContinueWatching] = useState<WatchedItem[]>([]);
-  const [recentlyWatched, setRecentlyWatched] = useState<WatchedItem[]>([]);
   
   // UI States
   const [loading, setLoading] = useState(true);
@@ -106,19 +103,6 @@ const HomePage = () => {
     return () => {
       // Keep popup blocker active even after unmount
     };
-  }, []);
-
-  // Load watch history
-  useEffect(() => {
-    const loadWatchHistory = () => {
-      setContinueWatching(watchHistoryService.getContinueWatching());
-      setRecentlyWatched(watchHistoryService.getRecentlyWatched(10));
-    };
-    
-    loadWatchHistory();
-    // Update on focus
-    window.addEventListener('focus', loadWatchHistory);
-    return () => window.removeEventListener('focus', loadWatchHistory);
   }, []);
 
   // Fetch all data
@@ -293,10 +277,6 @@ const HomePage = () => {
       genre_ids: item.genre_ids || [],
       progress: 5, // Started watching
     });
-    
-    // Update local state
-    setContinueWatching(watchHistoryService.getContinueWatching());
-    setRecentlyWatched(watchHistoryService.getRecentlyWatched(10));
   }, []);
 
   const getStreamUrl = useCallback((id: number, type: 'movie' | 'series') => {
@@ -612,7 +592,6 @@ const HomePage = () => {
               contentType,
               30 // Simulated progress
             );
-            setContinueWatching(watchHistoryService.getContinueWatching());
           }
         }}
         streamUrl={currentContent ? getStreamUrl(currentContent.id, contentType) : ''}
