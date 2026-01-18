@@ -5,10 +5,12 @@ import LoadingSpinner from '@/components/LoadingSpinner';
 import ErrorMessage from '@/components/ErrorMessage';
 import PlayerModal from '@/components/PlayerModal';
 import { Movie } from '@/types/movie';
+import { useTheme } from '@/App';
 
 const SUPERFLIX_BASE = 'https://superflixapi.bond';
 
 const SearchPageSimple = () => {
+  const { isDarkMode } = useTheme();
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<Movie[]>([]);
   const [loading, setLoading] = useState(false);
@@ -55,10 +57,10 @@ const SearchPageSimple = () => {
             <Search size={28} className="text-primary-400" />
           </div>
           <div>
-            <h1 className="text-3xl md:text-4xl font-extrabold text-white tracking-tight">
+            <h1 className={`text-3xl md:text-4xl font-extrabold tracking-tight ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
               Buscar
             </h1>
-            <p className="text-gray-500 mt-1">Encontre filmes e séries</p>
+            <p className={`mt-1 ${isDarkMode ? 'text-gray-500' : 'text-gray-600'}`}>Encontre filmes e séries</p>
           </div>
         </div>
         
@@ -66,13 +68,17 @@ const SearchPageSimple = () => {
         <form onSubmit={handleSearch} className="max-w-3xl">
           <div className="flex gap-3">
             <div className="relative flex-1">
-              <Search size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500" />
+              <Search size={20} className={`absolute left-4 top-1/2 -translate-y-1/2 ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`} />
               <input
                 type="text"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Digite o nome do filme ou série..."
-                className="w-full pl-12 pr-4 py-4 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 transition-all"
+                className={`w-full pl-12 pr-4 py-4 border rounded-xl focus:outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 transition-all ${
+                  isDarkMode 
+                    ? 'bg-white/5 border-white/10 text-white placeholder-gray-500'
+                    : 'bg-white border-gray-300 text-gray-900 placeholder-gray-400'
+                }`}
               />
             </div>
             <button 
@@ -94,9 +100,9 @@ const SearchPageSimple = () => {
         {/* Results */}
         {!loading && searched && (
           <div>
-            <p className="text-gray-400 mb-6 flex items-center gap-2">
+            <p className={`mb-6 flex items-center gap-2 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
               <Film size={18} />
-              <span className="text-primary-400 font-bold">{results.length}</span> resultado(s) encontrado(s) para "<span className="text-white">{query}</span>"
+              <span className="text-primary-400 font-bold">{results.length}</span> resultado(s) encontrado(s) para "<span className={isDarkMode ? 'text-white' : 'text-gray-900'}>{query}</span>"
             </p>
             
             {results.length > 0 ? (
@@ -107,7 +113,7 @@ const SearchPageSimple = () => {
                     className="cursor-pointer group"
                     onClick={() => openPlayer(movie)}
                   >
-                    <div className="aspect-[2/3] relative rounded-xl overflow-hidden bg-dark-800">
+                    <div className={`aspect-[2/3] relative rounded-xl overflow-hidden ${isDarkMode ? 'bg-dark-800' : 'bg-gray-200'}`}>
                       {movie.poster_path ? (
                         <img
                           src={movie.poster_path}
@@ -116,8 +122,8 @@ const SearchPageSimple = () => {
                           loading="lazy"
                         />
                       ) : (
-                        <div className="w-full h-full bg-dark-700 flex items-center justify-center">
-                          <Film size={48} className="text-gray-600 opacity-50" />
+                        <div className={`w-full h-full flex items-center justify-center ${isDarkMode ? 'bg-dark-700' : 'bg-gray-300'}`}>
+                          <Film size={48} className={`opacity-50 ${isDarkMode ? 'text-gray-600' : 'text-gray-400'}`} />
                         </div>
                       )}
                       
@@ -152,9 +158,9 @@ const SearchPageSimple = () => {
               </div>
             ) : (
               <div className="text-center py-20">
-                <Search size={64} className="inline-block mb-4 text-gray-600" />
-                <p className="text-xl text-gray-400">Nenhum resultado encontrado</p>
-                <p className="text-gray-600 mt-2">Tente buscar por outro termo</p>
+                <Search size={64} className={`inline-block mb-4 ${isDarkMode ? 'text-gray-600' : 'text-gray-400'}`} />
+                <p className={`text-xl ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Nenhum resultado encontrado</p>
+                <p className={`mt-2 ${isDarkMode ? 'text-gray-600' : 'text-gray-500'}`}>Tente buscar por outro termo</p>
               </div>
             )}
           </div>
@@ -164,8 +170,8 @@ const SearchPageSimple = () => {
         {!loading && !searched && (
           <div className="text-center py-20">
             <Film size={64} className="inline-block mb-4 text-primary-400" />
-            <p className="text-xl text-gray-400">Busque por filmes e séries</p>
-            <p className="text-gray-600 mt-2">Digite o nome no campo acima para começar</p>
+            <p className={`text-xl ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Busque por filmes e séries</p>
+            <p className={`mt-2 ${isDarkMode ? 'text-gray-600' : 'text-gray-500'}`}>Digite o nome no campo acima para começar</p>
           </div>
         )}
       </div>

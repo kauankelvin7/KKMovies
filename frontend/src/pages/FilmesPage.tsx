@@ -8,10 +8,12 @@ import ContentCarousel from '@/components/ContentCarousel';
 import MediaCard from '@/components/MediaCard';
 import { watchHistoryService } from '@/services/watchHistoryService';
 import { Movie } from '@/types/movie';
+import { useTheme } from '@/App';
 
 const SUPERFLIX_BASE = 'https://superflixapi.bond';
 
 const FilmesPage = () => {
+  const { isDarkMode } = useTheme();
   const [popularMovies, setPopularMovies] = useState<Movie[]>([]);
   const [topRated, setTopRated] = useState<Movie[]>([]);
   const [nowPlaying, setNowPlaying] = useState<Movie[]>([]);
@@ -82,10 +84,10 @@ const FilmesPage = () => {
             <Film size={28} className="text-primary-400" />
           </div>
           <div>
-            <h1 className="text-3xl md:text-4xl font-extrabold text-white tracking-tight">
+            <h1 className={`text-3xl md:text-4xl font-extrabold tracking-tight ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
               Filmes
             </h1>
-            <p className="text-gray-500 mt-1">Explore nossa coleção completa</p>
+            <p className={`mt-1 ${isDarkMode ? 'text-gray-500' : 'text-gray-600'}`}>Explore nossa coleção completa</p>
           </div>
         </div>
       </div>

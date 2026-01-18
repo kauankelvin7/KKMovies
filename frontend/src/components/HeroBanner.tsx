@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, memo } from 'react';
 import { ChevronLeft, ChevronRight, Play, Info, Star, Calendar, Film, Tv } from 'lucide-react';
+import { useTheme } from '@/App';
 
 interface FeaturedItem {
   id: number;
@@ -67,6 +68,13 @@ const HeroBanner = memo(({
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [isOverviewExpanded, setIsOverviewExpanded] = useState(false);
+  const { isDarkMode } = useTheme();
+
+  // Theme-aware colors
+  const bgColor = isDarkMode ? '#0a0a0a' : '#f8fafc';
+  const textColor = isDarkMode ? 'text-white' : 'text-gray-900';
+  const textSecondary = isDarkMode ? 'text-gray-300' : 'text-gray-700';
+  const textMuted = isDarkMode ? 'text-gray-400' : 'text-gray-500';
 
   const featuredItems = items.slice(0, 8);
   const currentItem = featuredItems[currentIndex];
@@ -137,10 +145,24 @@ const HeroBanner = memo(({
             }}
           />
 
-          {/* Gradients */}
-          <div className="absolute inset-0 bg-gradient-to-r from-[#0a0a0a] via-[#0a0a0a]/80 to-transparent" />
-          <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0a] via-transparent to-[#0a0a0a]/30" />
-          <div className="absolute bottom-0 left-0 right-0 h-40 bg-gradient-to-t from-[#0a0a0a] to-transparent" />
+          {/* Gradients - Theme aware with blur edges */}
+          <div 
+            className="absolute inset-0 transition-colors duration-300"
+            style={{ background: `linear-gradient(to right, ${bgColor} 0%, ${bgColor}cc 30%, transparent 70%)` }}
+          />
+          <div 
+            className="absolute inset-0 transition-colors duration-300"
+            style={{ background: `linear-gradient(to top, ${bgColor} 0%, transparent 50%, ${bgColor}4d 100%)` }}
+          />
+          <div 
+            className="absolute bottom-0 left-0 right-0 h-48 transition-colors duration-300"
+            style={{ background: `linear-gradient(to top, ${bgColor} 0%, ${bgColor}e6 40%, transparent 100%)` }}
+          />
+          {/* Side blur edges */}
+          <div 
+            className="absolute top-0 bottom-0 right-0 w-32 transition-colors duration-300"
+            style={{ background: `linear-gradient(to left, ${bgColor}80 0%, transparent 100%)` }}
+          />
         </div>
       ))}
 
@@ -164,13 +186,13 @@ const HeroBanner = memo(({
             </div>
 
             {/* Title */}
-            <h1 className="hero-title text-2xl sm:text-3xl md:text-5xl lg:text-6xl xl:text-7xl font-black text-white leading-tight tracking-tight">
+            <h1 className={`hero-title text-2xl sm:text-3xl md:text-5xl lg:text-6xl xl:text-7xl font-black ${textColor} leading-tight tracking-tight`}>
               {getTitle(currentItem)}
             </h1>
 
             {/* Meta Info */}
-            <div className="flex items-center gap-2 sm:gap-4 flex-wrap text-gray-300 text-sm sm:text-base">
-              <span className="flex items-center gap-1 sm:gap-1.5 text-amber-400 font-bold text-base sm:text-lg">
+            <div className={`flex items-center gap-2 sm:gap-4 flex-wrap ${textSecondary} text-sm sm:text-base`}>
+              <span className="flex items-center gap-1 sm:gap-1.5 text-amber-500 font-bold text-base sm:text-lg">
                 <Star size={16} className="sm:w-5 sm:h-5" fill="currentColor" />
                 {currentItem.vote_average?.toFixed(1)}
               </span>
@@ -181,7 +203,7 @@ const HeroBanner = memo(({
                 </span>
               )}
               {getGenres(currentItem) && (
-                <span className="text-gray-400 hidden sm:inline">
+                <span className={`${textMuted} hidden sm:inline`}>
                   {getGenres(currentItem)}
                 </span>
               )}
@@ -189,7 +211,7 @@ const HeroBanner = memo(({
 
             {/* Overview with Read More */}
             <div className="hidden xs:block max-w-xl">
-              <p className={`hero-overview text-gray-300 text-sm sm:text-base md:text-lg leading-relaxed transition-all duration-300 ${
+              <p className={`hero-overview ${textSecondary} text-sm sm:text-base md:text-lg leading-relaxed transition-all duration-300 ${
                 isOverviewExpanded ? '' : 'line-clamp-2'
               }`}>
                 {currentItem.overview || 'Assista agora em alta qualidade.'}
@@ -268,8 +290,11 @@ const HeroBanner = memo(({
 
       {/* Progress Bar - com fundo para ficar sempre visível */}
       <div className="absolute bottom-0 left-0 right-0 z-50">
-        <div className="bg-gradient-to-t from-black/80 to-transparent pt-6 sm:pt-8 pb-3 sm:pb-4 px-4">
-          <div className="h-0.5 sm:h-1 bg-white/10 rounded-full overflow-hidden">
+        <div 
+          className="pt-6 sm:pt-8 pb-3 sm:pb-4 px-4 transition-colors duration-300"
+          style={{ background: `linear-gradient(to top, ${bgColor}cc 0%, transparent 100%)` }}
+        >
+          <div className={`h-0.5 sm:h-1 ${isDarkMode ? 'bg-white/10' : 'bg-black/10'} rounded-full overflow-hidden`}>
             <div
               className="h-full bg-gradient-to-r from-primary-400 to-primary-600 transition-all duration-300"
               style={{ width: `${((currentIndex + 1) / featuredItems.length) * 100}%` }}

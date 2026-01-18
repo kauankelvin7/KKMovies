@@ -4,6 +4,7 @@ import LoadingSpinner from '@/components/LoadingSpinner';
 import ErrorMessage from '@/components/ErrorMessage';
 import api from '@/services/api';
 import { watchHistoryService } from '@/services/watchHistoryService';
+import { useTheme } from '@/App';
 
 const SUPERFLIX_BASE = 'https://superflixapi.bond';
 const TMDB_IMAGE_BASE = 'https://image.tmdb.org/t/p/w500';
@@ -54,6 +55,7 @@ const genreIconComponents: Record<number, any> = {
 };
 
 const SeriesPage = () => {
+  const { isDarkMode } = useTheme();
   const [popularSeries, setPopularSeries] = useState<Serie[]>([]);
   const [topRatedSeries, setTopRatedSeries] = useState<Serie[]>([]);
   const [trendingSeries, setTrendingSeries] = useState<Serie[]>([]);
@@ -250,11 +252,11 @@ const SeriesPage = () => {
     <div className="min-h-screen bg-[var(--bg-primary)] pb-12 pt-20" data-app-element>
       {/* Header */}
       <div className="pt-8 pb-6 px-4 md:px-12">
-        <h1 className="text-3xl md:text-4xl font-black text-white flex items-center gap-3">
+        <h1 className={`text-3xl md:text-4xl font-black flex items-center gap-3 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
           <Tv size={36} className="text-primary-400" />
           Séries
         </h1>
-        <p className="text-gray-400 mt-2">Assista suas séries favoritas</p>
+        <p className={`mt-2 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Assista suas séries favoritas</p>
 
         {/* Campo de Busca */}
         <form onSubmit={handleSearch} className="mt-6 max-w-2xl">
@@ -265,7 +267,11 @@ const SeriesPage = () => {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Buscar série por nome..."
-                className="w-full px-4 py-3 bg-dark-800 border border-dark-600 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 transition-all"
+                className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 transition-all ${
+                  isDarkMode 
+                    ? 'bg-dark-800 border-dark-600 text-white placeholder-gray-500' 
+                    : 'bg-white border-gray-300 text-gray-900 placeholder-gray-400'
+                }`}
               />
               {searchQuery && (
                 <button
@@ -303,13 +309,13 @@ const SeriesPage = () => {
       {hasSearched && (
         <div className="px-4 md:px-12 mb-8">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-bold text-white">
+            <h2 className={`text-xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
               <SearchIcon size={20} className="inline mr-2" />Resultados para "{searchQuery}"
-              <span className="text-gray-400 font-normal ml-2">({searchResults.length} encontrados)</span>
+              <span className={`font-normal ml-2 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>({searchResults.length} encontrados)</span>
             </h2>
             <button
               onClick={clearSearch}
-              className="px-4 py-2 bg-dark-700 hover:bg-dark-600 text-gray-300 rounded-lg transition-colors text-sm"
+              className={`px-4 py-2 rounded-lg transition-colors text-sm ${isDarkMode ? 'bg-dark-700 hover:bg-dark-600 text-gray-300' : 'bg-gray-200 hover:bg-gray-300 text-gray-700'}`}
             >
               Limpar busca
             </button>
@@ -333,7 +339,7 @@ const SeriesPage = () => {
       {/* Seção de Gêneros - PRIMEIRO */}
       {!hasSearched && (
         <div className="px-4 md:px-12 mb-6">
-          <h2 className="text-xl md:text-2xl font-bold text-white mb-4 flex items-center gap-3">
+          <h2 className={`text-xl md:text-2xl font-bold mb-4 flex items-center gap-3 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
             <Drama size={24} className="inline mr-2 text-purple-400" />Explorar por Gênero
             <span className="flex-1 h-px bg-gradient-to-r from-primary-500/30 to-transparent" />
           </h2>
@@ -349,7 +355,9 @@ const SeriesPage = () => {
                   className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 flex items-center gap-2 ${
                     selectedGenre?.id === genre.id
                       ? 'bg-primary-500 text-white shadow-lg shadow-primary-500/30'
-                      : 'bg-dark-700 text-gray-300 hover:bg-dark-600 hover:text-white'
+                      : isDarkMode 
+                        ? 'bg-dark-700 text-gray-300 hover:bg-dark-600 hover:text-white'
+                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300 hover:text-gray-900'
                   }`}
                 >
                   <IconComponent size={16} />
@@ -364,17 +372,17 @@ const SeriesPage = () => {
             <div className="mt-6">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                 <div className="flex items-center gap-3">
-                  <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                  <h3 className={`text-lg font-bold flex items-center gap-2 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
                     {(() => {
                       const IconComponent = genreIconComponents[selectedGenre.id] || Tv;
                       return <IconComponent size={24} className="text-primary-400" />;
                     })()}
                     {selectedGenre.name}
-                    <span className="text-gray-400 font-normal text-sm">({genreSeries.length} resultados)</span>
+                    <span className={`font-normal text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>({genreSeries.length} resultados)</span>
                   </h3>
                   <button
                     onClick={clearGenreFilter}
-                    className="px-3 py-1 bg-dark-700 hover:bg-dark-600 text-gray-300 rounded-lg transition-colors text-sm flex items-center gap-1"
+                    className={`px-3 py-1 rounded-lg transition-colors text-sm flex items-center gap-1 ${isDarkMode ? 'bg-dark-700 hover:bg-dark-600 text-gray-300' : 'bg-gray-200 hover:bg-gray-300 text-gray-700'}`}
                   >
                     <X size={14} />
                     ✕ Limpar
@@ -383,11 +391,11 @@ const SeriesPage = () => {
                 
                 {/* Ordenação */}
                 <div className="flex items-center gap-2">
-                  <span className="text-gray-400 text-sm">Ordenar por:</span>
+                  <span className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Ordenar por:</span>
                   <select
                     value={sortBy}
                     onChange={(e) => handleSortChange(e.target.value)}
-                    className="px-3 py-2 bg-dark-700 border border-dark-600 rounded-lg text-white text-sm focus:outline-none focus:border-primary-500"
+                    className={`px-3 py-2 border rounded-lg text-sm focus:outline-none focus:border-primary-500 ${isDarkMode ? 'bg-dark-700 border-dark-600 text-white' : 'bg-white border-gray-300 text-gray-900'}`}
                   >
                     <option value="popularity.desc">Mais Populares</option>
                     <option value="vote_average.desc">Melhor Avaliados</option>

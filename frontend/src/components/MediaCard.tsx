@@ -1,5 +1,6 @@
 import { memo } from 'react';
 import { Play, Star, Clock, Check, Film, Tv, X, Calendar } from 'lucide-react';
+import { useTheme } from '@/App';
 
 interface MediaCardProps {
   id: number;
@@ -41,6 +42,7 @@ const MediaCard = memo(({
   onRemove,
   size = 'medium',
 }: MediaCardProps) => {
+  const { isDarkMode } = useTheme();
   const displayTitle = title || name || 'Sem título';
   const year = release_date || first_air_date 
     ? new Date(release_date || first_air_date || '').getFullYear() 
@@ -78,7 +80,7 @@ const MediaCard = memo(({
       onClick={() => onPlay(item)}
       data-app-element
     >
-      <div className="media-card-inner aspect-[2/3] relative rounded-xl overflow-hidden bg-dark-800 shadow-lg">
+      <div className={`media-card-inner aspect-[2/3] relative rounded-xl overflow-hidden shadow-lg transition-colors duration-300 ${isDarkMode ? 'bg-dark-800' : 'bg-gray-100'}`}>
         {/* Poster Image */}
         {poster_path ? (
           <img
@@ -89,8 +91,8 @@ const MediaCard = memo(({
             decoding="async"
           />
         ) : (
-          <div className="w-full h-full bg-gradient-to-br from-dark-700 to-dark-900 flex items-center justify-center">
-            <Film size={48} className="text-gray-600 opacity-50" />
+          <div className={`w-full h-full flex items-center justify-center ${isDarkMode ? 'bg-gradient-to-br from-dark-700 to-dark-900' : 'bg-gradient-to-br from-gray-200 to-gray-300'}`}>
+            <Film size={48} className={`opacity-50 ${isDarkMode ? 'text-gray-600' : 'text-gray-400'}`} />
           </div>
         )}
 

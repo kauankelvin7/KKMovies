@@ -25,6 +25,7 @@ import MediaCard from '@/components/MediaCard';
 import { watchHistoryService, WatchedItem } from '@/services/watchHistoryService';
 import { popupBlocker } from '@/services/popupBlockerService';
 import { Movie } from '@/types/movie';
+import { useTheme } from '@/App';
 
 const SUPERFLIX_BASE = 'https://superflixapi.bond';
 
@@ -65,6 +66,7 @@ const isKDrama = (item: Serie) => {
 
 const HomePage = () => {
   const navigate = useNavigate();
+  const { isDarkMode } = useTheme();
   
   // States for movies
   const [popularMovies, setPopularMovies] = useState<Movie[]>([]);
@@ -399,10 +401,10 @@ const HomePage = () => {
         {/* FILMES Section */}
         <div className="section-divider" />
         <div className="px-6 md:px-12 pt-16 pb-2">
-          <h2 className="text-2xl md:text-3xl font-bold text-white flex items-center gap-3">
+          <h2 className={`text-2xl md:text-3xl font-bold flex items-center gap-3 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
             <Film size={28} className="text-primary-500" />
             Filmes
-            <span className="text-sm font-normal text-gray-500 ml-2">Os melhores para você</span>
+            <span className={`text-sm font-normal ml-2 ${isDarkMode ? 'text-gray-500' : 'text-gray-600'}`}>Os melhores para você</span>
           </h2>
         </div>
 
@@ -481,10 +483,10 @@ const HomePage = () => {
           <>
             <div className="section-divider" />
             <div className="px-4 md:px-12 pt-4 pb-2">
-              <h2 className="text-2xl md:text-3xl font-bold text-white flex items-center gap-3">
+              <h2 className={`text-2xl md:text-3xl font-bold flex items-center gap-3 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
                 <Tv size={28} className="text-blue-500" />
                 Séries
-                <span className="text-sm font-normal text-gray-500 ml-2">Maratonar agora</span>
+                <span className={`text-sm font-normal ml-2 ${isDarkMode ? 'text-gray-500' : 'text-gray-600'}`}>Maratonar agora</span>
               </h2>
             </div>
 
@@ -542,12 +544,12 @@ const HomePage = () => {
           <>
             <div className="section-divider" />
             <div className="px-4 md:px-12 pt-4 pb-2">
-              <h2 className="text-2xl md:text-3xl font-bold text-white flex items-center gap-3">
+              <h2 className={`text-2xl md:text-3xl font-bold flex items-center gap-3 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
                 <div className="w-10 h-10 bg-pink-500/20 rounded-xl flex items-center justify-center">
                   <Zap size={24} className="text-pink-400" />
                 </div>
                 Animes
-                <span className="text-sm font-normal text-gray-500 ml-2">O melhor do Japão</span>
+                <span className={`text-sm font-normal ml-2 ${isDarkMode ? 'text-gray-500' : 'text-gray-600'}`}>O melhor do Japão</span>
               </h2>
             </div>
 
@@ -592,12 +594,12 @@ const HomePage = () => {
           <>
             <div className="section-divider" />
             <div className="px-4 md:px-12 pt-4 pb-2">
-              <h2 className="text-2xl md:text-3xl font-bold text-white flex items-center gap-3">
+              <h2 className={`text-2xl md:text-3xl font-bold flex items-center gap-3 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
                 <div className="w-10 h-10 bg-red-500/20 rounded-xl flex items-center justify-center">
                   <Globe2 size={24} className="text-red-400" />
                 </div>
                 Doramas
-                <span className="text-sm font-normal text-gray-500 ml-2">K-Dramas imperdíveis</span>
+                <span className={`text-sm font-normal ml-2 ${isDarkMode ? 'text-gray-500' : 'text-gray-600'}`}>K-Dramas imperdíveis</span>
               </h2>
             </div>
 
