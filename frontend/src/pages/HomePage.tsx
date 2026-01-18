@@ -354,7 +354,7 @@ const HomePage = () => {
       )}
 
       {/* Main Content */}
-      <div className="relative z-20 -mt-8 pb-16 space-y-8">
+      <div className="relative z-20 mt-4 sm:mt-8 md:mt-12 pb-8 sm:pb-12 space-y-2 sm:space-y-3 md:space-y-4">
         
         {/* Continue Watching */}
         {continueWatching.length > 0 && (
@@ -400,11 +400,11 @@ const HomePage = () => {
 
         {/* FILMES Section */}
         <div className="section-divider" />
-        <div className="px-6 md:px-12 pt-16 pb-2">
-          <h2 className={`text-2xl md:text-3xl font-bold flex items-center gap-3 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-            <Film size={28} className="text-primary-500" />
+        <div className="px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16 pt-4 sm:pt-6 md:pt-8 pb-1">
+          <h2 className={`text-xl sm:text-2xl md:text-3xl font-bold flex items-center gap-2 sm:gap-3 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+            <Film size={24} className="text-primary-500 sm:w-7 sm:h-7" />
             Filmes
-            <span className={`text-sm font-normal ml-2 ${isDarkMode ? 'text-gray-500' : 'text-gray-600'}`}>Os melhores para você</span>
+            <span className={`text-xs sm:text-sm font-normal ml-1 sm:ml-2 ${isDarkMode ? 'text-gray-500' : 'text-gray-600'}`}>Os melhores para você</span>
           </h2>
         </div>
 
@@ -482,11 +482,11 @@ const HomePage = () => {
         {popularSeries.length > 0 && (
           <>
             <div className="section-divider" />
-            <div className="px-4 md:px-12 pt-4 pb-2">
-              <h2 className={`text-2xl md:text-3xl font-bold flex items-center gap-3 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                <Tv size={28} className="text-blue-500" />
+            <div className="px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16 pt-4 sm:pt-6 md:pt-8 pb-1">
+              <h2 className={`text-xl sm:text-2xl md:text-3xl font-bold flex items-center gap-2 sm:gap-3 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                <Tv size={24} className="text-blue-500 sm:w-7 sm:h-7" />
                 Séries
-                <span className={`text-sm font-normal ml-2 ${isDarkMode ? 'text-gray-500' : 'text-gray-600'}`}>Maratonar agora</span>
+                <span className={`text-xs sm:text-sm font-normal ml-1 sm:ml-2 ${isDarkMode ? 'text-gray-500' : 'text-gray-600'}`}>Maratonar agora</span>
               </h2>
             </div>
 
@@ -543,13 +543,13 @@ const HomePage = () => {
         {(animeSeries.length > 0 || animeMovies.length > 0) && (
           <>
             <div className="section-divider" />
-            <div className="px-4 md:px-12 pt-4 pb-2">
-              <h2 className={`text-2xl md:text-3xl font-bold flex items-center gap-3 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                <div className="w-10 h-10 bg-pink-500/20 rounded-xl flex items-center justify-center">
-                  <Zap size={24} className="text-pink-400" />
+            <div className="px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16 pt-4 sm:pt-6 md:pt-8 pb-1">
+              <h2 className={`text-xl sm:text-2xl md:text-3xl font-bold flex items-center gap-2 sm:gap-3 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                <div className="w-8 h-8 sm:w-10 sm:h-10 bg-pink-500/20 rounded-xl flex items-center justify-center">
+                  <Zap size={20} className="text-pink-400 sm:w-6 sm:h-6" />
                 </div>
                 Animes
-                <span className={`text-sm font-normal ml-2 ${isDarkMode ? 'text-gray-500' : 'text-gray-600'}`}>O melhor do Japão</span>
+                <span className={`text-xs sm:text-sm font-normal ml-1 sm:ml-2 ${isDarkMode ? 'text-gray-500' : 'text-gray-600'}`}>O melhor do Japão</span>
               </h2>
             </div>
 
@@ -593,13 +593,13 @@ const HomePage = () => {
         {kDramas.length > 0 && (
           <>
             <div className="section-divider" />
-            <div className="px-4 md:px-12 pt-4 pb-2">
-              <h2 className={`text-2xl md:text-3xl font-bold flex items-center gap-3 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                <div className="w-10 h-10 bg-red-500/20 rounded-xl flex items-center justify-center">
-                  <Globe2 size={24} className="text-red-400" />
+            <div className="px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16 pt-4 sm:pt-6 md:pt-8 pb-1">
+              <h2 className={`text-xl sm:text-2xl md:text-3xl font-bold flex items-center gap-2 sm:gap-3 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                <div className="w-8 h-8 sm:w-10 sm:h-10 bg-red-500/20 rounded-xl flex items-center justify-center">
+                  <Globe2 size={20} className="text-red-400 sm:w-6 sm:h-6" />
                 </div>
                 Doramas
-                <span className={`text-sm font-normal ml-2 ${isDarkMode ? 'text-gray-500' : 'text-gray-600'}`}>K-Dramas imperdíveis</span>
+                <span className={`text-xs sm:text-sm font-normal ml-1 sm:ml-2 ${isDarkMode ? 'text-gray-500' : 'text-gray-600'}`}>K-Dramas imperdíveis</span>
               </h2>
             </div>
 

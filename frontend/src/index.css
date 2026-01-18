@@ -854,7 +854,7 @@ html.light-mode .carousel-blur-right {
 
 /* Section Dividers */
 .section-divider {
-  @apply relative my-8;
+  @apply relative my-4 sm:my-6 md:my-8;
 }
 
 .section-divider::before {

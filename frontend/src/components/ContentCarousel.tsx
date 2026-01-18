@@ -49,9 +49,9 @@ const ContentCarousel = ({
   }, []);
 
   return (
-    <div className={`content-carousel relative group/carousel py-4 sm:py-6 ${className}`} data-app-element>
+    <div className={`content-carousel relative group/carousel py-2 sm:py-3 md:py-4 ${className}`} data-app-element>
       {/* Header */}
-      <div className="flex items-center justify-between mb-3 sm:mb-5 px-3 sm:px-4 md:px-12 relative z-10">
+      <div className="flex items-center justify-between mb-2 sm:mb-3 md:mb-4 px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16 relative z-10">
         <div className="flex items-center gap-2 sm:gap-3">
           {icon && (
             <div className="flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-gradient-to-br from-primary-500/20 to-primary-600/10 text-primary-400">
@@ -97,7 +97,7 @@ const ContentCarousel = ({
         {/* Content Slider */}
         <div
           ref={sliderRef}
-          className={`carousel-slider flex gap-2 sm:gap-3 md:gap-4 lg:gap-5 overflow-x-auto pb-4 px-3 sm:px-4 md:px-12 scroll-smooth transition-all duration-300 ${isScrolling ? 'is-scrolling' : ''}`}
+          className={`carousel-slider flex gap-2.5 sm:gap-3 md:gap-4 overflow-x-auto pb-2 px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16 scroll-smooth transition-all duration-300 ${isScrolling ? 'is-scrolling' : ''}`}
         >
           {children}
         </div>
