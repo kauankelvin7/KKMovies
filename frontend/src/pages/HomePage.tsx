@@ -3,15 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import { 
   Clock, 
   TrendingUp, 
-  Award, 
-  Calendar, 
   Film, 
   Tv, 
   Sparkles, 
-  Heart,
-  Flame,
-  Zap,
-  Globe2
+  Flame
 } from 'lucide-react';
 import movieService from '@/services/movieService';
 import api from '@/services/api';
@@ -55,37 +50,18 @@ interface ContentItem {
   media_type?: 'movie' | 'series';
 }
 
-// Gêneros específicos
-const ANIME_GENRE_ID = 16; // Animation
-
-// Helper para filtrar K-Dramas
-const isKDrama = (item: Serie) => {
-  return item.original_language === 'ko';
-};
-
 const HomePage = () => {
   const navigate = useNavigate();
   const { isDarkMode } = useTheme();
   
-  // States for movies
+  // States for movies - REDUZIDO: apenas 2 categorias principais
   const [popularMovies, setPopularMovies] = useState<Movie[]>([]);
-  const [topRatedMovies, setTopRatedMovies] = useState<Movie[]>([]);
   const [nowPlaying, setNowPlaying] = useState<Movie[]>([]);
-  const [upcomingMovies, setUpcomingMovies] = useState<Movie[]>([]);
   
-  // States for series
-  const [popularSeries, setPopularSeries] = useState<Serie[]>([]);
-  const [topRatedSeries, setTopRatedSeries] = useState<Serie[]>([]);
+  // States for series - REDUZIDO: apenas 1 categoria
   const [trendingSeries, setTrendingSeries] = useState<Serie[]>([]);
   
-  // States for anime
-  const [animeSeries, setAnimeSeries] = useState<Serie[]>([]);
-  const [animeMovies, setAnimeMovies] = useState<Movie[]>([]);
-  
-  // States for K-Drama/Dorama
-  const [kDramas, setKDramas] = useState<Serie[]>([]);
-  
-  // States for recommendations
+  // States for recommendations - mantido para personalização
   const [recommendations, setRecommendations] = useState<ContentItem[]>([]);
   
   // UI States
@@ -105,78 +81,25 @@ const HomePage = () => {
     };
   }, []);
 
-  // Fetch all data
+  // Fetch all data - OTIMIZADO: apenas 3 requisições em vez de 10+
   useEffect(() => {
     const fetchAllData = async () => {
       try {
         setLoading(true);
         
-        // Fetch movies
-        const [popularRes, topRatedRes, nowPlayingRes, upcomingRes] = await Promise.all([
+        // Fetch apenas os essenciais - REDUZIDO de 8 para 3 requisições
+        const [popularRes, nowPlayingRes, trendingSeriesRes] = await Promise.all([
           movieService.getPopular(),
-          movieService.getTopRated(),
           movieService.getLatestReleases(),
-          movieService.getUpcoming(),
+          api.get('/series/trending').catch(() => ({ data: { results: [] } })),
         ]);
         
-        setPopularMovies(popularRes.results.slice(0, 20));
-        setTopRatedMovies(topRatedRes.results.slice(0, 20));
-        setNowPlaying(nowPlayingRes.results.slice(0, 20));
-        setUpcomingMovies(upcomingRes.results.slice(0, 20));
+        // Limitar a 12 itens por categoria para reduzir memória
+        setPopularMovies(popularRes.results.slice(0, 12));
+        setNowPlaying(nowPlayingRes.results.slice(0, 12));
+        setTrendingSeries(trendingSeriesRes.data.results?.slice(0, 12) || []);
         
-        // Fetch series
-        try {
-          const [popularSeriesRes, topRatedSeriesRes, trendingSeriesRes] = await Promise.all([
-            api.get('/series/popular'),
-            api.get('/series/top-rated'),
-            api.get('/series/trending'),
-          ]);
-          
-          const allPopularSeries = popularSeriesRes.data.results || [];
-          const allTopRatedSeries = topRatedSeriesRes.data.results || [];
-          const allTrendingSeries = trendingSeriesRes.data.results || [];
-          
-          // Filtrar K-Dramas das séries normais
-          setPopularSeries(allPopularSeries.filter((s: Serie) => !isKDrama(s)).slice(0, 20));
-          setTopRatedSeries(allTopRatedSeries.filter((s: Serie) => !isKDrama(s)).slice(0, 20));
-          setTrendingSeries(allTrendingSeries.filter((s: Serie) => !isKDrama(s)).slice(0, 20));
-          
-          // Coletar K-Dramas de todas as fontes
-          const kDramasList = [
-            ...allPopularSeries.filter((s: Serie) => isKDrama(s)),
-            ...allTopRatedSeries.filter((s: Serie) => isKDrama(s)),
-            ...allTrendingSeries.filter((s: Serie) => isKDrama(s)),
-          ];
-          
-          // Remover duplicados por ID
-          const uniqueKDramas = kDramasList.filter((item, index, self) => 
-            index === self.findIndex((t) => t.id === item.id)
-          );
-          
-          setKDramas(uniqueKDramas.slice(0, 20));
-        } catch (seriesError) {
-          console.log('Series API not available:', seriesError);
-        }
-        
-        // Fetch anime (separar por idioma japonês)
-        try {
-          const [animeSeriesRes, animeMoviesRes] = await Promise.all([
-            api.get('/series/discover', { params: { genreId: ANIME_GENRE_ID, language: 'ja' } }),
-            movieService.getByGenre(ANIME_GENRE_ID),
-          ]);
-          
-          setAnimeSeries(animeSeriesRes.data.results?.slice(0, 20) || []);
-          
-          // Filtrar apenas animes japoneses dos filmes
-          const japaneseAnimes = (animeMoviesRes.results || []).filter((m: Movie) => 
-            m.original_language === 'ja'
-          );
-          setAnimeMovies(japaneseAnimes.slice(0, 20));
-        } catch (animeError) {
-          console.log('Anime API not available:', animeError);
-        }
-        
-        // Generate smart recommendations based on watch history
+        // Generate smart recommendations (mais leve)
         generateRecommendations();
         
       } catch (err) {
@@ -190,72 +113,49 @@ const HomePage = () => {
     fetchAllData();
   }, []);
 
-  // Generate smart recommendations with intelligent logic
+  // Generate smart recommendations with intelligent logic - OTIMIZADO
   const generateRecommendations = useCallback(async () => {
-    // Lista de todos os gêneros disponíveis
-    const allGenres = [28, 12, 16, 35, 80, 99, 18, 10751, 14, 36, 27, 10402, 9648, 10749, 878, 10770, 53, 10752, 37];
+    // Lista reduzida de gêneros populares
+    const popularGenres = [28, 12, 35, 878, 53]; // Ação, Aventura, Comédia, Sci-Fi, Thriller
     
-    // Obtém mix inteligente de gêneros (favoritos + hora do dia + descoberta)
-    const smartGenres = watchHistoryService.getSmartGenreMix(allGenres);
+    // Obtém mix inteligente de gêneros (apenas 2 para reduzir carga)
+    const smartGenres = watchHistoryService.getSmartGenreMix(popularGenres).slice(0, 2);
     const rotationSeed = watchHistoryService.getRotationSeed();
     
     if (smartGenres.length === 0) {
-      // Sem gêneros, não faz nada
-      return;
+      // Sem histórico, usa gêneros padrão
+      smartGenres.push(28, 35); // Ação e Comédia
     }
     
     try {
       const recommendedItems: ContentItem[] = [];
       
-      // Busca conteúdo de cada gênero do mix inteligente (limitado a 3 para performance)
-      const genresToFetch = smartGenres.slice(0, 3);
+      // Busca apenas 1 gênero para otimizar
+      const genreId = smartGenres[0];
       
-      await Promise.all(genresToFetch.map(async (genreId) => {
-        try {
-          const [movieRecs, seriesRecs] = await Promise.all([
-            movieService.getByGenre(genreId, 1),
-            api.get('/series/discover', { params: { genreId } }).catch(() => ({ data: { results: [] } })),
-          ]);
-          
-          // Adiciona filmes
-          movieRecs.results.slice(0, 4).forEach((movie: Movie) => {
-            recommendedItems.push({
-              ...movie,
-              media_type: 'movie',
-            });
+      try {
+        const movieRecs = await movieService.getByGenre(genreId, 1);
+        
+        // Adiciona apenas 8 filmes (reduzido de 12+)
+        movieRecs.results.slice(0, 8).forEach((movie: Movie) => {
+          recommendedItems.push({
+            ...movie,
+            media_type: 'movie',
           });
-          
-          // Adiciona séries
-          (seriesRecs.data.results || []).slice(0, 4).forEach((serie: Serie) => {
-            recommendedItems.push({
-              id: serie.id,
-              title: serie.name,
-              name: serie.name,
-              poster_path: serie.poster_path,
-              backdrop_path: serie.backdrop_path,
-              vote_average: serie.vote_average,
-              first_air_date: serie.first_air_date,
-              genre_ids: serie.genre_ids,
-              media_type: 'series',
-            });
-          });
-        } catch (e) {
-          console.log('Error fetching recommendations for genre:', genreId);
-        }
-      }));
+        });
+      } catch (e) {
+        console.log('Error fetching recommendations');
+      }
       
       // Remove duplicatas
       const uniqueItems = recommendedItems.filter((item, index, self) => 
-        index === self.findIndex((t) => t.id === item.id && t.media_type === item.media_type)
+        index === self.findIndex((t) => t.id === item.id)
       );
       
-      // Shuffle determinístico baseado no seed de rotação (muda a cada 4 horas)
+      // Shuffle determinístico
       const shuffled = watchHistoryService.shuffleWithSeed(uniqueItems, rotationSeed);
       
-      // Diversifica para não ter gêneros repetidos seguidos
-      const diversified = watchHistoryService.diversifyContent(shuffled);
-      
-      setRecommendations(diversified.slice(0, 20));
+      setRecommendations(shuffled.slice(0, 12)); // Reduzido de 20 para 12
     } catch (err) {
       console.error('Error generating recommendations:', err);
     }
@@ -305,11 +205,11 @@ const HomePage = () => {
     media_type: 'series',
   }), []);
 
-  // Hero items - mix of movies and series
+  // Hero items - mix otimizado (apenas 5 itens)
   const heroItems = [
-    ...nowPlaying.slice(0, 4).map(movieToContent),
-    ...trendingSeries.slice(0, 4).map(serieToContent),
-  ].sort(() => Math.random() - 0.5).slice(0, 8);
+    ...nowPlaying.slice(0, 3).map(movieToContent),
+    ...trendingSeries.slice(0, 2).map(serieToContent),
+  ];
 
   if (loading) {
     return (
@@ -333,7 +233,7 @@ const HomePage = () => {
         </div>
       )}
 
-      {/* Main Content */}
+      {/* Main Content - REDUZIDO: 4 carrosséis em vez de 13+ */}
       <div className="relative z-20 mt-4 sm:mt-8 md:mt-12 pb-8 sm:pb-12 space-y-2 sm:space-y-3 md:space-y-4">
 
         {/* Smart Recommendations */}
@@ -355,7 +255,7 @@ const HomePage = () => {
           </ContentCarousel>
         )}
 
-        {/* FILMES Section */}
+        {/* FILMES - REDUZIDO para 2 categorias */}
         <div className="section-divider" />
         <div className="px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16 pt-4 sm:pt-6 md:pt-8 pb-1">
           <h2 className={`text-xl sm:text-2xl md:text-3xl font-bold flex items-center gap-2 sm:gap-3 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
@@ -397,46 +297,8 @@ const HomePage = () => {
           ))}
         </ContentCarousel>
 
-        <ContentCarousel
-          title="Mais Bem Avaliados"
-          subtitle="Nota acima de 8"
-          icon={<Award size={22} className="text-amber-400" />}
-        >
-          {topRatedMovies.map((movie) => (
-            <MediaCard
-              key={`top-${movie.id}`}
-              {...movieToContent(movie)}
-              title={movie.title}
-              onPlay={() => openPlayer(movieToContent(movie), 'movie')}
-            />
-          ))}
-        </ContentCarousel>
-
-        <ContentCarousel
-          title="Em Breve"
-          subtitle="Próximos lançamentos"
-          icon={<Calendar size={22} className="text-rose-400" />}
-        >
-          {upcomingMovies.filter((movie) => {
-            // Filtrar apenas filmes com data de lançamento futura
-            if (!movie.release_date) return false;
-            const releaseDate = new Date(movie.release_date);
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
-            return releaseDate > today;
-          }).map((movie) => (
-            <MediaCard
-              key={`up-${movie.id}`}
-              {...movieToContent(movie)}
-              title={movie.title}
-              onPlay={() => openPlayer(movieToContent(movie), 'movie')}
-              isUpcoming={true}
-            />
-          ))}
-        </ContentCarousel>
-
-        {/* SÉRIES Section */}
-        {popularSeries.length > 0 && (
+        {/* SÉRIES - REDUZIDO para 1 categoria */}
+        {trendingSeries.length > 0 && (
           <>
             <div className="section-divider" />
             <div className="px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16 pt-4 sm:pt-6 md:pt-8 pb-1">
@@ -463,120 +325,8 @@ const HomePage = () => {
                 />
               ))}
             </ContentCarousel>
-
-            <ContentCarousel
-              title="Populares"
-              subtitle="As mais assistidas"
-              icon={<Heart size={22} className="text-pink-500" />}
-            >
-              {popularSeries.map((serie) => (
-                <MediaCard
-                  key={`popserie-${serie.id}`}
-                  {...serieToContent(serie)}
-                  title={serie.name}
-                  onPlay={() => openPlayer(serieToContent(serie), 'series')}
-                />
-              ))}
-            </ContentCarousel>
-
-            <ContentCarousel
-              title="Mais Bem Avaliadas"
-              subtitle="Crítica e público aprovam"
-              icon={<Award size={22} className="text-amber-400" />}
-            >
-              {topRatedSeries.map((serie) => (
-                <MediaCard
-                  key={`topserie-${serie.id}`}
-                  {...serieToContent(serie)}
-                  title={serie.name}
-                  onPlay={() => openPlayer(serieToContent(serie), 'series')}
-                />
-              ))}
-            </ContentCarousel>
           </>
         )}
-
-        {/* ANIMES Section */}
-        {(animeSeries.length > 0 || animeMovies.length > 0) && (
-          <>
-            <div className="section-divider" />
-            <div className="px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16 pt-4 sm:pt-6 md:pt-8 pb-1">
-              <h2 className={`text-xl sm:text-2xl md:text-3xl font-bold flex items-center gap-2 sm:gap-3 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                <div className="w-8 h-8 sm:w-10 sm:h-10 bg-pink-500/20 rounded-xl flex items-center justify-center">
-                  <Zap size={20} className="text-pink-400 sm:w-6 sm:h-6" />
-                </div>
-                Animes
-                <span className={`text-xs sm:text-sm font-normal ml-1 sm:ml-2 ${isDarkMode ? 'text-gray-500' : 'text-gray-600'}`}>O melhor do Japão</span>
-              </h2>
-            </div>
-
-            {animeSeries.length > 0 && (
-              <ContentCarousel
-                title="Séries de Anime"
-                subtitle="Os mais populares"
-                icon={<TrendingUp size={22} className="text-pink-400" />}
-              >
-                {animeSeries.map((serie) => (
-                  <MediaCard
-                    key={`anime-${serie.id}`}
-                    {...serieToContent(serie)}
-                    title={serie.name}
-                    onPlay={() => openPlayer(serieToContent(serie), 'series')}
-                  />
-                ))}
-              </ContentCarousel>
-            )}
-
-            {animeMovies.length > 0 && (
-              <ContentCarousel
-                title="Filmes de Anime"
-                subtitle="Obras-primas japonesas"
-                icon={<Award size={22} className="text-purple-400" />}
-              >
-                {animeMovies.map((movie) => (
-                  <MediaCard
-                    key={`animemovie-${movie.id}`}
-                    {...movieToContent(movie)}
-                    title={movie.title}
-                    onPlay={() => openPlayer(movieToContent(movie), 'movie')}
-                  />
-                ))}
-              </ContentCarousel>
-            )}
-          </>
-        )}
-
-        {/* DORAMAS Section */}
-        {kDramas.length > 0 && (
-          <>
-            <div className="section-divider" />
-            <div className="px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16 pt-4 sm:pt-6 md:pt-8 pb-1">
-              <h2 className={`text-xl sm:text-2xl md:text-3xl font-bold flex items-center gap-2 sm:gap-3 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                <div className="w-8 h-8 sm:w-10 sm:h-10 bg-red-500/20 rounded-xl flex items-center justify-center">
-                  <Globe2 size={20} className="text-red-400 sm:w-6 sm:h-6" />
-                </div>
-                Doramas
-                <span className={`text-xs sm:text-sm font-normal ml-1 sm:ml-2 ${isDarkMode ? 'text-gray-500' : 'text-gray-600'}`}>K-Dramas imperdíveis</span>
-              </h2>
-            </div>
-
-            <ContentCarousel
-              title="K-Dramas Populares"
-              subtitle="Os favoritos da Coreia"
-              icon={<Heart size={22} className="text-red-400" />}
-            >
-              {kDramas.map((serie) => (
-                <MediaCard
-                  key={`kdrama-${serie.id}`}
-                  {...serieToContent(serie)}
-                  title={serie.name}
-                  onPlay={() => openPlayer(serieToContent(serie), 'series')}
-                />
-              ))}
-            </ContentCarousel>
-          </>
-        )}
-
 
       </div>
 

@@ -1,4 +1,4 @@
-import { useRef, useCallback, useState, ReactNode } from 'react';
+import { useRef, useCallback, useState, ReactNode, memo } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface ContentCarouselProps {
@@ -13,8 +13,9 @@ interface ContentCarouselProps {
 
 /**
  * Carrossel de conteúdo estilo Netflix com setas melhoradas e responsividade
+ * Otimizado com memo para evitar re-renders desnecessários
  */
-const ContentCarousel = ({
+const ContentCarousel = memo(({
   title,
   subtitle,
   icon,
@@ -27,7 +28,7 @@ const ContentCarousel = ({
   const [isScrolling, setIsScrolling] = useState(false);
 
   const scroll = useCallback((direction: 'left' | 'right') => {
-    if (sliderRef.current) {
+    if (sliderRef.current && !isScrolling) {
       const container = sliderRef.current;
       // Scroll 80% of visible width on desktop, 60% on mobile for smoother experience
       const isMobile = window.innerWidth < 768;
@@ -46,7 +47,7 @@ const ContentCarousel = ({
         setIsScrolling(false);
       }, 400);
     }
-  }, []);
+  }, [isScrolling]);
 
   return (
     <div className={`content-carousel relative group/carousel py-2 sm:py-3 md:py-4 ${className}`} data-app-element>
@@ -115,6 +116,8 @@ const ContentCarousel = ({
       </div>
     </div>
   );
-};
+});
+
+ContentCarousel.displayName = 'ContentCarousel';
 
 export default ContentCarousel;

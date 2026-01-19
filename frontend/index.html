@@ -2,11 +2,49 @@
 <html lang="pt-BR">
   <head>
     <meta charset="UTF-8" />
+    
+    <!-- Resource Hints para Performance (LCP Optimization) -->
+    <link rel="preconnect" href="https://api.themoviedb.org" crossorigin />
+    <link rel="preconnect" href="https://image.tmdb.org" crossorigin />
+    <link rel="dns-prefetch" href="https://superflixapi.bond" />
+    <link rel="dns-prefetch" href="https://api.ipify.org" />
+    
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="apple-touch-icon" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="KKMovies - Assista filmes e séries online grátis em HD" />
     <meta name="theme-color" content="#f97316" />
+    
+    <!-- Content Security Policy para bloquear scripts maliciosos -->
+    <meta http-equiv="Content-Security-Policy" content="
+      default-src 'self';
+      script-src 'self' 'unsafe-inline' 'unsafe-eval' https://fonts.googleapis.com https://fonts.gstatic.com;
+      style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+      font-src 'self' https://fonts.gstatic.com data:;
+      img-src 'self' data: https: http:;
+      media-src 'self' blob: https: http:;
+      connect-src 'self' https://api.themoviedb.org https://image.tmdb.org https://api.ipify.org https://superflixapi.bond https://superflixapi.top https://superflixapi.dev https://superflixapi.com http://localhost:* https://localhost:*;
+      frame-src 'self' https://superflixapi.bond https://superflixapi.top https://superflixapi.dev https://superflixapi.com https://www.youtube.com https://player.vimeo.com;
+      object-src 'none';
+      base-uri 'self';
+      form-action 'self';
+      upgrade-insecure-requests;
+    ">
+    
+    <!-- Referrer Policy para segurança -->
+    <meta name="referrer" content="strict-origin-when-cross-origin" />
+    
+    <!-- Permissions Policy para limitar recursos -->
+    <meta http-equiv="Permissions-Policy" content="
+      geolocation=(),
+      camera=(),
+      microphone=(),
+      payment=(),
+      usb=(),
+      magnetometer=(),
+      accelerometer=(),
+      gyroscope=()
+    ">
     
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website" />

@@ -125,19 +125,22 @@ const HeroBanner = memo(({
       onMouseLeave={() => setIsAutoPlaying(true)}
       data-app-element
     >
-      {/* Background Slides */}
+      {/* Background Slides - Renderiza TODOS com fade suave (crossfade) */}
       {featuredItems.map((item, index) => (
         <div
           key={item.id}
-          className={`hero-slide absolute inset-0 transition-all duration-700 ease-out ${
+          className={`hero-slide absolute inset-0 transition-opacity duration-1000 ease-in-out ${
             index === currentIndex
-              ? 'opacity-100 scale-100 z-10'
-              : 'opacity-0 scale-105 z-0'
+              ? 'opacity-100 z-10'
+              : 'opacity-0 z-0'
           }`}
         >
-          {/* Background Image */}
+          {/* Background Image com Ken Burns Effect - key única FORÇA recriação do elemento */}
           <div
-            className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+            key={`zoom-${item.id}-${currentIndex}`}
+            className={`absolute inset-0 bg-cover bg-center bg-no-repeat ${
+              index === currentIndex ? 'animate-zoom' : ''
+            }`}
             style={{
               backgroundImage: item.backdrop_path
                 ? `url(${item.backdrop_path})`

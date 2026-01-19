@@ -1,7 +1,8 @@
 import { useEffect, useState, useRef, memo } from 'react';
-import { Tv, Sparkles, Sword, Laugh, Search as SearchIcon, Drama, Users, Baby, Eye, Newspaper, Film, Rocket, Heart, Mic, Flag, TrendingUp, Star, X } from 'lucide-react';
+import { Tv, Sparkles, Sword, Laugh, Search as SearchIcon, Drama, Users, Baby, Eye, Newspaper, Film, Rocket, Heart, Mic, Flag, TrendingUp, Star, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import ErrorMessage from '@/components/ErrorMessage';
+import ContentCarousel from '@/components/ContentCarousel';
 import api from '@/services/api';
 import { watchHistoryService } from '@/services/watchHistoryService';
 import { useTheme } from '@/App';
@@ -83,6 +84,10 @@ const SeriesPage = () => {
   const [totalSeasons, setTotalSeasons] = useState(1);
   const [playerOpen, setPlayerOpen] = useState(false);
   const [loadingEpisodes, setLoadingEpisodes] = useState(false);
+  
+  // Estado para controle de scroll dos gêneros
+  const genreSliderRef = useRef<HTMLDivElement>(null);
+  const [isGenreScrolling, setIsGenreScrolling] = useState(false);
 
   useEffect(() => {
     fetchSeries();
@@ -136,6 +141,24 @@ const SeriesPage = () => {
     setSelectedGenre(null);
     setGenreSeries([]);
     setGenrePage(1);
+  };
+
+  const scrollGenres = (direction: 'left' | 'right') => {
+    if (genreSliderRef.current && !isGenreScrolling) {
+      const container = genreSliderRef.current;
+      const scrollAmount = container.clientWidth * 0.7;
+      
+      setIsGenreScrolling(true);
+      
+      container.scrollBy({
+        left: direction === 'left' ? -scrollAmount : scrollAmount,
+        behavior: 'smooth',
+      });
+      
+      setTimeout(() => {
+        setIsGenreScrolling(false);
+      }, 400);
+    }
   };
 
   const fetchSeries = async () => {
@@ -344,27 +367,108 @@ const SeriesPage = () => {
             <span className="flex-1 h-px bg-gradient-to-r from-primary-500/30 to-transparent" />
           </h2>
           
-          {/* Grid de Gêneros */}
-          <div className="flex flex-wrap gap-2 mb-6">
-            {genres.map((genre) => {
-              const IconComponent = genreIconComponents[genre.id] || Tv;
-              return (
-                <button
-                  key={genre.id}
-                  onClick={() => handleGenreSelect(genre)}
-                  className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 flex items-center gap-2 ${
-                    selectedGenre?.id === genre.id
-                      ? 'bg-primary-500 text-white shadow-lg shadow-primary-500/30'
-                      : isDarkMode 
-                        ? 'bg-dark-700 text-gray-300 hover:bg-dark-600 hover:text-white'
-                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300 hover:text-gray-900'
-                  }`}
-                >
-                  <IconComponent size={16} />
-                  {genre.name}
-                </button>
-              );
-            })}
+          {/* Scroll Horizontal de Gêneros - PREMIUM DESIGN COM SETAS */}
+          <div className="relative group/genres mb-6">
+            {/* Blur overlays para efeito suave */}
+            <div className={`absolute left-0 top-0 bottom-0 w-16 z-10 pointer-events-none transition-opacity duration-300 ${
+              isGenreScrolling ? 'opacity-100' : 'opacity-70'
+            } ${
+              isDarkMode 
+                ? 'bg-gradient-to-r from-[#0a0a0a] via-[#0a0a0a]/80 to-transparent' 
+                : 'bg-gradient-to-r from-[#f8fafc] via-[#f8fafc]/80 to-transparent'
+            }`} />
+            
+            <div className={`absolute right-0 top-0 bottom-0 w-16 z-10 pointer-events-none transition-opacity duration-300 ${
+              isGenreScrolling ? 'opacity-100' : 'opacity-70'
+            } ${
+              isDarkMode 
+                ? 'bg-gradient-to-l from-[#0a0a0a] via-[#0a0a0a]/80 to-transparent' 
+                : 'bg-gradient-to-l from-[#f8fafc] via-[#f8fafc]/80 to-transparent'
+            }`} />
+            
+            {/* Seta Esquerda */}
+            <button
+              onClick={() => scrollGenres('left')}
+              className={`
+                absolute left-0 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full
+                opacity-0 group-hover/genres:opacity-100 transition-all duration-300
+                flex items-center justify-center shadow-lg
+                hover:scale-110 active:scale-95
+                ${
+                  isDarkMode
+                    ? 'bg-dark-800/90 hover:bg-dark-700 text-white border border-white/10'
+                    : 'bg-white/90 hover:bg-white text-gray-900 border border-gray-200 shadow-md'
+                }
+              `}
+              aria-label="Anterior"
+            >
+              <ChevronLeft size={20} strokeWidth={2.5} />
+            </button>
+            
+            {/* Container com Scroll */}
+            <div 
+              ref={genreSliderRef}
+              className={`flex gap-3 overflow-x-auto pb-2 px-1 scrollbar-hide scroll-smooth snap-x snap-mandatory ${
+                isGenreScrolling ? 'blur-[2px]' : ''
+              } transition-all duration-300`}
+            >
+              {genres.map((genre) => {
+                const IconComponent = genreIconComponents[genre.id] || Tv;
+                const isActive = selectedGenre?.id === genre.id;
+                
+                return (
+                  <button
+                    key={genre.id}
+                    onClick={() => handleGenreSelect(genre)}
+                    className={`
+                      group/genre flex-shrink-0 px-5 py-2.5 rounded-full font-semibold text-sm
+                      transition-all duration-300 ease-out
+                      flex items-center gap-2.5 snap-start
+                      transform hover:scale-105 active:scale-95
+                      ${isActive
+                        ? 'bg-primary-500 text-white shadow-lg shadow-primary-500/40 border-2 border-primary-400'
+                        : isDarkMode
+                          ? 'bg-white/10 backdrop-blur-md text-gray-300 border border-white/10 hover:border-primary-500/50 hover:bg-white/15 hover:text-white shadow-sm'
+                          : 'bg-white text-gray-700 border border-gray-200 hover:border-primary-500 hover:shadow-md hover:text-gray-900 shadow-sm'
+                      }
+                    `}
+                  >
+                    <IconComponent 
+                      size={16} 
+                      className={`
+                        transition-all duration-300
+                        ${isActive 
+                          ? 'text-white' 
+                          : isDarkMode
+                            ? 'text-gray-400 group-hover/genre:text-primary-400'
+                            : 'text-gray-500 group-hover/genre:text-primary-500'
+                        }
+                      `}
+                    />
+                    <span className="whitespace-nowrap">{genre.name}</span>
+                  </button>
+                );
+              })}
+            </div>
+            
+            {/* Seta Direita */}
+            <button
+              onClick={() => scrollGenres('right')}
+              className={`
+                absolute right-0 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full
+                opacity-0 group-hover/genres:opacity-100 transition-all duration-300
+                flex items-center justify-center shadow-lg
+                hover:scale-110 active:scale-95
+                ${
+                  isDarkMode
+                    ? 'bg-dark-800/90 hover:bg-dark-700 text-white border border-white/10'
+                    : 'bg-white/90 hover:bg-white text-gray-900 border border-gray-200 shadow-md'
+                }
+              `}
+              aria-label="Próximo"
+            >
+              <ChevronRight size={20} strokeWidth={2.5} />
+            </button>
           </div>
 
           {/* Resultados do Gênero Selecionado */}
@@ -456,29 +560,65 @@ const SeriesPage = () => {
       {/* Categorias (mostrar apenas se não estiver buscando e não tiver gênero selecionado) */}
       {!hasSearched && !selectedGenre && (
         <div className="space-y-8">
-          <CategoryRow title="Em Alta" titleIcon={TrendingUp} series={trendingSeries} onSelect={openSeriePlayer} />
-          <CategoryRow title="Populares" titleIcon={Star} series={popularSeries} onSelect={openSeriePlayer} />
-          <CategoryRow title="Mais Bem Avaliadas" titleIcon={Star} series={topRatedSeries} onSelect={openSeriePlayer} />
+          <ContentCarousel 
+            title="Em Alta" 
+            subtitle="Séries populares do momento"
+            icon={<TrendingUp size={22} className="text-primary-400" />}
+          >
+            {trendingSeries.map((serie) => (
+              <SerieCard key={serie.id} serie={serie} onSelect={openSeriePlayer} />
+            ))}
+          </ContentCarousel>
+          
+          <ContentCarousel 
+            title="Populares" 
+            subtitle="As séries mais assistidas"
+            icon={<Star size={22} className="text-primary-400" />}
+          >
+            {popularSeries.map((serie) => (
+              <SerieCard key={serie.id} serie={serie} onSelect={openSeriePlayer} />
+            ))}
+          </ContentCarousel>
+          
+          <ContentCarousel 
+            title="Mais Bem Avaliadas" 
+            subtitle="Com as melhores notas"
+            icon={<Star size={22} className="text-primary-400" />}
+          >
+            {topRatedSeries.map((serie) => (
+              <SerieCard key={serie.id} serie={serie} onSelect={openSeriePlayer} />
+            ))}
+          </ContentCarousel>
         </div>
       )}
 
       {/* Player Modal com Seletor de Episódios */}
       {playerOpen && selectedSerie && (
-        <div className="fixed inset-0 z-50 bg-black/95 flex flex-col" data-app-modal data-app-element>
+        <div className={`fixed inset-0 z-50 flex flex-col ${
+          isDarkMode ? 'bg-black/95' : 'bg-white/95'
+        }`} data-app-modal data-app-element>
           {/* Header do Player */}
-          <div className="flex items-center justify-between p-4 bg-dark-900/80">
+          <div className={`flex items-center justify-between p-4 ${
+            isDarkMode ? 'bg-dark-900/80' : 'bg-gray-100/80'
+          }`}>
             <div className="flex items-center gap-4">
               <button
                 onClick={closePlayer}
-                className="p-2 rounded-full bg-dark-700 hover:bg-dark-600 transition-colors"
+                className={`p-2 rounded-full transition-colors ${
+                  isDarkMode ? 'bg-dark-700 hover:bg-dark-600' : 'bg-gray-200 hover:bg-gray-300'
+                }`}
               >
-                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className={isDarkMode ? 'w-6 h-6 text-white' : 'w-6 h-6 text-gray-900'} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                 </svg>
               </button>
               <div>
-                <h2 className="text-xl font-bold text-white">{selectedSerie.name}</h2>
-                <p className="text-sm text-gray-400">
+                <h2 className={`text-xl font-bold ${
+                  isDarkMode ? 'text-white' : 'text-gray-900'
+                }`}>{selectedSerie.name}</h2>
+                <p className={`text-sm ${
+                  isDarkMode ? 'text-gray-400' : 'text-gray-600'
+                }`}>
                   Temporada {selectedSeason} • Episódio {selectedEpisode}
                 </p>
               </div>
@@ -496,139 +636,176 @@ const SeriesPage = () => {
               </button>
               <button
                 onClick={closePlayer}
-                className="p-2 rounded-full bg-dark-700 hover:bg-red-600 transition-colors"
+                className={`p-2 rounded-full transition-colors ${
+                  isDarkMode ? 'bg-dark-700 hover:bg-red-600' : 'bg-gray-200 hover:bg-red-500'
+                }`}
               >
-                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className={isDarkMode ? 'w-6 h-6 text-white' : 'w-6 h-6 text-gray-900'} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
             </div>
           </div>
 
-          <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
-            {/* Player */}
-            <div className="flex-1 relative bg-black">
-              <iframe
-                src={getStreamUrl()}
-                className="absolute inset-0 w-full h-full border-0"
-                allowFullScreen
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
-                referrerPolicy="no-referrer"
-              />
+          {/* VIEWPORT-CONSTRAINED LAYOUT - Grid 70/30 com max-height 85vh */}
+          <div className="grid lg:grid-cols-[1fr_280px] gap-0 overflow-hidden" style={{ maxHeight: '85vh' }}>
+            {/* Player - Aspect Ratio 16:9 com altura limitada */}
+            <div className={`relative flex items-center justify-center ${
+              isDarkMode ? 'bg-black' : 'bg-gray-100'
+            }`} style={{ maxHeight: '85vh' }}>
+              <div className={`w-full ${
+                isDarkMode ? 'bg-black' : 'bg-white shadow-lg'
+              }`} style={{ maxHeight: '80vh', aspectRatio: '16/9' }}>
+                <iframe
+                  src={getStreamUrl()}
+                  className="w-full h-full border-0"
+                  allowFullScreen
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
+                  referrerPolicy="no-referrer"
+                />
+              </div>
             </div>
 
-            {/* Sidebar de Episódios */}
-            <div className="lg:w-80 xl:w-96 bg-dark-900 flex flex-col max-h-[40vh] lg:max-h-full overflow-hidden">
-              {/* Seletor de Temporada */}
-              <div className="p-4 border-b border-dark-700">
-                <label className="text-sm text-gray-400 mb-2 block">Temporada</label>
-                <div className="relative group">
-                  {/* Seta Esquerda */}
-                  <button
-                    onClick={() => {
-                      const container = document.getElementById('season-scroll');
-                      if (container) container.scrollBy({ left: -150, behavior: 'smooth' });
-                    }}
-                    className="absolute left-0 top-0 bottom-2 z-10 w-8 bg-gradient-to-r from-dark-900 to-transparent flex items-center justify-start opacity-0 group-hover:opacity-100 transition-opacity"
-                  >
-                    <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                    </svg>
-                  </button>
-                  
-                  <div id="season-scroll" className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide px-1">
-                    {Array.from({ length: totalSeasons }, (_, i) => i + 1).map((season) => (
-                      <button
-                        key={season}
-                        onClick={() => changeSeason(season)}
-                        className={`
-                          flex-shrink-0 w-10 h-10 rounded-lg font-bold transition-all duration-300
-                          ${selectedSeason === season
-                            ? 'bg-primary-500 text-white shadow-glow'
-                            : 'bg-dark-700 text-gray-300 hover:bg-dark-600'
-                          }
-                        `}
-                      >
-                        {season}
-                      </button>
-                    ))}
-                  </div>
-                  
-                  {/* Seta Direita */}
-                  <button
-                    onClick={() => {
-                      const container = document.getElementById('season-scroll');
-                      if (container) container.scrollBy({ left: 150, behavior: 'smooth' });
-                    }}
-                    className="absolute right-0 top-0 bottom-2 z-10 w-8 bg-gradient-to-l from-dark-900 to-transparent flex items-center justify-end opacity-0 group-hover:opacity-100 transition-opacity"
-                  >
-                    <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                    </svg>
-                  </button>
+            {/* Sidebar de Episódios - ULTRA COMPACTO com scroll interno */}
+            <div className={`backdrop-blur-sm flex flex-col border-l ${
+              isDarkMode ? 'bg-dark-900/95 border-dark-700/50' : 'bg-gray-50/95 border-gray-200'
+            }`} style={{ maxHeight: '85vh' }}>
+              {/* Seletor de Temporada - Dropdown Compacto */}
+              <div className={`p-2.5 border-b flex-shrink-0 ${
+                isDarkMode ? 'border-dark-700/50 bg-dark-800/50' : 'border-gray-200 bg-gray-100/50'
+              }`}>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className={`text-[10px] font-medium uppercase tracking-wide ${
+                    isDarkMode ? 'text-gray-400' : 'text-gray-600'
+                  }`}>Temporada</label>
+                  <span className={`text-[10px] ${
+                    isDarkMode ? 'text-gray-500' : 'text-gray-500'
+                  }`}>{episodes.length} eps</span>
                 </div>
+                <select
+                  value={selectedSeason}
+                  onChange={(e) => changeSeason(Number(e.target.value))}
+                  className={`w-full px-2.5 py-1.5 border rounded text-xs focus:outline-none focus:border-primary-500 transition-colors cursor-pointer ${
+                    isDarkMode 
+                      ? 'bg-dark-700 border-dark-600 text-white hover:bg-dark-600'
+                      : 'bg-white border-gray-300 text-gray-900 hover:bg-gray-50'
+                  }`}
+                >
+                  {Array.from({ length: totalSeasons }, (_, i) => i + 1).map((season) => (
+                    <option key={season} value={season}>
+                      Temporada {season}
+                    </option>
+                  ))}
+                </select>
               </div>
 
-              {/* Lista de Episódios */}
-              <div className="flex-1 overflow-y-auto p-2">
-                <p className="text-sm text-gray-400 px-2 mb-2">Episódios</p>
+              {/* Lista de Episódios - SCROLL INTERNO COMPACTO (40px cada) */}
+              <div className="flex-1 overflow-y-auto episode-list-scroll">
                 {loadingEpisodes ? (
                   <div className="flex items-center justify-center py-8">
-                    <div className="w-8 h-8 border-2 border-primary-500 border-t-transparent rounded-full animate-spin" />
+                    <div className="w-5 h-5 border-2 border-primary-500 border-t-transparent rounded-full animate-spin" />
                   </div>
                 ) : episodes.length > 0 ? (
-                  <div className="space-y-1">
+                  <div className="py-1">
                     {episodes.map((ep) => (
                       <button
                         key={ep.episode_number}
                         onClick={() => setSelectedEpisode(ep.episode_number)}
                         className={`
-                          w-full p-3 rounded-lg text-left transition-all duration-300 flex gap-3
+                          w-full px-2.5 py-2 text-left transition-all duration-150 flex items-center gap-2.5 group relative
                           ${selectedEpisode === ep.episode_number
-                            ? 'bg-primary-500/20 border border-primary-500'
-                            : 'bg-dark-800 hover:bg-dark-700 border border-transparent'
+                            ? isDarkMode
+                              ? 'bg-primary-500/15 border-l-2 border-primary-500'
+                              : 'bg-primary-100 border-l-2 border-primary-500'
+                            : isDarkMode
+                              ? 'border-l-2 border-transparent hover:bg-dark-800/60 hover:border-l-primary-500/30'
+                              : 'border-l-2 border-transparent hover:bg-gray-100 hover:border-l-primary-500/30'
                           }
                         `}
+                        style={{ minHeight: '40px', maxHeight: '40px' }}
                       >
-                        <div className="w-8 h-8 rounded bg-dark-700 flex items-center justify-center flex-shrink-0">
-                          <span className="text-sm font-bold text-primary-400">{ep.episode_number}</span>
+                        {/* Número do Episódio - Mini */}
+                        <div className={`
+                          w-6 h-6 rounded flex items-center justify-center flex-shrink-0 text-[11px] font-bold transition-colors
+                          ${selectedEpisode === ep.episode_number
+                            ? 'bg-primary-500 text-white'
+                            : isDarkMode
+                              ? 'bg-dark-700/50 text-gray-400 group-hover:bg-dark-600 group-hover:text-primary-400'
+                              : 'bg-gray-200 text-gray-600 group-hover:bg-gray-300 group-hover:text-primary-500'
+                          }
+                        `}>
+                          {ep.episode_number}
                         </div>
+                        
+                        {/* Info do Episódio */}
                         <div className="flex-1 min-w-0">
-                          <p className="font-medium text-white text-sm line-clamp-1">
+                          <p className={`
+                            font-medium text-[11px] line-clamp-1 leading-tight transition-colors
+                            ${selectedEpisode === ep.episode_number 
+                              ? isDarkMode ? 'text-white' : 'text-gray-900'
+                              : isDarkMode ? 'text-gray-300 group-hover:text-white' : 'text-gray-700 group-hover:text-gray-900'
+                            }
+                          `}>
                             {ep.name || `Episódio ${ep.episode_number}`}
                           </p>
-                          {ep.air_date && (
-                            <p className="text-xs text-gray-500 mt-0.5">
-                              {new Date(ep.air_date).toLocaleDateString('pt-BR')}
-                            </p>
-                          )}
                         </div>
+                        
+                        {/* Indicador de Playing - Mini */}
                         {selectedEpisode === ep.episode_number && (
-                          <div className="w-2 h-2 rounded-full bg-primary-500 animate-pulse self-center" />
+                          <div className="flex items-center gap-0.5 flex-shrink-0">
+                            <div className="w-1 h-1 rounded-full bg-primary-400 animate-pulse" />
+                            <div className="w-1 h-1 rounded-full bg-primary-400 animate-pulse" style={{ animationDelay: '0.2s' }} />
+                            <div className="w-1 h-1 rounded-full bg-primary-400 animate-pulse" style={{ animationDelay: '0.4s' }} />
+                          </div>
                         )}
                       </button>
                     ))}
                   </div>
                 ) : (
-                  <div className="space-y-1">
+                  <div className="py-1">
                     {Array.from({ length: 10 }, (_, i) => i + 1).map((epNum) => (
                       <button
                         key={epNum}
                         onClick={() => setSelectedEpisode(epNum)}
                         className={`
-                          w-full p-3 rounded-lg text-left transition-all duration-300 flex gap-3 items-center
+                          w-full px-2.5 py-2 text-left transition-all duration-150 flex items-center gap-2.5 group relative
                           ${selectedEpisode === epNum
-                            ? 'bg-primary-500/20 border border-primary-500'
-                            : 'bg-dark-800 hover:bg-dark-700 border border-transparent'
+                            ? isDarkMode
+                              ? 'bg-primary-500/15 border-l-2 border-primary-500'
+                              : 'bg-primary-100 border-l-2 border-primary-500'
+                            : isDarkMode
+                              ? 'border-l-2 border-transparent hover:bg-dark-800/60 hover:border-l-primary-500/30'
+                              : 'border-l-2 border-transparent hover:bg-gray-100 hover:border-l-primary-500/30'
                           }
                         `}
+                        style={{ minHeight: '40px', maxHeight: '40px' }}
                       >
-                        <div className="w-8 h-8 rounded bg-dark-700 flex items-center justify-center">
-                          <span className="text-sm font-bold text-primary-400">{epNum}</span>
+                        <div className={`
+                          w-6 h-6 rounded flex items-center justify-center flex-shrink-0 text-[11px] font-bold transition-colors
+                          ${selectedEpisode === epNum
+                            ? 'bg-primary-500 text-white'
+                            : isDarkMode
+                              ? 'bg-dark-700/50 text-gray-400 group-hover:bg-dark-600 group-hover:text-primary-400'
+                              : 'bg-gray-200 text-gray-600 group-hover:bg-gray-300 group-hover:text-primary-500'
+                          }
+                        `}>
+                          {epNum}
                         </div>
-                        <span className="font-medium text-white text-sm">Episódio {epNum}</span>
+                        <span className={`
+                          font-medium text-[11px] transition-colors
+                          ${selectedEpisode === epNum 
+                            ? isDarkMode ? 'text-white' : 'text-gray-900'
+                            : isDarkMode ? 'text-gray-300 group-hover:text-white' : 'text-gray-700 group-hover:text-gray-900'
+                          }
+                        `}>
+                          Episódio {epNum}
+                        </span>
                         {selectedEpisode === epNum && (
-                          <div className="ml-auto w-2 h-2 rounded-full bg-primary-500 animate-pulse" />
+                          <div className="ml-auto flex items-center gap-0.5">
+                            <div className="w-1 h-1 rounded-full bg-primary-400 animate-pulse" />
+                            <div className="w-1 h-1 rounded-full bg-primary-400 animate-pulse" style={{ animationDelay: '0.2s' }} />
+                            <div className="w-1 h-1 rounded-full bg-primary-400 animate-pulse" style={{ animationDelay: '0.4s' }} />
+                          </div>
                         )}
                       </button>
                     ))}
@@ -643,61 +820,7 @@ const SeriesPage = () => {
   );
 };
 
-interface CategoryRowProps {
-  title: string;
-  series: Serie[];
-  onSelect: (serie: Serie) => void;
-  titleIcon?: any;
-}
 
-const CategoryRow = ({ title, series, onSelect, titleIcon: TitleIcon }: CategoryRowProps) => {
-  const sliderRef = useRef<HTMLDivElement>(null);
-
-  const scroll = (direction: 'left' | 'right') => {
-    if (sliderRef.current) {
-      sliderRef.current.scrollBy({
-        left: direction === 'left' ? -400 : 400,
-        behavior: 'smooth',
-      });
-    }
-  };
-
-  if (!series.length) return null;
-
-  return (
-    <div className="relative group/row py-4">
-      <h2 className="text-lg md:text-xl font-bold text-white mb-4 px-4 md:px-12 flex items-center gap-3">
-        {TitleIcon && <TitleIcon size={20} className="text-primary-400" />}
-        {title}
-        <span className="flex-1 h-px bg-gradient-to-r from-primary-500/30 to-transparent" />
-      </h2>
-      
-      <button
-        onClick={() => scroll('left')}
-        className="absolute left-0 top-1/2 translate-y-4 z-20 w-12 h-40 bg-gradient-to-r from-black/80 to-transparent text-white opacity-0 group-hover/row:opacity-100 transition-all duration-300 flex items-center justify-center"
-      >
-        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-        </svg>
-      </button>
-      
-      <div ref={sliderRef} className="flex gap-4 overflow-x-auto pb-4 px-4 md:px-12 scroll-smooth scrollbar-hide">
-        {series.map((serie, index) => (
-          <SerieCard key={`${serie.id}-${index}`} serie={serie} onSelect={onSelect} />
-        ))}
-      </div>
-      
-      <button
-        onClick={() => scroll('right')}
-        className="absolute right-0 top-1/2 translate-y-4 z-20 w-12 h-40 bg-gradient-to-l from-black/80 to-transparent text-white opacity-0 group-hover/row:opacity-100 transition-all duration-300 flex items-center justify-center"
-      >
-        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-        </svg>
-      </button>
-    </div>
-  );
-};
 
 interface SerieCardProps {
   serie: Serie;

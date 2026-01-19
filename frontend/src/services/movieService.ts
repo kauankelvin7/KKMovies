@@ -3,25 +3,58 @@ import { MoviesResponse, MovieDetails, Genre, SearchParams } from '@/types/movie
 
 /**
  * Movie service for handling all movie-related API calls
+ * Otimizado com cache e paginação inteligente
  */
 class MovieService {
+  private cache = new Map<string, { data: any; timestamp: number }>();
+  private readonly CACHE_TTL = 5 * 60 * 1000; // 5 minutos
+
   /**
-   * Get trending movies
+   * Cache helper
+   */
+  private getCached<T>(key: string): T | null {
+    const cached = this.cache.get(key);
+    if (!cached) return null;
+    
+    if (Date.now() - cached.timestamp > this.CACHE_TTL) {
+      this.cache.delete(key);
+      return null;
+    }
+    
+    return cached.data as T;
+  }
+
+  private setCache(key: string, data: any): void {
+    this.cache.set(key, { data, timestamp: Date.now() });
+  }
+
+  /**
+   * Get trending movies com cache
    */
   async getTrending(page: number = 1): Promise<MoviesResponse> {
+    const cacheKey = `trending_${page}`;
+    const cached = this.getCached<MoviesResponse>(cacheKey);
+    if (cached) return cached;
+
     const response = await api.get<MoviesResponse>('/movies/trending', {
       params: { page },
     });
+    this.setCache(cacheKey, response.data);
     return response.data;
   }
 
   /**
-   * Get popular movies
+   * Get popular movies com cache
    */
   async getPopular(page: number = 1): Promise<MoviesResponse> {
+    const cacheKey = `popular_${page}`;
+    const cached = this.getCached<MoviesResponse>(cacheKey);
+    if (cached) return cached;
+
     const response = await api.get<MoviesResponse>('/movies/popular', {
       params: { page },
     });
+    this.setCache(cacheKey, response.data);
     return response.data;
   }
 

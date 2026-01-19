@@ -96,9 +96,10 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .hero-slide {
-  /* Only use will-change during transitions */
+  /* Transição cinematográfica suave de 1.5s */
   transform: translateZ(0);
   backface-visibility: hidden;
+  transition: opacity 1.5s ease-in-out;
 }
 
 .hero-badge {
@@ -807,6 +808,20 @@ html.light-mode .carousel-blur-right {
   }
 }
 
+/* Ken Burns Effect - Zoom-in MUITO lento durante exibição */
+@keyframes slowZoom {
+  0% {
+    transform: scale(1);
+  }
+  100% {
+    transform: scale(1.15);
+  }
+}
+
+.animate-zoom {
+  animation: slowZoom 5s linear forwards;
+}
+
 .animate-fade-in {
   animation: fadeIn 0.5s ease-out;
 }
@@ -1253,3 +1268,88 @@ img {
     transition: background-color 0.15s ease-out, box-shadow 0.15s ease-out;
   }
 }
+
+/* ===== SCROLLBARS CUSTOMIZADAS - LISTA DE EPISÓDIOS ===== */
+/* Scrollbar fina e elegante estilo Spotify/Netflix */
+.episode-list-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(249, 115, 22, 0.3) transparent;
+}
+
+/* Webkit (Chrome, Safari, Edge) */
+.episode-list-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+
+.episode-list-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.episode-list-scroll::-webkit-scrollbar-thumb {
+  background: rgba(249, 115, 22, 0.3);
+  border-radius: 10px;
+  transition: background 0.2s ease;
+}
+
+.episode-list-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(249, 115, 22, 0.5);
+}
+
+.episode-list-scroll::-webkit-scrollbar-thumb:active {
+  background: rgba(249, 115, 22, 0.7);
+}
+
+/* Scrollbar aparece apenas no hover */
+.episode-list-scroll::-webkit-scrollbar-thumb {
+  background: transparent;
+}
+
+.episode-list-scroll:hover::-webkit-scrollbar-thumb {
+  background: rgba(249, 115, 22, 0.3);
+}
+
+.episode-list-scroll:hover::-webkit-scrollbar-thumb:hover {
+  background: rgba(249, 115, 22, 0.5);
+}
+
+/* ===== VIEWPORT-CONSTRAINED LAYOUT - RESPONSIVO ===== */
+/* Mobile: Layout em Stack (coluna) com alturas controladas */
+@media (max-width: 1023px) {
+  /* Força layout em coluna no mobile/tablet */
+  .grid.lg\:grid-cols-\[1fr_280px\] {
+    grid-template-columns: 1fr !important;
+    max-height: none !important;
+  }
+  
+  /* Player mobile: fixo no topo, aspect ratio 16:9 */
+  .grid.lg\:grid-cols-\[1fr_280px\] > div:first-child {
+    max-height: 56.25vw !important; /* 16:9 aspect ratio baseado na largura */
+    aspect-ratio: 16/9 !important;
+  }
+  
+  /* Lista mobile: altura máxima 50vh com scroll */
+  .grid.lg\:grid-cols-\[1fr_280px\] > div:last-child {
+    max-height: 50vh !important;
+    border-left: none !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
+  }
+}
+
+/* Desktop: mantém grid 70/30 */
+@media (min-width: 1024px) {
+  .grid.lg\:grid-cols-\[1fr_280px\] {
+    height: 85vh;
+  }
+}
+
+/* ===== SCROLLBAR HIDE UTILITY ===== */
+/* Esconde scrollbar mas mantém funcionalidade */
+.scrollbar-hide {
+  -ms-overflow-style: none;  /* IE e Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;  /* Chrome, Safari, Opera */
+}
+

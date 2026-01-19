@@ -1,3 +1,4 @@
+import { memo, useCallback } from 'react';
 import { Movie } from '@/types/movie';
 import { getImageUrl, getRatingColor } from '@/utils/helpers';
 import { useNavigate } from 'react-router-dom';
@@ -8,13 +9,14 @@ interface MovieCardProps {
 
 /**
  * Movie card component displaying movie poster and basic information
+ * Optimized with memo and lazy loading
  */
-const MovieCard = ({ movie }: MovieCardProps) => {
+const MovieCard = memo(({ movie }: MovieCardProps) => {
   const navigate = useNavigate();
 
-  const handleClick = () => {
+  const handleClick = useCallback(() => {
     navigate(`/movie/${movie.id}`);
-  };
+  }, [navigate, movie.id]);
 
   return (
     <div className="movie-card" onClick={handleClick}>
@@ -24,6 +26,7 @@ const MovieCard = ({ movie }: MovieCardProps) => {
         alt={movie.title}
         className="movie-card-image"
         loading="lazy"
+        decoding="async"
       />
 
       {/* Overlay with details */}
@@ -55,6 +58,8 @@ const MovieCard = ({ movie }: MovieCardProps) => {
       </div>
     </div>
   );
-};
+});
+
+MovieCard.displayName = 'MovieCard';
 
 export default MovieCard;
