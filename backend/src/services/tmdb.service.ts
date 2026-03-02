@@ -11,10 +11,11 @@ interface CacheEntry<T> {
   timestamp: number;
 }
 
-const CACHE_DURATION = 60 * 60 * 1000; // 60 minutos (1 hora) - aumentado drasticamente para evitar 429
+const CACHE_DURATION = 60 * 60 * 1000; // 60 minutos (1 hora)
 
 /**
  * TMDB API Service - Handles all interactions with The Movie Database API
+ * Rate-limited with exponential backoff retry on 429
  */
 class TMDBService {
   private api: AxiosInstance;
@@ -22,7 +23,10 @@ class TMDBService {
   private initialized: Promise<void>;
   private cache: Map<string, CacheEntry<any>> = new Map();
   private lastRequestTime: number = 0;
-  private readonly MIN_REQUEST_INTERVAL = 250; // 250ms entre requisições
+  private readonly MIN_REQUEST_INTERVAL = 300; // 300ms entre requisições
+  private activeRequests: number = 0;
+  private readonly MAX_CONCURRENT = 3; // Máximo de requisições simultâneas
+  private requestQueue: Array<() => void> = [];
 
   constructor() {
     this.apiKey = process.env.TMDB_API_KEY || '';
@@ -35,26 +39,37 @@ class TMDBService {
       baseURL: process.env.TMDB_BASE_URL || 'https://api.themoviedb.org/3',
       params: {
         api_key: this.apiKey,
-        language: 'pt-BR', // Idioma português
-        region: 'BR', // Região Brasil
+        language: 'pt-BR',
+        region: 'BR',
       },
     });
 
-    // Add response interceptor for error handling
+    // Add response interceptor with exponential backoff for 429
     this.api.interceptors.response.use(
       (response) => response,
       async (error: AxiosError) => {
-        // Se for erro 429, esperar e tentar novamente
         if (error.response?.status === 429) {
-          console.warn('⚠️ Rate limit atingido (429), aguardando 2 segundos...');
-          await new Promise(resolve => setTimeout(resolve, 2000));
-          // Retornar dados em cache se disponível
-          const config = error.config;
+          const config = error.config as any;
+          const retryCount = config?.__retryCount || 0;
+          const maxRetries = 3;
+
+          if (retryCount < maxRetries) {
+            const delay = Math.min(1000 * Math.pow(2, retryCount), 8000); // 1s, 2s, 4s
+            console.warn(`⚠️ Rate limit 429 (tentativa ${retryCount + 1}/${maxRetries}), aguardando ${delay}ms...`);
+            await new Promise(resolve => setTimeout(resolve, delay));
+            
+            if (config) {
+              config.__retryCount = retryCount + 1;
+              return this.api.request(config);
+            }
+          }
+
+          // After max retries, try cache fallback
           if (config?.url) {
             const cacheKey = `fallback_${config.url}_${JSON.stringify(config.params)}`;
             const cached = this.cache.get(cacheKey);
             if (cached) {
-              console.log(`📦 Usando cache antigo para ${cacheKey}`);
+              console.log(`📦 Usando cache fallback para ${cacheKey}`);
               return { data: cached.data };
             }
           }
@@ -101,23 +116,24 @@ class TMDBService {
   }
 
   /**
-   * Transform movie data to include full image URLs
+   * Transform movie data to include full image URLs and media_type
    */
-  private transformMovie(movie: Movie): Movie {
+  private transformMovie(movie: Movie, mediaType: string = 'movie'): Movie {
     return {
       ...movie,
+      media_type: mediaType,
       poster_path: this.getImageUrl(movie.poster_path),
       backdrop_path: this.getImageUrl(movie.backdrop_path, 'w1280'),
     };
   }
 
   /**
-   * Transform movie response to include full image URLs
+   * Transform movie response to include full image URLs and media_type
    */
-  private transformResponse(response: TMDBResponse<Movie>): TMDBResponse<Movie> {
+  private transformResponse(response: TMDBResponse<Movie>, mediaType: string = 'movie'): TMDBResponse<Movie> {
     return {
       ...response,
-      results: response.results.map(movie => this.transformMovie(movie)),
+      results: response.results.map(movie => this.transformMovie(movie, mediaType)),
     };
   }
 
@@ -129,9 +145,17 @@ class TMDBService {
   }
 
   /**
-   * Delay para respeitar rate limit
+   * Delay para respeitar rate limit + concurrency control
    */
   private async waitForRateLimit(): Promise<void> {
+    // Wait if too many concurrent requests
+    while (this.activeRequests >= this.MAX_CONCURRENT) {
+      await new Promise<void>(resolve => {
+        this.requestQueue.push(resolve);
+      });
+    }
+    this.activeRequests++;
+
     const now = Date.now();
     const timeSinceLastRequest = now - this.lastRequestTime;
     
@@ -144,7 +168,18 @@ class TMDBService {
   }
 
   /**
-   * Get data from cache or fetch from API
+   * Release a request slot and process queue
+   */
+  private releaseRequest(): void {
+    this.activeRequests--;
+    if (this.requestQueue.length > 0) {
+      const next = this.requestQueue.shift();
+      if (next) next();
+    }
+  }
+
+  /**
+   * Get data from cache or fetch from API (with concurrency control)
    */
   private async getCached<T>(cacheKey: string, fetcher: () => Promise<T>): Promise<T> {
     const cached = this.cache.get(cacheKey);
@@ -155,11 +190,14 @@ class TMDBService {
     }
     
     console.log(`🌐 Fetching: ${cacheKey}`);
-    await this.waitForRateLimit(); // Aguardar rate limit antes de fazer requisição
-    const data = await fetcher();
-    this.cache.set(cacheKey, { data, timestamp: Date.now() });
-    
-    return data;
+    await this.waitForRateLimit();
+    try {
+      const data = await fetcher();
+      this.cache.set(cacheKey, { data, timestamp: Date.now() });
+      return data;
+    } finally {
+      this.releaseRequest();
+    }
   }
 
   /**
@@ -246,32 +284,107 @@ class TMDBService {
   }
 
   /**
-   * Get movies by genre
+   * Get movies by genre (cached)
    */
   async getByGenre(genreId: number, page: number = 1): Promise<TMDBResponse<Movie>> {
     await this.ensureInitialized();
-    const response = await this.api.get<TMDBResponse<Movie>>('/discover/movie', {
-      params: {
-        with_genres: genreId,
-        page,
-        sort_by: 'popularity.desc',
-      },
+    return this.getCached(`genre_${genreId}_${page}`, async () => {
+      const response = await this.api.get<TMDBResponse<Movie>>('/discover/movie', {
+        params: {
+          with_genres: genreId,
+          page,
+          sort_by: 'popularity.desc',
+        },
+      });
+      return this.transformResponse(response.data, 'movie');
     });
-    return this.transformResponse(response.data);
   }
 
   /**
-   * Search movies by query
+   * Search movies by query (cached)
    */
   async searchMovies(query: string, page: number = 1): Promise<TMDBResponse<Movie>> {
     await this.ensureInitialized();
-    const response = await this.api.get<TMDBResponse<Movie>>('/search/movie', {
-      params: {
-        query,
-        page,
-      },
+    return this.getCached(`search_movies_${query}_${page}`, async () => {
+      const response = await this.api.get<TMDBResponse<Movie>>('/search/movie', {
+        params: { query, page },
+      });
+      return this.transformResponse(response.data, 'movie');
     });
-    return this.transformResponse(response.data);
+  }
+
+  /**
+   * Multi-search: movies + TV series in a single call
+   */
+  async searchMulti(query: string, page: number = 1): Promise<any> {
+    await this.ensureInitialized();
+    return this.getCached(`search_multi_${query}_${page}`, async () => {
+      const response = await this.api.get('/search/multi', {
+        params: { query, page },
+      });
+      const data = response.data;
+      // Filter only movies and tv, exclude people
+      const filtered = (data.results || []).filter(
+        (item: any) => item.media_type === 'movie' || item.media_type === 'tv'
+      );
+      // Normalize fields
+      const normalized = filtered.map((item: any) => ({
+        id: item.id,
+        media_type: item.media_type,
+        title: item.title || item.name || 'Sem título',
+        original_title: item.original_title || item.original_name,
+        overview: item.overview || '',
+        poster_path: this.getImageUrl(item.poster_path),
+        backdrop_path: this.getImageUrl(item.backdrop_path, 'w1280'),
+        release_date: item.release_date || item.first_air_date || '',
+        vote_average: item.vote_average || 0,
+        vote_count: item.vote_count || 0,
+        genre_ids: item.genre_ids || [],
+        popularity: item.popularity || 0,
+        adult: item.adult || false,
+        original_language: item.original_language || '',
+      }));
+      return {
+        results: normalized,
+        total_results: data.total_results,
+        total_pages: data.total_pages,
+        page: data.page,
+      };
+    });
+  }
+
+  /**
+   * Discover content (movies or TV) with advanced filters
+   */
+  async discoverContent(params: {
+    type?: string;
+    page?: number;
+    sort_by?: string;
+    with_genres?: string;
+    primary_release_year?: number;
+    first_air_date_year?: number;
+    'vote_average.gte'?: number;
+    with_original_language?: string;
+  }): Promise<any> {
+    await this.ensureInitialized();
+    const { type = 'movie', ...rest } = params;
+    const endpoint = type === 'tv' ? '/discover/tv' : '/discover/movie';
+    const cacheKey = `discover_${type}_${JSON.stringify(rest)}`;
+    return this.getCached(cacheKey, async () => {
+      const response = await this.api.get(endpoint, {
+        params: { 'vote_count.gte': 50, ...rest },
+      });
+      const data = response.data;
+      const results = (data.results || []).map((item: any) => ({
+        ...item,
+        media_type: type,
+        title: item.title || item.name || 'Sem título',
+        release_date: item.release_date || item.first_air_date || '',
+        poster_path: this.getImageUrl(item.poster_path),
+        backdrop_path: this.getImageUrl(item.backdrop_path, 'w1280'),
+      }));
+      return { results, total_pages: data.total_pages || 1, page: data.page || 1 };
+    });
   }
 
   /**
@@ -313,37 +426,44 @@ class TMDBService {
   }
 
   /**
-   * Get recommended movies based on a movie
+   * Get recommended movies based on a movie (cached)
    */
   async getRecommendations(movieId: number, page: number = 1): Promise<TMDBResponse<Movie>> {
     await this.ensureInitialized();
-    const response = await this.api.get<TMDBResponse<Movie>>(`/movie/${movieId}/recommendations`, {
-      params: { page },
+    return this.getCached(`recommendations_${movieId}_${page}`, async () => {
+      const response = await this.api.get<TMDBResponse<Movie>>(`/movie/${movieId}/recommendations`, {
+        params: { page },
+      });
+      return this.transformResponse(response.data, 'movie');
     });
-    return this.transformResponse(response.data);
   }
 
   /**
-   * Get similar movies
+   * Get similar movies (cached)
    */
   async getSimilarMovies(movieId: number, page: number = 1): Promise<TMDBResponse<Movie>> {
     await this.ensureInitialized();
-    const response = await this.api.get<TMDBResponse<Movie>>(`/movie/${movieId}/similar`, {
-      params: { page },
+    return this.getCached(`similar_${movieId}_${page}`, async () => {
+      const response = await this.api.get<TMDBResponse<Movie>>(`/movie/${movieId}/similar`, {
+        params: { page },
+      });
+      return this.transformResponse(response.data, 'movie');
     });
-    return this.transformResponse(response.data);
   }
 
   // ========== SERIES METHODS ==========
 
   /**
-   * Transform series response to include full image URLs
+   * Transform series response to include full image URLs and media_type: 'tv'
    */
   private transformSeriesResponse(response: any): any {
     return {
       ...response,
       results: response.results.map((serie: any) => ({
         ...serie,
+        media_type: 'tv',
+        title: serie.title || serie.name || 'Sem título',
+        release_date: serie.release_date || serie.first_air_date || '',
         poster_path: this.getImageUrl(serie.poster_path),
         backdrop_path: this.getImageUrl(serie.backdrop_path, 'w1280'),
       })),
@@ -395,34 +515,39 @@ class TMDBService {
   }
 
   /**
-   * Get series details
+   * Get series details (cached)
    */
   async getSeriesDetails(seriesId: number): Promise<any> {
     await this.ensureInitialized();
-    const response = await this.api.get(`/tv/${seriesId}`);
-    const serie = response.data;
-    return {
-      ...serie,
-      poster_path: this.getImageUrl(serie.poster_path),
-      backdrop_path: this.getImageUrl(serie.backdrop_path, 'w1280'),
-    };
+    return this.getCached(`series_details_${seriesId}`, async () => {
+      const response = await this.api.get(`/tv/${seriesId}`);
+      const serie = response.data;
+      return {
+        ...serie,
+        media_type: 'tv',
+        poster_path: this.getImageUrl(serie.poster_path),
+        backdrop_path: this.getImageUrl(serie.backdrop_path, 'w1280'),
+      };
+    });
   }
 
   /**
-   * Get season details with episodes
+   * Get season details with episodes (cached)
    */
   async getSeasonDetails(seriesId: number, seasonNumber: number): Promise<any> {
     await this.ensureInitialized();
-    const response = await this.api.get(`/tv/${seriesId}/season/${seasonNumber}`);
-    const season = response.data;
-    return {
-      ...season,
-      poster_path: this.getImageUrl(season.poster_path),
-      episodes: season.episodes?.map((ep: any) => ({
-        ...ep,
-        still_path: this.getImageUrl(ep.still_path, 'w300'),
-      })) || [],
-    };
+    return this.getCached(`season_${seriesId}_${seasonNumber}`, async () => {
+      const response = await this.api.get(`/tv/${seriesId}/season/${seasonNumber}`);
+      const season = response.data;
+      return {
+        ...season,
+        poster_path: this.getImageUrl(season.poster_path),
+        episodes: season.episodes?.map((ep: any) => ({
+          ...ep,
+          still_path: this.getImageUrl(ep.still_path, 'w300'),
+        })) || [],
+      };
+    });
   }
 
   /**
@@ -437,18 +562,42 @@ class TMDBService {
   }
 
   /**
-   * Discover series by genre
+   * Discover series by genre (cached)
    */
   async discoverSeriesByGenre(genreId: number, page: number = 1, sortBy: string = 'popularity.desc'): Promise<any> {
     await this.ensureInitialized();
-    const response = await this.api.get('/discover/tv', {
-      params: {
-        with_genres: genreId,
-        page,
-        sort_by: sortBy,
-      },
+    return this.getCached(`discover_series_${genreId}_${page}_${sortBy}`, async () => {
+      const response = await this.api.get('/discover/tv', {
+        params: {
+          with_genres: genreId,
+          page,
+          sort_by: sortBy,
+        },
+      });
+      return this.transformSeriesResponse(response.data);
     });
-    return this.transformSeriesResponse(response.data);
+  }
+
+  /**
+   * Get movie videos (trailers, teasers, etc.) from TMDB
+   */
+  async getMovieVideos(movieId: number): Promise<any> {
+    await this.ensureInitialized();
+    return this.getCached(`movie_videos_${movieId}`, async () => {
+      const response = await this.api.get(`/movie/${movieId}/videos`);
+      return response.data;
+    });
+  }
+
+  /**
+   * Get series videos (trailers, teasers, etc.) from TMDB
+   */
+  async getSeriesVideos(seriesId: number): Promise<any> {
+    await this.ensureInitialized();
+    return this.getCached(`series_videos_${seriesId}`, async () => {
+      const response = await this.api.get(`/tv/${seriesId}/videos`);
+      return response.data;
+    });
   }
 }
 

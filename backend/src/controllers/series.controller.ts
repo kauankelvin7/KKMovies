@@ -52,7 +52,7 @@ class SeriesController {
    */
   async search(req: Request, res: Response): Promise<void> {
     try {
-      const query = req.query.query as string;
+      const query = (req.query.query || req.query.q) as string;
       const page = parseInt(req.query.page as string) || 1;
 
       if (!query) {
@@ -141,6 +141,26 @@ class SeriesController {
     } catch (error) {
       console.error('Error discovering series by genre:', error);
       res.status(500).json({ error: 'Failed to discover series by genre' });
+    }
+  }
+
+  /**
+   * Get series videos (trailers, teasers)
+   */
+  async getVideos(req: Request, res: Response): Promise<void> {
+    try {
+      const seriesId = parseInt(req.params.id);
+
+      if (!seriesId) {
+        res.status(400).json({ error: 'Series ID is required' });
+        return;
+      }
+
+      const data = await tmdbService.getSeriesVideos(seriesId);
+      res.json(data);
+    } catch (error) {
+      console.error('Error fetching series videos:', error);
+      res.status(500).json({ error: 'Failed to fetch series videos' });
     }
   }
 }

@@ -1,0 +1,49 @@
+{
+  "name": "KauanFlix",
+  "short_name": "KauanFlix",
+  "description": "Seu cinema, do seu jeito. Assista filmes e séries online.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0A0A10",
+  "theme_color": "#7B2FFF",
+  "orientation": "portrait-primary",
+  "lang": "pt-BR",
+  "categories": ["entertainment", "video"],
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Buscar",
+      "short_name": "Buscar",
+      "url": "/buscar"
+    },
+    {
+      "name": "Filmes",
+      "short_name": "Filmes",
+      "url": "/filmes"
+    },
+    {
+      "name": "Séries",
+      "short_name": "Séries",
+      "url": "/series"
+    }
+  ]
+}

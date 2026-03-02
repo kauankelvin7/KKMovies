@@ -1,194 +1,93 @@
-import { useEffect, useState } from 'react';
-import { Clock, TrendingUp, Award, Calendar, Film } from 'lucide-react';
-import movieService from '@/services/movieService';
-import LoadingSpinner from '@/components/LoadingSpinner';
-import ErrorMessage from '@/components/ErrorMessage';
-import PlayerModal from '@/components/PlayerModal';
-import ContentCarousel from '@/components/ContentCarousel';
-import MediaCard from '@/components/MediaCard';
-import { watchHistoryService } from '@/services/watchHistoryService';
-import { Movie } from '@/types/movie';
-import { useTheme } from '@/App';
+/* KauanFlix — Films Catalog Page (grid view of popular movies) */
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { Film } from 'lucide-react';
+import MovieCard from '../components/MovieCard';
+import { SkeletonRow } from '../components/ui/Skeleton';
+import { ErrorMessage } from '../components/ui/ErrorBoundary';
+import * as movieService from '../services/movieService';
+import type { Movie } from '../types/movie';
 
-const SUPERFLIX_BASE = 'https://superflixapi.bond';
-
-const FilmesPage = () => {
-  const { isDarkMode } = useTheme();
-  const [popularMovies, setPopularMovies] = useState<Movie[]>([]);
-  const [topRated, setTopRated] = useState<Movie[]>([]);
-  const [nowPlaying, setNowPlaying] = useState<Movie[]>([]);
-  const [upcoming, setUpcoming] = useState<Movie[]>([]);
+const FilmesPage: React.FC = () => {
+  const [movies, setMovies] = useState<Movie[]>([]);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  
-  const [playerOpen, setPlayerOpen] = useState(false);
-  const [currentMovie, setCurrentMovie] = useState<Movie | null>(null);
-  const [streamUrl, setStreamUrl] = useState<string>('');
+  const observerRef = useRef<HTMLDivElement>(null);
+  const loadingRef = useRef(false);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        const [popularRes, topRatedRes, nowPlayingRes, upcomingRes] = await Promise.all([
-          movieService.getPopular(),
-          movieService.getTopRated(),
-          movieService.getLatestReleases(),
-          movieService.getUpcoming(),
-        ]);
-        setPopularMovies(popularRes.results.slice(0, 20));
-        setTopRated(topRatedRes.results.slice(0, 20));
-        setNowPlaying(nowPlayingRes.results.slice(0, 20));
-        setUpcoming(upcomingRes.results.slice(0, 20));
-      } catch (err) {
-        setError('Falha ao carregar filmes.');
-        console.error('Error:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchData();
+  const fetchMovies = useCallback(async (pageNum: number) => {
+    if (loadingRef.current) return;
+    loadingRef.current = true;
+    if (pageNum === 1) setLoading(true);
+    else setLoadingMore(true);
+
+    try {
+      const res = await movieService.getPopular(pageNum);
+      const results = Array.isArray(res) ? res : res.results || [];
+      setMovies((prev) => pageNum === 1 ? results : [...prev, ...results]);
+      setTotalPages(res.total_pages || 1);
+      setPage(pageNum);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+      setLoadingMore(false);
+      loadingRef.current = false;
+    }
   }, []);
 
-  const openPlayer = (movie: Movie) => {
-    setCurrentMovie(movie);
-    setStreamUrl(`${SUPERFLIX_BASE}/filme/${movie.id}`);
-    setPlayerOpen(true);
-    
-    watchHistoryService.addToHistory({
-      id: movie.id,
-      type: 'movie',
-      title: movie.title,
-      poster_path: movie.poster_path,
-      backdrop_path: movie.backdrop_path,
-      vote_average: movie.vote_average,
-      genre_ids: movie.genre_ids || [],
-      progress: 5,
-    });
-  };
+  useEffect(() => {
+    fetchMovies(1);
+    document.title = 'Filmes — KauanFlix';
+    return () => { document.title = 'KauanFlix — Seu cinema, do seu jeito'; };
+  }, [fetchMovies]);
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-[var(--bg-primary)] flex items-center justify-center pt-20">
-        <LoadingSpinner />
-      </div>
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && !loadingRef.current && page < totalPages) {
+          fetchMovies(page + 1);
+        }
+      },
+      { threshold: 0.5 }
     );
+    const el = observerRef.current;
+    if (el) observer.observe(el);
+    return () => { if (el) observer.unobserve(el); };
+  }, [page, totalPages, fetchMovies]);
+
+  if (error && movies.length === 0) {
+    return <ErrorMessage message={error} onRetry={() => fetchMovies(1)} />;
   }
 
   return (
-    <div className="min-h-screen bg-[var(--bg-primary)] pb-12 pt-20" data-app-element>
-      {/* Header da página */}
-      <div className="pt-10 pb-8 px-4 md:px-12">
-        <div className="flex items-center gap-4">
-          <div className="w-14 h-14 bg-gradient-to-br from-primary-500/30 to-primary-600/10 rounded-2xl flex items-center justify-center shadow-lg shadow-primary-500/20">
-            <Film size={28} className="text-primary-400" />
-          </div>
-          <div>
-            <h1 className={`text-3xl md:text-4xl font-extrabold tracking-tight ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-              Filmes
-            </h1>
-            <p className={`mt-1 ${isDarkMode ? 'text-gray-500' : 'text-gray-600'}`}>Explore nossa coleção completa</p>
-          </div>
+    <main className="min-h-screen pt-24 section-container">
+      <h1 className="section-title flex items-center gap-2">
+        <Film className="w-6 h-6 text-kf-accent" />
+        Filmes
+      </h1>
+
+      {loading ? (
+        <SkeletonRow count={12} />
+      ) : (
+        <div className="grid grid-cols-2 xs:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+          {movies.map((movie) => (
+            <MovieCard key={movie.id} movie={movie} />
+          ))}
         </div>
+      )}
+
+      <div ref={observerRef} className="h-20 flex items-center justify-center">
+        {loadingMore && (
+          <div className="flex items-center gap-2 text-kf-text-muted text-sm">
+            <div className="w-5 h-5 border-2 border-kf-accent border-t-transparent rounded-full animate-spin" />
+            Carregando mais...
+          </div>
+        )}
       </div>
-
-      {error && <div className="px-4 md:px-12 py-4"><ErrorMessage message={error} /></div>}
-      
-      <div className="py-8 space-y-8">
-        <ContentCarousel 
-          title="Em Cartaz" 
-          subtitle="Nos cinemas agora"
-          icon={<Clock size={22} className="text-primary-400" />}
-        >
-          {nowPlaying.map((movie) => (
-            <MediaCard
-              key={`now-${movie.id}`}
-              id={movie.id}
-              title={movie.title}
-              poster_path={movie.poster_path}
-              backdrop_path={movie.backdrop_path}
-              vote_average={movie.vote_average}
-              release_date={movie.release_date}
-              genre_ids={movie.genre_ids}
-              media_type="movie"
-              onPlay={() => openPlayer(movie)}
-            />
-          ))}
-        </ContentCarousel>
-
-        <ContentCarousel 
-          title="Populares" 
-          subtitle="Os mais assistidos"
-          icon={<TrendingUp size={22} className="text-orange-400" />}
-        >
-          {popularMovies.map((movie) => (
-            <MediaCard
-              key={`pop-${movie.id}`}
-              id={movie.id}
-              title={movie.title}
-              poster_path={movie.poster_path}
-              backdrop_path={movie.backdrop_path}
-              vote_average={movie.vote_average}
-              release_date={movie.release_date}
-              genre_ids={movie.genre_ids}
-              media_type="movie"
-              onPlay={() => openPlayer(movie)}
-            />
-          ))}
-        </ContentCarousel>
-
-        <ContentCarousel 
-          title="Mais Bem Avaliados" 
-          subtitle="Nota acima de 8"
-          icon={<Award size={22} className="text-amber-400" />}
-        >
-          {topRated.map((movie) => (
-            <MediaCard
-              key={`top-${movie.id}`}
-              id={movie.id}
-              title={movie.title}
-              poster_path={movie.poster_path}
-              backdrop_path={movie.backdrop_path}
-              vote_average={movie.vote_average}
-              release_date={movie.release_date}
-              genre_ids={movie.genre_ids}
-              media_type="movie"
-              onPlay={() => openPlayer(movie)}
-            />
-          ))}
-        </ContentCarousel>
-
-        <ContentCarousel 
-          title="Em Breve" 
-          subtitle="Próximos lançamentos"
-          icon={<Calendar size={22} className="text-rose-400" />}
-        >
-          {upcoming.map((movie) => (
-            <MediaCard
-              key={`up-${movie.id}`}
-              id={movie.id}
-              title={movie.title}
-              poster_path={movie.poster_path}
-              backdrop_path={movie.backdrop_path}
-              vote_average={movie.vote_average}
-              release_date={movie.release_date}
-              genre_ids={movie.genre_ids}
-              media_type="movie"
-              onPlay={() => openPlayer(movie)}
-            />
-          ))}
-        </ContentCarousel>
-      </div>
-
-      <PlayerModal
-        isOpen={playerOpen}
-        onClose={() => {
-          setPlayerOpen(false);
-          setStreamUrl('');
-        }}
-        streamUrl={streamUrl}
-        title={currentMovie?.title || ''}
-      />
-    </div>
+    </main>
   );
 };
 

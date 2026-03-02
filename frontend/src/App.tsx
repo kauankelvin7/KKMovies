@@ -1,75 +1,89 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { useEffect, useState, createContext, useContext } from 'react';
-import Header from '@/components/Header';
-import Footer from '@/components/Footer';
-import HomePage from '@/pages/HomePage';
-import SearchPageSimple from '@/pages/SearchPageSimple';
-import FilmesPage from '@/pages/FilmesPage';
-import SeriesPage from '@/pages/SeriesPage';
-import { popupBlocker } from '@/services/popupBlockerService';
+import { useEffect, lazy, Suspense } from 'react';
+import { Header } from './components/layout/Header';
+import { Footer } from './components/layout/Footer';
+import { BottomNav } from './components/layout/BottomNav';
+import { PlayerModal } from './components/player/PlayerModal';
+import { ToastContainer } from './components/ui/Toast';
+import { ErrorBoundary } from './components/ui/ErrorBoundary';
+import { ApiStatusBar } from './components/ApiStatusBar';
+import { InstallBanner } from './components/ui/InstallBanner';
+import { UpdateToast } from './components/ui/UpdateToast';
+import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
+import * as movieService from './services/movieService';
+import { useAppStore } from './store/useAppStore';
 
-// Theme Context (sem localStorage - reseta ao recarregar)
-interface ThemeContextType {
-  isDarkMode: boolean;
-  toggleTheme: () => void;
+/* Lazy-loaded pages */
+const HomePage = lazy(() => import('./pages/HomePage'));
+const MovieDetailsPage = lazy(() => import('./pages/MovieDetailsPage'));
+const SearchPage = lazy(() => import('./pages/SearchPage'));
+const CatalogPage = lazy(() => import('./pages/CatalogPage'));
+const FilmesPage = lazy(() => import('./pages/FilmesPage'));
+const SeriesPage = lazy(() => import('./pages/SeriesPage'));
+const MyListPage = lazy(() => import('./pages/MyListPage'));
+const Top10Page = lazy(() => import('./pages/Top10Page'));
+const SeriesDetailPage = lazy(() => import('./pages/SeriesDetailPage'));
+
+/* Loading fallback */
+function PageLoader() {
+  return (
+    <div className="min-h-screen flex items-center justify-center">
+      <div className="w-10 h-10 border-3 border-kf-accent border-t-transparent rounded-full animate-spin" />
+    </div>
+  );
 }
 
-export const ThemeContext = createContext<ThemeContextType>({
-  isDarkMode: true,
-  toggleTheme: () => {},
-});
-
-export const useTheme = () => useContext(ThemeContext);
-
-/**
- * Main application component with routing
- */
 function App() {
-  const [isDarkMode, setIsDarkMode] = useState(true);
+  const setGenres = useAppStore((s) => s.setGenres);
 
-  const toggleTheme = () => {
-    setIsDarkMode(prev => !prev);
-  };
-
-  // Initialize popup blocker globally
+  /* Load genres once on mount */
   useEffect(() => {
-    popupBlocker.enable();
-    console.log('[KKMovies] App initialized with popup protection');
-    
-    return () => {
-      // Keep popup blocker active
-    };
-  }, []);
-
-  // Apply theme class to document
-  useEffect(() => {
-    if (isDarkMode) {
-      document.documentElement.classList.remove('light-mode');
-      document.documentElement.classList.add('dark-mode');
-    } else {
-      document.documentElement.classList.remove('dark-mode');
-      document.documentElement.classList.add('light-mode');
-    }
-  }, [isDarkMode]);
+    movieService.getGenres().then(setGenres).catch(() => {});
+  }, [setGenres]);
 
   return (
-    <ThemeContext.Provider value={{ isDarkMode, toggleTheme }}>
+    <ErrorBoundary>
       <Router>
-        <div className={`flex flex-col min-h-screen transition-colors duration-500 ${isDarkMode ? 'bg-[#0a0a0a]' : 'bg-gray-100'}`} data-app-element>
-          <Header />
-          <main className="flex-grow pt-20 md:pt-24" data-app-content>
-            <Routes>
-              <Route path="/" element={<HomePage />} />
-              <Route path="/filmes" element={<FilmesPage />} />
-              <Route path="/series" element={<SeriesPage />} />
-              <Route path="/search" element={<SearchPageSimple />} />
-              <Route path="*" element={<HomePage />} />
-            </Routes>
-          </main>
-          <Footer />
-        </div>
+        <AppShell />
       </Router>
-    </ThemeContext.Provider>
+    </ErrorBoundary>
+  );
+}
+
+function AppShell() {
+  useKeyboardShortcuts();
+
+  return (
+    <>
+      <div className="flex flex-col min-h-screen bg-kf-bg text-white">
+        <Header />
+
+        <Suspense fallback={<PageLoader />}>
+          <Routes>
+            <Route path="/" element={<HomePage />} />
+            <Route path="/filme/:id" element={<MovieDetailsPage />} />
+            <Route path="/filmes" element={<FilmesPage />} />
+            <Route path="/series" element={<SeriesPage />} />
+            <Route path="/serie/:id" element={<SeriesDetailPage />} />
+            <Route path="/buscar" element={<SearchPage />} />
+            <Route path="/explorar" element={<CatalogPage />} />
+            <Route path="/minha-lista" element={<MyListPage />} />
+            <Route path="/top10" element={<Top10Page />} />
+            <Route path="*" element={<HomePage />} />
+          </Routes>
+        </Suspense>
+
+        <Footer />
+        <BottomNav />
+      </div>
+
+      {/* Global overlays - rendered outside main layout */}
+      <PlayerModal />
+      <ToastContainer />
+      <ApiStatusBar />
+      <InstallBanner />
+      <UpdateToast />
+    </>
   );
 }
 

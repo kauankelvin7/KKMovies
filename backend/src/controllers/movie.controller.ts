@@ -101,7 +101,7 @@ class MovieController {
    */
   async search(req: Request, res: Response): Promise<void> {
     try {
-      const query = req.query.query as string;
+      const query = (req.query.query || req.query.q) as string;
       const page = parseInt(req.query.page as string) || 1;
 
       if (!query) {
@@ -114,6 +114,50 @@ class MovieController {
     } catch (error) {
       console.error('Error searching movies:', error);
       res.status(500).json({ error: 'Failed to search movies' });
+    }
+  }
+
+  /**
+   * Multi-search (movies + series)
+   */
+  async searchMulti(req: Request, res: Response): Promise<void> {
+    try {
+      const query = (req.query.query || req.query.q) as string;
+      const page = parseInt(req.query.page as string) || 1;
+
+      if (!query) {
+        res.status(400).json({ error: 'Search query is required' });
+        return;
+      }
+
+      const data = await tmdbService.searchMulti(query, page);
+      res.json(data);
+    } catch (error) {
+      console.error('Error in multi-search:', error);
+      res.status(500).json({ error: 'Failed to search' });
+    }
+  }
+
+  /**
+   * Discover movies/series with filters
+   */
+  async discover(req: Request, res: Response): Promise<void> {
+    try {
+      const params: any = {};
+      if (req.query.type) params.type = req.query.type;
+      if (req.query.page) params.page = parseInt(req.query.page as string) || 1;
+      if (req.query.sort_by) params.sort_by = req.query.sort_by;
+      if (req.query.with_genres) params.with_genres = req.query.with_genres;
+      if (req.query.primary_release_year) params.primary_release_year = parseInt(req.query.primary_release_year as string);
+      if (req.query.first_air_date_year) params.first_air_date_year = parseInt(req.query.first_air_date_year as string);
+      if (req.query['vote_average.gte']) params['vote_average.gte'] = parseFloat(req.query['vote_average.gte'] as string);
+      if (req.query.with_original_language) params.with_original_language = req.query.with_original_language;
+
+      const data = await tmdbService.discoverContent(params);
+      res.json(data);
+    } catch (error) {
+      console.error('Error in discover:', error);
+      res.status(500).json({ error: 'Failed to discover content' });
     }
   }
 
@@ -189,6 +233,26 @@ class MovieController {
     } catch (error) {
       console.error('Error fetching similar movies:', error);
       res.status(500).json({ error: 'Failed to fetch similar movies' });
+    }
+  }
+
+  /**
+   * Get movie videos (trailers, teasers)
+   */
+  async getVideos(req: Request, res: Response): Promise<void> {
+    try {
+      const movieId = parseInt(req.params.id);
+
+      if (!movieId) {
+        res.status(400).json({ error: 'Movie ID is required' });
+        return;
+      }
+
+      const data = await tmdbService.getMovieVideos(movieId);
+      res.json(data);
+    } catch (error) {
+      console.error('Error fetching movie videos:', error);
+      res.status(500).json({ error: 'Failed to fetch movie videos' });
     }
   }
 }

@@ -14,6 +14,7 @@ export interface Movie {
   adult: boolean;
   original_language: string;
   video: boolean;
+  media_type?: string;
 }
 
 // Genre interface

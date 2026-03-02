@@ -10,6 +10,7 @@ router.get('/top-rated', seriesController.getTopRated.bind(seriesController));
 router.get('/genres', seriesController.getGenres.bind(seriesController));
 router.get('/discover', seriesController.discoverByGenre.bind(seriesController));
 router.get('/search', seriesController.search.bind(seriesController));
+router.get('/:id/videos', seriesController.getVideos.bind(seriesController));
 router.get('/:id', seriesController.getDetails.bind(seriesController));
 router.get('/:id/season/:seasonNumber', seriesController.getSeason.bind(seriesController));
 
