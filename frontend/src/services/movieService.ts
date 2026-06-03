@@ -149,10 +149,11 @@ export async function getUpcoming(page = 1): Promise<TMDBResponse<Movie>> {
 
 export async function getMoviesByGenre(genreId: number, page = 1): Promise<TMDBResponse<Movie>> {
   return fetchCached(`genre-${genreId}-${page}`, async () => {
-    const { data } = await api.get(`/api/movies/genre/${genreId}`, { params: { page } });
+    const { data } = await api.get('/api/movies/genre', { params: { genreId, page } });
     return data.results ? data : { page: 1, results: data, total_pages: 1, total_results: data.length };
   });
 }
+
 
 export async function searchMovies(query: string, page = 1): Promise<TMDBResponse<Movie>> {
   const key = `search-${query}-${page}`;
