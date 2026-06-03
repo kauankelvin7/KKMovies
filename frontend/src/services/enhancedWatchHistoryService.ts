@@ -24,8 +24,8 @@ const DEBOUNCE_DELAY = 1000; // Aguarda 1s antes de salvar
 class EnhancedWatchHistoryService {
   private history: Map<number, WatchProgress> = new Map();
   private deviceId: string;
-  private syncTimer: number | null = null;
-  private saveTimer: number | null = null;
+  private syncTimer: ReturnType<typeof setInterval> | null = null;
+  private saveTimer: ReturnType<typeof setTimeout> | null = null;
   private listeners: Set<(progress: WatchProgress) => void> = new Set();
 
   constructor() {

@@ -6,7 +6,7 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 export const usePlayerOptimization = () => {
   const [isPlayerReady, setIsPlayerReady] = useState(false);
   const [hasPreloaded, setHasPreloaded] = useState(false);
-  const preloadTimeoutRef = useRef<number>();
+  const preloadTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
 
   /**
    * Preload do player com delay para evitar sobrecarga

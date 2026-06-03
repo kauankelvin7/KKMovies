@@ -25,7 +25,7 @@ const OptimizedCarousel = memo(({
   className = '',
 }: OptimizedCarouselProps) => {
   const sliderRef = useRef<HTMLDivElement>(null);
-  const scrollTimeoutRef = useRef<number>();
+  const scrollTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
 
   /**
    * Scroll suave otimizado
