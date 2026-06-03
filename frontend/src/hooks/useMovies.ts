@@ -3,9 +3,8 @@
    Uses sequential batch loading to avoid 429 rate limiting. */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import type { Movie, WatchProgress } from '../types/movie';
+import type { Movie } from '../types/movie';
 import * as movieService from '../services/movieService';
-import { watchHistoryService } from '../services/watchHistoryService';
 import { useAppStore } from '../store/useAppStore';
 
 interface HomeData {
@@ -18,8 +17,6 @@ interface HomeData {
   comedyMovies: Movie[];
   dramaMovies: Movie[];
   horrorMovies: Movie[];
-  inProgress: WatchProgress[];
-  completed: WatchProgress[];
   loading: boolean;
   error: string | null;
 }
@@ -34,7 +31,6 @@ export function useHomeMovies() {
   const [data, setData] = useState<HomeData>({
     trending: [], popular: [], topRated: [], upcoming: [], nowPlaying: [],
     actionMovies: [], comedyMovies: [], dramaMovies: [], horrorMovies: [],
-    inProgress: [], completed: [],
     loading: true, error: null,
   });
   const setGenres = useAppStore((s) => s.setGenres);
@@ -50,12 +46,6 @@ export function useHomeMovies() {
         : [];
 
     try {
-      // Load local data immediately (no API call)
-      setData((d) => ({
-        ...d,
-        inProgress: watchHistoryService.getInProgress(),
-        completed: watchHistoryService.getCompleted(),
-      }));
 
       // Batch 1: Essential above-the-fold content (2 requests)
       const [trendingRes, genresRes] = await Promise.allSettled([

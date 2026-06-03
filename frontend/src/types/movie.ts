@@ -7,6 +7,7 @@ export interface Movie {
   overview: string;
   poster_path: string | null;
   backdrop_path: string | null;
+  logo_path?: string | null;       // TMDB logo image for hero banner
   release_date: string;
   vote_average: number;
   vote_count: number;
@@ -27,6 +28,11 @@ export interface Movie {
   production_companies?: ProductionCompany[];
   spoken_languages?: SpokenLanguage[];
   belongs_to_collection?: Collection | null;
+  // Series / TV fields when media_type = 'tv'
+  name?: string;
+  first_air_date?: string;
+  number_of_seasons?: number;
+  number_of_episodes?: number;
 }
 
 export interface Genre {

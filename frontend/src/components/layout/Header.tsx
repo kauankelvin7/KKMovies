@@ -1,16 +1,20 @@
-/* KauanFlix — Header / NavBar */
+/* KauanFlix — Header v4 (HBO Max style)
+   - Logo: Inter 300, letter-spacing, accent blue
+   - Nav links: underline indicator on active (not bg highlight)
+   - Search: inline expand in header
+   - No purple anywhere */
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Search, Menu, X, Film, Tv, Compass, Heart, Trophy } from 'lucide-react';
+import { Search, Menu, X } from 'lucide-react';
 import { useAppStore } from '../../store/useAppStore';
 
 const NAV_LINKS = [
-  { to: '/', label: 'Início', icon: null },
-  { to: '/filmes', label: 'Filmes', icon: Film },
-  { to: '/series', label: 'Séries', icon: Tv },
-  { to: '/explorar', label: 'Explorar', icon: Compass },
-  { to: '/top10', label: 'Top 10', icon: Trophy },
-  { to: '/minha-lista', label: 'Minha Lista', icon: Heart },
+  { to: '/', label: 'Início' },
+  { to: '/filmes', label: 'Filmes' },
+  { to: '/series', label: 'Séries' },
+  { to: '/explorar', label: 'Explorar' },
+  { to: '/minha-lista', label: 'Minha Lista' },
 ];
 
 export const Header: React.FC = () => {
@@ -23,7 +27,7 @@ export const Header: React.FC = () => {
   const searchRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 20);
+    const handleScroll = () => setScrolled(window.scrollY > 40);
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
@@ -46,22 +50,38 @@ export const Header: React.FC = () => {
 
   return (
     <header
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        scrolled
-          ? 'bg-[rgba(8,8,15,0.97)] backdrop-blur-xl border-b border-[rgba(255,255,255,0.05)]'
-          : 'bg-gradient-to-b from-[rgba(8,8,15,0.95)] to-transparent'
-      }`}
+      className="fixed top-0 left-0 right-0 z-50"
+      style={{
+        background: scrolled
+          ? 'rgba(5,5,8,0.97)'
+          : 'linear-gradient(to bottom, rgba(5,5,8,0.9) 0%, transparent 100%)',
+        backdropFilter: scrolled ? 'blur(20px)' : 'none',
+        WebkitBackdropFilter: scrolled ? 'blur(20px)' : 'none',
+        borderBottom: scrolled ? '1px solid rgba(255,255,255,0.04)' : 'none',
+        transition: 'background 300ms ease, backdrop-filter 300ms ease, border-color 300ms ease',
+      }}
     >
-      <div className="section-container flex items-center justify-between h-16 md:h-[72px]">
+      <div
+        className="flex items-center justify-between h-16 md:h-[70px]"
+        style={{ padding: '0 clamp(16px, 5vw, 80px)' }}
+      >
         {/* Logo */}
-        <Link to="/" className="flex items-center gap-2 flex-shrink-0 group" aria-label="KauanFlix Home">
-          <span className="text-2xl md:text-3xl font-bold font-display tracking-wide text-gradient kauanflix-logo">
+        <Link to="/" className="flex-shrink-0" aria-label="KauanFlix Home">
+          <span
+            className="kauanflix-logo"
+            style={{
+              fontSize: 22,
+              fontWeight: 300,
+              letterSpacing: '0.2em',
+              fontFamily: 'Inter, sans-serif',
+            }}
+          >
             KAUANFLIX
           </span>
         </Link>
 
         {/* Desktop Nav */}
-        <nav className="hidden md:flex items-center gap-1 ml-8" aria-label="Navegação principal">
+        <nav className="hidden md:flex items-center gap-6" aria-label="Navegação principal">
           {NAV_LINKS.map((link) => {
             const isActive = link.to === '/'
               ? location.pathname === '/'
@@ -70,11 +90,8 @@ export const Header: React.FC = () => {
               <Link
                 key={link.to}
                 to={link.to}
-                className={`nav-link px-3 py-2 text-sm font-medium rounded-md transition-all duration-200 ${
-                  isActive
-                    ? 'active text-white bg-[rgba(123,47,255,0.15)]'
-                    : 'text-kf-text-secondary hover:text-white hover:bg-[rgba(255,255,255,0.05)]'
-                }`}
+                className={`nav-link text-sm ${isActive ? 'active' : ''}`}
+                style={{ fontWeight: 400 }}
               >
                 {link.label}
               </Link>
@@ -87,21 +104,38 @@ export const Header: React.FC = () => {
           {/* Search */}
           <div className="relative">
             {searchOpen ? (
-              <form onSubmit={handleSearch} className="flex items-center">
-                <input
-                  ref={searchRef}
-                  type="text"
-                  value={searchInput}
-                  onChange={(e) => setSearchInput(e.target.value)}
-                  placeholder="Buscar filmes..."
-                  className="w-48 sm:w-64 h-9 pl-9 pr-3 text-sm bg-[rgba(255,255,255,0.08)] border border-[rgba(123,47,255,0.3)] rounded-full text-white placeholder-kf-text-muted focus:outline-none focus:border-kf-accent transition-all"
-                  aria-label="Buscar filmes e séries"
-                />
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-kf-text-muted" />
+              <form onSubmit={handleSearch} className="flex items-center gap-2">
+                <div className="relative">
+                  <Search
+                    className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4"
+                    style={{ color: 'rgba(255,255,255,0.4)' }}
+                  />
+                  <input
+                    ref={searchRef}
+                    type="text"
+                    value={searchInput}
+                    onChange={(e) => setSearchInput(e.target.value)}
+                    placeholder="Buscar..."
+                    style={{
+                      width: 220,
+                      height: 36,
+                      paddingLeft: 36,
+                      paddingRight: 12,
+                      fontSize: 14,
+                      background: 'var(--surface-2)',
+                      border: '1px solid rgba(255,255,255,0.1)',
+                      borderRadius: 'var(--radius-sm)',
+                      color: 'white',
+                      outline: 'none',
+                    }}
+                    aria-label="Buscar filmes e séries"
+                  />
+                </div>
                 <button
                   type="button"
                   onClick={() => { setSearchOpen(false); setSearchInput(''); }}
-                  className="ml-2 text-kf-text-muted hover:text-white"
+                  className="btn-icon"
+                  style={{ width: 32, height: 32, background: 'transparent' }}
                   aria-label="Fechar busca"
                 >
                   <X className="w-4 h-4" />
@@ -110,8 +144,9 @@ export const Header: React.FC = () => {
             ) : (
               <button
                 onClick={() => setSearchOpen(true)}
-                className="btn-icon w-9 h-9 bg-transparent hover:bg-[rgba(255,255,255,0.08)]"
-                aria-label="Abrir busca"
+                className="btn-icon"
+                style={{ width: 36, height: 36, background: 'transparent' }}
+                aria-label="Buscar"
               >
                 <Search className="w-5 h-5" />
               </button>
@@ -121,8 +156,9 @@ export const Header: React.FC = () => {
           {/* Mobile menu toggle */}
           <button
             onClick={toggleMobileMenu}
-            className="md:hidden btn-icon w-9 h-9 bg-transparent"
-            aria-label="Menu"
+            className="md:hidden btn-icon"
+            style={{ width: 36, height: 36, background: 'transparent' }}
+            aria-label={isMobileMenuOpen ? 'Fechar menu' : 'Menu'}
           >
             {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
@@ -132,20 +168,33 @@ export const Header: React.FC = () => {
       {/* Mobile Drawer */}
       {isMobileMenuOpen && (
         <>
-          <div className="fixed inset-0 bg-black/60 z-40 md:hidden" onClick={closeMobileMenu} />
+          <div
+            className="fixed inset-0 z-40 md:hidden"
+            style={{ background: 'rgba(5,5,8,0.7)' }}
+            onClick={closeMobileMenu}
+          />
           <nav
-            className="fixed top-0 right-0 bottom-0 w-72 z-50 md:hidden bg-kf-bg-secondary border-l border-[rgba(255,255,255,0.05)] flex flex-col animate-slide-down"
+            className="fixed top-0 right-0 bottom-0 w-64 z-50 md:hidden flex flex-col"
+            style={{
+              background: 'var(--surface-1)',
+              borderLeft: '1px solid rgba(255,255,255,0.06)',
+              animation: 'slideDown 0.25s ease-out',
+            }}
             aria-label="Menu mobile"
           >
-            <div className="flex items-center justify-between p-4 border-b border-[rgba(255,255,255,0.05)]">
-              <span className="text-xl font-display text-gradient">KAUANFLIX</span>
-              <button onClick={closeMobileMenu} aria-label="Fechar menu">
-                <X className="w-5 h-5 text-kf-text-muted" />
+            <div
+              className="flex items-center justify-between p-4"
+              style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}
+            >
+              <span className="kauanflix-logo" style={{ fontSize: 18, fontWeight: 300, letterSpacing: '0.2em' }}>
+                KAUANFLIX
+              </span>
+              <button onClick={closeMobileMenu} className="btn-icon" style={{ width: 32, height: 32, background: 'transparent' }}>
+                <X className="w-4 h-4" />
               </button>
             </div>
             <div className="flex flex-col py-2">
               {NAV_LINKS.map((link) => {
-                const Icon = link.icon;
                 const isActive = link.to === '/'
                   ? location.pathname === '/'
                   : location.pathname.startsWith(link.to);
@@ -153,13 +202,14 @@ export const Header: React.FC = () => {
                   <Link
                     key={link.to}
                     to={link.to}
-                    className={`flex items-center gap-3 px-5 py-3.5 text-sm font-medium transition-colors ${
-                      isActive
-                        ? 'text-white bg-[rgba(123,47,255,0.12)] border-r-2 border-kf-accent'
-                        : 'text-kf-text-secondary hover:text-white hover:bg-[rgba(255,255,255,0.03)]'
-                    }`}
+                    className="flex items-center px-5 py-3.5 text-sm font-normal"
+                    style={{
+                      color: isActive ? '#fff' : 'rgba(255,255,255,0.6)',
+                      borderRight: isActive ? '2px solid #4A90D9' : '2px solid transparent',
+                      background: isActive ? 'rgba(74,144,217,0.08)' : 'transparent',
+                      transition: 'background 150ms ease, color 150ms ease',
+                    }}
                   >
-                    {Icon && <Icon className="w-5 h-5" />}
                     {link.label}
                   </Link>
                 );

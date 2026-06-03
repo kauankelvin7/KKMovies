@@ -1,9 +1,10 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import { useEffect, lazy, Suspense } from 'react';
 import { Header } from './components/layout/Header';
 import { Footer } from './components/layout/Footer';
 import { BottomNav } from './components/layout/BottomNav';
 import { PlayerModal } from './components/player/PlayerModal';
+import { DetailsModal } from './components/DetailsModal';
 import { ToastContainer } from './components/ui/Toast';
 import { ErrorBoundary } from './components/ui/ErrorBoundary';
 import { ApiStatusBar } from './components/ApiStatusBar';
@@ -15,20 +16,40 @@ import { useAppStore } from './store/useAppStore';
 
 /* Lazy-loaded pages */
 const HomePage = lazy(() => import('./pages/HomePage'));
-const MovieDetailsPage = lazy(() => import('./pages/MovieDetailsPage'));
 const SearchPage = lazy(() => import('./pages/SearchPage'));
 const CatalogPage = lazy(() => import('./pages/CatalogPage'));
 const FilmesPage = lazy(() => import('./pages/FilmesPage'));
 const SeriesPage = lazy(() => import('./pages/SeriesPage'));
 const MyListPage = lazy(() => import('./pages/MyListPage'));
 const Top10Page = lazy(() => import('./pages/Top10Page'));
-const SeriesDetailPage = lazy(() => import('./pages/SeriesDetailPage'));
 
-/* Loading fallback */
+/* Loading fallback — minimal spinner */
 function PageLoader() {
   return (
-    <div className="min-h-screen flex items-center justify-center">
-      <div className="w-10 h-10 border-3 border-kf-accent border-t-transparent rounded-full animate-spin" />
+    <div
+      className="min-h-screen flex items-center justify-center"
+      style={{ background: 'var(--surface-0)' }}
+    >
+      <div
+        className="rounded-full border-[2px]"
+        style={{
+          width: 32,
+          height: 32,
+          borderColor: 'rgba(74,144,217,0.2)',
+          borderTopColor: '#4A90D9',
+          animation: 'spin 0.8s linear infinite',
+        }}
+      />
+    </div>
+  );
+}
+
+/* Page transition wrapper */
+function AnimatedPage({ children }: { children: React.ReactNode }) {
+  const location = useLocation();
+  return (
+    <div key={location.pathname} className="page-enter">
+      {children}
     </div>
   );
 }
@@ -36,7 +57,6 @@ function PageLoader() {
 function App() {
   const setGenres = useAppStore((s) => s.setGenres);
 
-  /* Load genres once on mount */
   useEffect(() => {
     movieService.getGenres().then(setGenres).catch(() => {});
   }, [setGenres]);
@@ -55,29 +75,36 @@ function AppShell() {
 
   return (
     <>
-      <div className="flex flex-col min-h-screen bg-kf-bg text-white">
+      <div
+        className="flex flex-col min-h-screen"
+        style={{ background: 'var(--surface-0)', color: 'white' }}
+      >
         <Header />
 
         <Suspense fallback={<PageLoader />}>
-          <Routes>
-            <Route path="/" element={<HomePage />} />
-            <Route path="/filme/:id" element={<MovieDetailsPage />} />
-            <Route path="/filmes" element={<FilmesPage />} />
-            <Route path="/series" element={<SeriesPage />} />
-            <Route path="/serie/:id" element={<SeriesDetailPage />} />
-            <Route path="/buscar" element={<SearchPage />} />
-            <Route path="/explorar" element={<CatalogPage />} />
-            <Route path="/minha-lista" element={<MyListPage />} />
-            <Route path="/top10" element={<Top10Page />} />
-            <Route path="*" element={<HomePage />} />
-          </Routes>
+          <AnimatedPage>
+            <Routes>
+              <Route path="/" element={<HomePage />} />
+              <Route path="/filmes" element={<FilmesPage />} />
+              <Route path="/series" element={<SeriesPage />} />
+              <Route path="/buscar" element={<SearchPage />} />
+              <Route path="/explorar" element={<CatalogPage />} />
+              <Route path="/minha-lista" element={<MyListPage />} />
+              <Route path="/top10" element={<Top10Page />} />
+              {/* Legacy routes redirect to modal via HomePage */}
+              <Route path="/filme/:id" element={<MovieDetailsRedirect />} />
+              <Route path="/serie/:id" element={<SeriesDetailsRedirect />} />
+              <Route path="*" element={<HomePage />} />
+            </Routes>
+          </AnimatedPage>
         </Suspense>
 
         <Footer />
         <BottomNav />
       </div>
 
-      {/* Global overlays - rendered outside main layout */}
+      {/* Global overlays */}
+      <DetailsModal />
       <PlayerModal />
       <ToastContainer />
       <ApiStatusBar />
@@ -85,6 +112,35 @@ function AppShell() {
       <UpdateToast />
     </>
   );
+}
+
+/* Redirect legacy /filme/:id to modal via homepage */
+function MovieDetailsRedirect() {
+  const location = useLocation();
+  const openDetails = useAppStore((s) => s.openDetails);
+  const id = location.pathname.split('/')[2];
+
+  useEffect(() => {
+    if (id && !isNaN(Number(id))) {
+      openDetails(Number(id), 'movie');
+    }
+  }, [id, openDetails]);
+
+  return <HomePage />;
+}
+
+function SeriesDetailsRedirect() {
+  const location = useLocation();
+  const openDetails = useAppStore((s) => s.openDetails);
+  const id = location.pathname.split('/')[2];
+
+  useEffect(() => {
+    if (id && !isNaN(Number(id))) {
+      openDetails(Number(id), 'tv');
+    }
+  }, [id, openDetails]);
+
+  return <HomePage />;
 }
 
 export default App;

@@ -5,9 +5,9 @@ import { CheckCircle, XCircle, Info, X } from 'lucide-react';
 import { useAppStore } from '../../store/useAppStore';
 
 const icons = {
-  success: <CheckCircle className="w-5 h-5 text-kf-success flex-shrink-0" />,
-  error: <XCircle className="w-5 h-5 text-kf-danger flex-shrink-0" />,
-  info: <Info className="w-5 h-5 text-kf-info flex-shrink-0" />,
+  success: <CheckCircle className="w-4 h-4 flex-shrink-0" style={{ color: '#4A90D9' }} />,
+  error: <XCircle className="w-4 h-4 flex-shrink-0" style={{ color: '#EF4444' }} />,
+  info: <Info className="w-4 h-4 flex-shrink-0" style={{ color: 'rgba(255,255,255,0.6)' }} />,
 };
 
 export const ToastContainer: React.FC = () => {
@@ -23,10 +23,13 @@ export const ToastContainer: React.FC = () => {
           <span className="text-sm text-white flex-1">{toast.message}</span>
           <button
             onClick={() => removeToast(toast.id)}
-            className="text-kf-text-muted hover:text-white transition-colors"
+            className="transition-colors"
+            style={{ color: 'rgba(255,255,255,0.4)' }}
             aria-label="Fechar notificação"
+            onMouseEnter={(e) => (e.currentTarget.style.color = '#fff')}
+            onMouseLeave={(e) => (e.currentTarget.style.color = 'rgba(255,255,255,0.4)')}
           >
-            <X className="w-4 h-4" />
+            <X className="w-3.5 h-3.5" />
           </button>
         </div>
       ))}

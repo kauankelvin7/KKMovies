@@ -2,10 +2,16 @@
 import React from 'react';
 
 export const SkeletonCard: React.FC<{ landscape?: boolean }> = ({ landscape }) => (
-  <div className={`skeleton flex-shrink-0 ${landscape ? 'card-landscape' : ''}`}
-    style={{ width: landscape ? 280 : 180, aspectRatio: landscape ? '16/9' : '2/3' }}
+  <div
+    className={`skeleton flex-shrink-0`}
+    style={{
+      width: landscape ? 260 : 160,
+      aspectRatio: landscape ? '16/9' : '2/3',
+      borderRadius: 6,
+    }}
   />
 );
+
 
 export const SkeletonRow: React.FC<{ count?: number; landscape?: boolean }> = ({
   count = 6,

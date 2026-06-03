@@ -1,30 +1,38 @@
-/* KauanFlix — Mobile Bottom Navigation */
-import React from 'react';
-import { NavLink } from 'react-router-dom';
-import { Home, Search, Compass, Heart } from 'lucide-react';
+/* KauanFlix — Bottom Navigation (Mobile) v4
+   4 items: Home / Buscar / Minha Lista / Recentes
+   Active: accent blue */
 
-const BOTTOM_LINKS = [
-  { to: '/', label: 'Início', icon: Home, exact: true },
+import React from 'react';
+import { Link, useLocation } from 'react-router-dom';
+import { Home, Search, Heart, Clock } from 'lucide-react';
+
+const NAV_ITEMS = [
+  { to: '/', label: 'Início', icon: Home },
   { to: '/buscar', label: 'Buscar', icon: Search },
-  { to: '/explorar', label: 'Explorar', icon: Compass },
   { to: '/minha-lista', label: 'Minha Lista', icon: Heart },
+  { to: '/explorar', label: 'Recentes', icon: Clock },
 ];
 
 export const BottomNav: React.FC = () => {
+  const location = useLocation();
+
   return (
-    <nav className="mobile-bottom-nav md:hidden" aria-label="Navegação inferior">
-      {BOTTOM_LINKS.map((link) => {
-        const Icon = link.icon;
+    <nav className="mobile-bottom-nav md:hidden safe-bottom" aria-label="Navegação mobile">
+      {NAV_ITEMS.map(({ to, label, icon: Icon }) => {
+        const isActive = to === '/'
+          ? location.pathname === '/'
+          : location.pathname.startsWith(to);
         return (
-          <NavLink
-            key={link.to}
-            to={link.to}
-            end={link.exact}
-            className={({ isActive }) => isActive ? 'active' : ''}
+          <Link
+            key={to}
+            to={to}
+            className={isActive ? 'active' : ''}
+            aria-label={label}
+            aria-current={isActive ? 'page' : undefined}
           >
             <Icon className="w-5 h-5" />
-            <span>{link.label}</span>
-          </NavLink>
+            <span>{label}</span>
+          </Link>
         );
       })}
     </nav>
