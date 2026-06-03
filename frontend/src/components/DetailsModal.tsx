@@ -21,6 +21,7 @@ import {
   getSeriesStreamingUrl,
   getSeriesDetails,
   getSeriesSeasonDetails,
+  getSeriesCredits,
 } from '../services/movieService';
 import { getYear } from '../utils/helpers';
 import { watchlistService, progressService } from '../services/storageService';
@@ -92,7 +93,7 @@ export const DetailsModal: React.FC = () => {
     if (isSeries) {
       Promise.all([
         getSeriesDetails(id),
-        getMovieCredits(id).catch(() => ({ cast: [], crew: [] })),
+        getSeriesCredits(id).catch(() => ({ cast: [], crew: [] })),
         getSimilarMovies(id).catch(() => []),
       ]).then(([details, creds, sim]) => {
         const seriesAsMovie = {
@@ -189,8 +190,8 @@ export const DetailsModal: React.FC = () => {
 
   const backdropUrl = movie?.backdrop_path ? getImageUrl(movie.backdrop_path, 'original') : '';
   const logoUrl = movie?.logo_path ? getImageUrl(movie.logo_path, 'w500') : null;
-  const director = credits?.crew.find((c) => c.job === 'Director');
-  const cast = credits?.cast.slice(0, 8) || [];
+  const director = credits?.crew?.find((c) => c.job === 'Director');
+  const cast = credits?.cast?.slice(0, 8) || [];
   const releaseYear = getYear(movie?.release_date || movie?.first_air_date || '');
 
   const tabs: { id: TabId; label: string }[] = [

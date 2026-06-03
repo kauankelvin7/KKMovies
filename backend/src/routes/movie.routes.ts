@@ -18,7 +18,7 @@ router.get('/now-playing', movieController.getLatestReleases.bind(movieControlle
 router.get('/:id', movieController.getDetails.bind(movieController));
 router.get('/:id/recommendations', movieController.getRecommendations.bind(movieController));
 router.get('/:id/similar', movieController.getSimilar.bind(movieController));
-router.get('/:id/credits', movieController.getDetails.bind(movieController));
+router.get('/:id/credits', movieController.getCredits.bind(movieController));
 router.get('/:id/videos', movieController.getVideos.bind(movieController));
 
 export default router;

@@ -182,6 +182,26 @@ class MovieController {
   }
 
   /**
+   * Get movie credits
+   */
+  async getCredits(req: Request, res: Response): Promise<void> {
+    try {
+      const movieId = parseInt(req.params.id);
+
+      if (!movieId) {
+        res.status(400).json({ error: 'Movie ID is required' });
+        return;
+      }
+
+      const data = await tmdbService.getMovieCredits(movieId);
+      res.json(data);
+    } catch (error) {
+      console.error('Error fetching movie credits:', error);
+      res.status(500).json({ error: 'Failed to fetch movie credits' });
+    }
+  }
+
+  /**
    * Get all genres
    */
   async getGenres(_req: Request, res: Response): Promise<void> {

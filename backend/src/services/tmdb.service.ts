@@ -415,6 +415,17 @@ class TMDBService {
   }
 
   /**
+   * Get movie credits (cast & crew)
+   */
+  async getMovieCredits(movieId: number): Promise<any> {
+    await this.ensureInitialized();
+    return this.getCached(`movie_credits_${movieId}`, async () => {
+      const response = await this.api.get(`/movie/${movieId}/credits`);
+      return response.data;
+    });
+  }
+
+  /**
    * Get all movie genres
    */
   async getGenres(): Promise<{ genres: Genre[] }> {
@@ -547,6 +558,17 @@ class TMDBService {
           still_path: this.getImageUrl(ep.still_path, 'w300'),
         })) || [],
       };
+    });
+  }
+
+  /**
+   * Get series credits (cast & crew)
+   */
+  async getSeriesCredits(seriesId: number): Promise<any> {
+    await this.ensureInitialized();
+    return this.getCached(`series_credits_${seriesId}`, async () => {
+      const response = await this.api.get(`/tv/${seriesId}/credits`);
+      return response.data;
     });
   }
 

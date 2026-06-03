@@ -214,6 +214,13 @@ export async function getSeriesVideos(id: number): Promise<Video[]> {
   });
 }
 
+export async function getSeriesCredits(id: number): Promise<Credits> {
+  return fetchCached(`credits-series-${id}`, async () => {
+    const { data } = await api.get(`/api/series/${id}/credits`);
+    return data;
+  });
+}
+
 export async function getGenres(): Promise<Genre[]> {
   return fetchCached('genres', async () => {
     const { data } = await api.get('/api/movies/genres');

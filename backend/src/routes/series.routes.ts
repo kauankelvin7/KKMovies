@@ -12,6 +12,7 @@ router.get('/discover', seriesController.discoverByGenre.bind(seriesController))
 router.get('/search', seriesController.search.bind(seriesController));
 router.get('/:id/videos', seriesController.getVideos.bind(seriesController));
 router.get('/:id', seriesController.getDetails.bind(seriesController));
+router.get('/:id/credits', seriesController.getCredits.bind(seriesController));
 router.get('/:id/season/:seasonNumber', seriesController.getSeason.bind(seriesController));
 
 export default router;
