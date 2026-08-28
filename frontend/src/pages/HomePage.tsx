@@ -1,4 +1,3 @@
-/* KauanFlix — Home Page v4 */
 import React, { useMemo } from 'react';
 import { HeroBanner } from '../components/HeroBanner';
 import { ContentCarousel } from '../components/ContentCarousel';
@@ -39,12 +38,20 @@ const HomePage: React.FC = () => {
   }
 
   return (
-    <main className="min-h-screen">
-      {/* Hero Banner — 100vh */}
+    <main className="min-h-screen bg-[var(--surface-0)] pb-20 sm:pb-28 page-enter">
+
+      {/* Hero Banner — 100vh com gradiente cinematográfico nativo */}
       <HeroBanner movies={trending} loading={loading} />
 
-      {/* Carousels — overlap with banner bottom */}
-      <div className="relative z-10" style={{ marginTop: -60 }}>
+      {/* 
+        Carousels Container
+        - Overlap responsivo sobre o Hero (-mt-24 no mobile, -mt-32 no desktop)
+        - bg-gradient garante uma transição suave da arte do Hero para o fundo escuro
+      */}
+      <div className="relative z-10 mt-4 sm:mt-8 flex flex-col gap-6 sm:gap-10">
+
+        {/* Layer de transição invisível para suavisar a entrada do primeiro carrossel */}
+        <div className="absolute inset-0 top-0 h-40 bg-gradient-to-b from-transparent to-[var(--surface-0)] pointer-events-none -z-10" />
 
         {/* 1. Continue Assistindo */}
         {continueWatching.length > 0 && (
@@ -116,6 +123,7 @@ const HomePage: React.FC = () => {
           movies={horrorMovies}
           loading={loading}
         />
+
       </div>
     </main>
   );

@@ -287,11 +287,96 @@ export async function searchSeries(query: string, page = 1) {
 
 const SUPERFLIX_BASE = import.meta.env.VITE_SUPERFLIX_BASE || 'https://superflixapi.beer';
 
+function isImdbId(id: string | number | undefined | null): boolean {
+  if (!id) return false;
+  return /^tt\d{7,}$/.test(String(id));
+}
+
 export function getStreamingUrl(movieId: number, imdbId?: string): string {
-  const id = imdbId || movieId;
+  const id = isImdbId(imdbId) ? imdbId! : movieId;
   return `${SUPERFLIX_BASE}/filme/${id}`;
 }
 
 export function getSeriesStreamingUrl(tmdbId: number, season: number, episode: number): string {
   return `${SUPERFLIX_BASE}/serie/${tmdbId}/${season}/${episode}`;
+}
+
+export interface StreamDiagnostics {
+  status?: number;
+  captcha?: boolean;
+  unavailable?: boolean;
+  server?: string;
+  cloudflare?: boolean;
+  ray?: string;
+}
+
+export interface ResolvedStream {
+  streamUrl: string;
+  directUrl: string;
+  mode: 'iframe-direct' | 'iframe-captcha-required' | 'unavailable';
+  diagnostics?: StreamDiagnostics;
+  warning?: string;
+}
+
+async function resolveFromProxy(
+  path: string,
+  params?: Record<string, unknown>,
+): Promise<ResolvedStream> {
+  try {
+    const { data } = await api.get(path, { params, timeout: 15000 });
+    return data as ResolvedStream;
+  } catch {
+    return {
+      streamUrl: '',
+      directUrl: '',
+      mode: 'iframe-direct',
+      warning: 'Proxy indisponível, tentando conexão direta',
+    };
+  }
+}
+
+export async function resolveMovieStream(
+  movieId: number,
+  imdbId?: string,
+  options?: { noLink?: boolean; color?: string; transparent?: boolean; noBackground?: boolean },
+): Promise<ResolvedStream> {
+  const hasValidImdb = isImdbId(imdbId);
+  const id = hasValidImdb ? imdbId! : String(movieId);
+
+  const proxy = await resolveFromProxy(`/api/streaming/movie/${id}`, {
+    noLink: true,
+    ...options,
+  });
+
+  if (proxy.streamUrl) {
+    if (!hasValidImdb) {
+      proxy.warning = proxy.warning || '⚠️ Filme sem IMDB ID — Player pode não carregar. Tente abrir em nova aba.';
+    }
+    return proxy;
+  }
+
+  return {
+    streamUrl: getStreamingUrl(movieId, imdbId),
+    directUrl: getStreamingUrl(movieId, imdbId),
+    mode: 'iframe-direct',
+    warning: hasValidImdb ? undefined : '⚠️ Filme sem IMDB ID — Player pode não carregar.',
+  };
+}
+
+export async function resolveSeriesStream(
+  tmdbId: number,
+  season: number,
+  episode: number,
+  options?: { noEpList?: boolean; noLink?: boolean; color?: string; transparent?: boolean; noBackground?: boolean },
+): Promise<ResolvedStream> {
+  const params: Record<string, unknown> = { noLink: true, noEpList: true, ...(options || {}) };
+  const proxy = await resolveFromProxy(`/api/streaming/series/${tmdbId}/${season}/${episode}`, params);
+
+  if (proxy.streamUrl) return proxy;
+
+  return {
+    streamUrl: getSeriesStreamingUrl(tmdbId, season, episode),
+    directUrl: getSeriesStreamingUrl(tmdbId, season, episode),
+    mode: 'iframe-direct',
+  };
 }

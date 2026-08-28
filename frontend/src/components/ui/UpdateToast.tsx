@@ -1,7 +1,3 @@
-/* KauanFlix — PWA Update Toast
-   Shows a toast notification when a new service worker version is available.
-   User can click "Atualizar" to activate the new version. */
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { RefreshCw } from 'lucide-react';
 
@@ -59,29 +55,41 @@ export const UpdateToast: React.FC = () => {
   if (!visible) return null;
 
   return (
-    <div className="update-toast animate-slide-up">
-      <div className="flex items-center gap-3">
-        <RefreshCw className="w-5 h-5 text-kf-accent flex-shrink-0 animate-spin-slow" />
+    <div className="fixed bottom-20 right-4 sm:right-6 z-[9990] w-[calc(100%-32px)] sm:w-auto sm:min-w-[340px] p-4 sm:p-5 glass-card shadow-2xl transition-all duration-300 ease-out transform translate-y-0 opacity-100">
+      
+      <div className="flex items-center gap-3.5">
+        {/* Ícone Apple-style */}
+        <div className="w-10 h-10 rounded-full bg-[var(--accent-blue-dim)] border border-[var(--accent-blue-border)] flex items-center justify-center flex-shrink-0">
+          <RefreshCw className="w-5 h-5 text-[var(--accent-blue)] animate-spin" style={{ animationDuration: '3s' }} />
+        </div>
+        
+        {/* Textos */}
         <div>
-          <p className="text-sm font-medium text-white">Nova versão disponível</p>
-          <p className="text-xs text-kf-text-secondary">Atualize para ter as melhorias mais recentes.</p>
+          <p className="text-[14px] font-medium text-[var(--text-primary)] tracking-tight">
+            Nova atualização disponível
+          </p>
+          <p className="text-[12px] text-[var(--text-muted)] mt-0.5 leading-snug">
+            Sincronize para ter a melhor experiência.
+          </p>
         </div>
       </div>
-      <div className="flex items-center gap-2 mt-3">
+
+      {/* Botões Glassmorphism */}
+      <div className="flex items-center gap-2.5 mt-4">
         <button
           onClick={handleUpdate}
-          className="px-4 py-1.5 text-sm font-semibold text-white rounded-lg"
-          style={{ background: 'var(--accent-gradient)' }}
+          className="glass-button primary flex-1 !h-9 !px-0 text-[13px]"
         >
-          Atualizar
+          Atualizar Agora
         </button>
         <button
           onClick={handleDismiss}
-          className="px-3 py-1.5 text-sm text-kf-text-secondary hover:text-white transition-colors"
+          className="glass-button flex-1 !h-9 !px-0 text-[13px]"
         >
-          Depois
+          Mais Tarde
         </button>
       </div>
+      
     </div>
   );
 };

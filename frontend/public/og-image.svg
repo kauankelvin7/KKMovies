@@ -1,55 +1,182 @@
-<svg width="1200" height="630" viewBox="0 0 1200 630" xmlns="http://www.w3.org/2000/svg">
-  <!-- Background Gradient -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
   <defs>
-    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#0a0a0a;stop-opacity:1" />
-      <stop offset="50%" style="stop-color:#1a1a2e;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#0a0a0a;stop-opacity:1" />
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0B0B0F"/>
+      <stop offset="40%" style="stop-color:#121218"/>
+      <stop offset="70%" style="stop-color:#1A1A24"/>
+      <stop offset="100%" style="stop-color:#0B0B0F"/>
     </linearGradient>
-    <linearGradient id="orangeGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%" style="stop-color:#f97316;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#fb923c;stop-opacity:1" />
+    <linearGradient id="brandGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#0A84FF"/>
+      <stop offset="40%" style="stop-color:#5E5CE6"/>
+      <stop offset="70%" style="stop-color:#BF5AF2"/>
+      <stop offset="100%" style="stop-color:#FF375F"/>
     </linearGradient>
+    <linearGradient id="cardGlass" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:rgba(255,255,255,0.08)"/>
+      <stop offset="100%" style="stop-color:rgba(255,255,255,0.02)"/>
+    </linearGradient>
+    <linearGradient id="accentGlow" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0A84FF"/>
+      <stop offset="100%" style="stop-color:#BF5AF2"/>
+    </linearGradient>
+    <filter id="softBlur">
+      <feGaussianBlur stdDeviation="48"/>
+    </filter>
+    <filter id="glassBorder">
+      <feOffset dx="0" dy="0.5"/>
+      <feGaussianBlur stdDeviation="0.5"/>
+      <feComposite operator="out" in2="SourceGraphic" result="inverse"/>
+      <feFlood flood-color="#FFFFFF" flood-opacity="0.14"/>
+      <feComposite in2="inverse" operator="in" result="hl"/>
+      <feComposite in="SourceGraphic" operator="over" in2="hl"/>
+    </filter>
+    <clipPath id="squircleLg">
+      <path d="M100 0C174.3 0 200 0 200 0 200 0 200 25.7 200 100 200 174.3 200 200 200 200 200 200 174.3 200 100 200 25.7 200 0 200 0 200 0 200 0 174.3 0 100 0 25.7 0 0 0 0 0 0 25.7 0 100Z" transform="scale(5 5)"/>
+    </clipPath>
+    <clipPath id="squircleMd">
+      <path d="M50 0C87.1 0 100 0 100 0 100 0 100 12.9 100 50 100 87.1 100 100 100 100 100 100 87.1 100 50 100 12.9 100 0 100 0 100 0 100 0 87.1 0 50 0 12.9 0 0 0 0 0 0 12.9 0 50Z" transform="scale(5 5)"/>
+    </clipPath>
   </defs>
-  
-  <!-- Background -->
-  <rect width="1200" height="630" fill="url(#bgGradient)"/>
-  
-  <!-- Decorative Elements -->
-  <circle cx="100" cy="100" r="150" fill="#f97316" opacity="0.1"/>
-  <circle cx="1100" cy="500" r="200" fill="#fb923c" opacity="0.1"/>
-  
-  <!-- Logo/Brand -->
-  <text x="600" y="200" font-family="'Plus Jakarta Sans', sans-serif" font-size="120" font-weight="800" text-anchor="middle" fill="url(#orangeGradient)">
-    KKMovies
-  </text>
-  
-  <!-- Subtitle -->
-  <text x="600" y="280" font-family="'Inter', sans-serif" font-size="32" font-weight="400" text-anchor="middle" fill="#9ca3af">
-    Filmes, Séries, Animes e Doramas Online
-  </text>
-  
-  <!-- Features -->
-  <g transform="translate(250, 350)">
-    <!-- HD Icon -->
-    <rect x="0" y="0" width="80" height="50" rx="8" fill="#f97316" opacity="0.2"/>
-    <text x="40" y="33" font-family="'Inter', sans-serif" font-size="22" font-weight="700" text-anchor="middle" fill="#f97316">HD</text>
-    
-    <!-- Free Icon -->
-    <rect x="120" y="0" width="120" height="50" rx="8" fill="#10b981" opacity="0.2"/>
-    <text x="180" y="33" font-family="'Inter', sans-serif" font-size="18" font-weight="600" text-anchor="middle" fill="#10b981">GRÁTIS</text>
-    
-    <!-- Updated Icon -->
-    <rect x="270" y="0" width="180" height="50" rx="8" fill="#3b82f6" opacity="0.2"/>
-    <text x="360" y="33" font-family="'Inter', sans-serif" font-size="18" font-weight="600" text-anchor="middle" fill="#3b82f6">ATUALIZADO</text>
-    
-    <!-- Catalog Icon -->
-    <rect x="480" y="0" width="220" height="50" rx="8" fill="#ec4899" opacity="0.2"/>
-    <text x="590" y="33" font-family="'Inter', sans-serif" font-size="18" font-weight="600" text-anchor="middle" fill="#ec4899">+1000 TÍTULOS</text>
+
+  <rect width="1200" height="630" fill="url(#bgGrad)"/>
+
+  <g opacity="0.55" filter="url(#softBlur)">
+    <circle cx="120" cy="80" r="220" fill="#0A84FF" opacity="0.25"/>
+    <circle cx="1080" cy="560" r="280" fill="#BF5AF2" opacity="0.18"/>
+    <circle cx="980" cy="100" r="160" fill="#FF375F" opacity="0.12"/>
+    <circle cx="200" cy="500" r="140" fill="#5E5CE6" opacity="0.15"/>
   </g>
-  
-  <!-- Bottom tagline -->
-  <text x="600" y="530" font-family="'Inter', sans-serif" font-size="24" font-weight="500" text-anchor="middle" fill="#6b7280">
-    Seu streaming completo e gratuito
-  </text>
+
+  <g opacity="0.08">
+    <pattern id="dotGrid" width="32" height="32" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1.5" fill="#FFFFFF"/>
+    </pattern>
+    <rect width="1200" height="630" fill="url(#dotGrid)"/>
+  </g>
+
+  <g transform="translate(100 72)">
+    <g clip-path="url(#squircleMd)" filter="url(#glassBorder)">
+      <rect x="0" y="0" width="500" height="140" rx="0" fill="url(#cardGlass)"/>
+      <rect x="0.5" y="0.5" width="499" height="139" rx="0" fill="none" stroke="rgba(255,255,255,0.12)" stroke-width="1"/>
+    </g>
+    <g transform="translate(32 36)">
+      <g clip-path="url(#squircleLg)">
+        <rect width="70" height="70" fill="url(#accentGlow)"/>
+        <rect width="70" height="70" fill="rgba(0,0,0,0.2)"/>
+        <polygon points="26,22 52,35 26,48" fill="#FFFFFF" opacity="0.95"/>
+      </g>
+      <g transform="translate(102 2)">
+        <text
+          font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Inter', Arial, sans-serif"
+          font-size="44"
+          font-weight="700"
+          letter-spacing="-1.5"
+          fill="url(#brandGrad)"
+        >KKMovies</text>
+        <text
+          y="40"
+          font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Inter', Arial, sans-serif"
+          font-size="17"
+          font-weight="400"
+          fill="rgba(235,235,245,0.6)"
+        >Filmes, Séries, Animes e Doramas</text>
+      </g>
+    </g>
+  </g>
+
+  <g transform="translate(680 68)">
+    <g clip-path="url(#squircleMd)" opacity="0.95">
+      <rect width="420" height="220" fill="rgba(28,28,30,0.7)"/>
+      <rect x="0" y="0" width="420" height="1" fill="rgba(255,255,255,0.1)"/>
+      <g transform="translate(28 28)">
+        <text font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif" font-size="13" font-weight="600" fill="#0A84FF" letter-spacing="0.5">EM DESTAQUE</text>
+        <text y="36" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif" font-size="28" font-weight="700" fill="#FFFFFF" letter-spacing="-0.5">+1000 Títulos</text>
+        <text y="60" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif" font-size="15" font-weight="400" fill="rgba(235,235,245,0.55)">Catálogo constantemente atualizado</text>
+      </g>
+      <g transform="translate(28 130)">
+        <g>
+          <rect width="118" height="56" rx="14" fill="rgba(52,199,89,0.15)"/>
+          <rect x="0.5" y="0.5" width="117" height="55" rx="14" fill="none" stroke="rgba(52,199,89,0.3)"/>
+          <text x="59" y="24" text-anchor="middle" font-family="-apple-system, 'SF Pro Display', sans-serif" font-size="15" font-weight="700" fill="#34C759">HD · 4K</text>
+          <text x="59" y="43" text-anchor="middle" font-family="-apple-system, 'SF Pro Text', sans-serif" font-size="11" fill="rgba(52,199,89,0.7)">Alta qualidade</text>
+        </g>
+        <g transform="translate(134 0)">
+          <rect width="118" height="56" rx="14" fill="rgba(10,132,255,0.15)"/>
+          <rect x="0.5" y="0.5" width="117" height="55" rx="14" fill="none" stroke="rgba(10,132,255,0.3)"/>
+          <text x="59" y="24" text-anchor="middle" font-family="-apple-system, 'SF Pro Display', sans-serif" font-size="15" font-weight="700" fill="#0A84FF">100%</text>
+          <text x="59" y="43" text-anchor="middle" font-family="-apple-system, 'SF Pro Text', sans-serif" font-size="11" fill="rgba(10,132,255,0.7)">Gratuito</text>
+        </g>
+        <g transform="translate(268 0)">
+          <rect width="96" height="56" rx="14" fill="rgba(191,90,242,0.15)"/>
+          <rect x="0.5" y="0.5" width="95" height="55" rx="14" fill="none" stroke="rgba(191,90,242,0.3)"/>
+          <text x="48" y="24" text-anchor="middle" font-family="-apple-system, 'SF Pro Display', sans-serif" font-size="15" font-weight="700" fill="#BF5AF2">Offline</text>
+          <text x="48" y="43" text-anchor="middle" font-family="-apple-system, 'SF Pro Text', sans-serif" font-size="11" fill="rgba(191,90,242,0.7)">PWA Install</text>
+        </g>
+      </g>
+    </g>
+  </g>
+
+  <g transform="translate(100 328)">
+    <g opacity="0.95">
+      {[0,1,2,3,4].map((i) => {
+        const colors = ['#FF375F', '#FF9500', '#FFCC00', '#34C759', '#0A84FF'];
+        const x = i * 104;
+        return `
+          <g transform="translate(${x} 0)">
+            <rect width="88" height="132" rx="14" fill="rgba(28,28,30,0.6)" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+            <rect x="10" y="10" width="68" height="92" rx="8" fill="rgba(255,255,255,0.04)"/>
+            <rect x="10" y="10" width="68" height="92" rx="8" fill="${colors[i]}" opacity="0.18"/>
+            <polygon points="38,46 58,56 38,66" fill="${colors[i]}" opacity="0.85"/>
+            <rect x="10" y="108" width="52" height="6" rx="3" fill="rgba(255,255,255,0.2)"/>
+            <rect x="10" y="118" width="36" height="5" rx="2.5" fill="rgba(255,255,255,0.12)"/>
+          </g>
+        `;
+      }).join('')}
+    </g>
+  </g>
+
+  <g transform="translate(680 344)">
+    <g clip-path="url(#squircleMd)" opacity="0.95">
+      <rect width="420" height="172" fill="rgba(28,28,30,0.7)"/>
+      <rect x="0" y="0" width="420" height="1" fill="rgba(255,255,255,0.1)"/>
+      <g transform="translate(28 26)">
+        <g transform="translate(0 0)">
+          <rect width="40" height="40" rx="12" fill="rgba(10,132,255,0.15)"/>
+          <rect x="14" y="12" width="12" height="2" rx="1" fill="#0A84FF"/>
+          <rect x="14" y="18" width="16" height="2" rx="1" fill="#0A84FF"/>
+          <rect x="14" y="24" width="10" height="2" rx="1" fill="#0A84FF"/>
+        </g>
+        <g transform="translate(60 0)">
+          <text font-family="-apple-system, 'SF Pro Display', sans-serif" font-size="19" font-weight="600" fill="#FFFFFF">Busca Inteligente</text>
+          <text y="26" font-family="-apple-system, 'SF Pro Text', sans-serif" font-size="14" fill="rgba(235,235,245,0.55)">Encontre títulos rapidamente com sugestões em tempo real</text>
+        </g>
+      </g>
+      <g transform="translate(28 96)">
+        <g transform="translate(0 0)">
+          <rect width="40" height="40" rx="12" fill="rgba(191,90,242,0.15)"/>
+          <rect x="13" y="12" width="14" height="16" rx="3" fill="none" stroke="#BF5AF2" stroke-width="2"/>
+          <polygon points="18,21 25,17 25,25" fill="#BF5AF2"/>
+        </g>
+        <g transform="translate(60 0)">
+          <text font-family="-apple-system, 'SF Pro Display', sans-serif" font-size="19" font-weight="600" fill="#FFFFFF">Minha Lista</text>
+          <text y="26" font-family="-apple-system, 'SF Pro Text', sans-serif" font-size="14" fill="rgba(235,235,245,0.55)">Salve favoritos e continue assistindo de onde parou</text>
+        </g>
+      </g>
+    </g>
+  </g>
+
+  <g transform="translate(0 590)">
+    <rect width="1200" height="40" fill="rgba(0,0,0,0.3)"/>
+    <g transform="translate(100 0)">
+      <text y="25" font-family="-apple-system, 'SF Pro Text', sans-serif" font-size="13" fill="rgba(235,235,245,0.4)">
+        kkmovies.app · Seu streaming completo e gratuito
+      </text>
+    </g>
+    <g transform="translate(1050 0)">
+      <text y="25" text-anchor="end" font-family="-apple-system, 'SF Pro Text', sans-serif" font-size="12" fill="rgba(235,235,245,0.3)">
+        Mobile First · iOS Style · PWA Ready
+      </text>
+    </g>
+  </g>
 </svg>

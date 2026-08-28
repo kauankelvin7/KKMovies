@@ -5,23 +5,25 @@
 /* ============================================================
    KauanFlix Design System — v4 (HBO Max-inspired)
    "Cinematographic. Sophisticated. Minimal."
-   4-surface dark palette, cool blue-slate accent, amber gold.
+   4-surface dark palette, comforting violet accent, amber gold.
    Font: Inter only — weight 300 for titles (the editorial premium feel).
    ============================================================ */
 
 @layer base {
   :root {
-    /* === 4-Layer Surface Palette === */
-    --surface-0: #050508;     /* Page background */
-    --surface-1: #0D0D14;     /* Cards and panels */
-    --surface-2: #141420;     /* Hover states, inputs */
-    --surface-3: #1C1C2E;     /* Visible borders, separators */
+    color-scheme: light dark;
+
+    /* === 4-Layer Surface Palette (default Dark) === */
+    --surface-0: #050508;
+    --surface-1: #0D0D14;
+    --surface-2: #141420;
+    --surface-3: #1C1C2E;
 
     /* === Accents === */
-    --accent-blue: #4A90D9;
-    --accent-blue-dim: rgba(74, 144, 217, 0.15);
-    --accent-blue-border: rgba(74, 144, 217, 0.3);
-    --accent-blue-glow: rgba(74, 144, 217, 0.25);
+    --accent-blue: #8E6FD6;
+    --accent-blue-dim: rgba(142, 111, 214, 0.15);
+    --accent-blue-border: rgba(142, 111, 214, 0.3);
+    --accent-blue-glow: rgba(142, 111, 214, 0.25);
     --accent-gold: #C9973A;
     --accent-gold-dim: rgba(201, 151, 58, 0.15);
 
@@ -40,7 +42,6 @@
     /* === Typography === */
     --font-base: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 
-    /* Font sizes */
     --text-hero: clamp(36px, 5vw, 72px);
     --text-title: clamp(18px, 2.5vw, 28px);
     --text-subtitle: 18px;
@@ -48,39 +49,83 @@
     --text-small: 13px;
     --text-caption: 11px;
 
-    /* === Gradients === */
     --gradient-hero-left: linear-gradient(to right, #050508 0%, #050508 20%, transparent 55%);
     --gradient-hero-bottom: linear-gradient(to top, #050508 0%, transparent 40%);
     --gradient-hero-overlay: rgba(5, 5, 8, 0.25);
     --gradient-card: linear-gradient(to top, rgba(5, 5, 8, 0.9) 0%, transparent 65%);
 
-    /* === Layout === */
     --padding-desktop: 80px;
     --padding-tablet: 40px;
     --padding-mobile: 16px;
     --section-padding: clamp(16px, 5vw, 80px);
     --section-gap: 40px;
 
-    /* === Radii === */
     --radius-sm: 4px;
     --radius-md: 6px;
     --radius-lg: 12px;
     --radius-xl: 16px;
     --radius-full: 9999px;
 
-    /* === Transitions (specific properties only — never transition: all) === */
     --ease-card: cubic-bezier(0.25, 0.46, 0.45, 0.94);
     --ease-modal: cubic-bezier(0.16, 1, 0.3, 1);
     --ease-base: ease;
     --t-fast: 150ms;
     --t-base: 220ms;
     --t-slow: 350ms;
+
+    /* === iOS Glassmorphism Tokens === */
+    --glass-bg-light: rgba(255, 255, 255, 0.72);
+    --glass-bg-dark: rgba(28, 28, 30, 0.72);
+    --glass-bg: var(--glass-bg-dark);
+
+    --glass-separator-light: rgba(60, 60, 67, 0.22);
+    --glass-separator-dark: rgba(84, 84, 88, 0.6);
+    --glass-separator: var(--glass-separator-dark);
+
+    --glass-inner-border-light: rgba(255, 255, 255, 0.7);
+    --glass-inner-border-dark: rgba(255, 255, 255, 0.08);
+    --glass-inner-border: var(--glass-inner-border-dark);
+
+    --glass-outer-glow-light: 0 8px 32px rgba(0, 0, 0, 0.08);
+    --glass-outer-glow-dark: 0 8px 32px rgba(0, 0, 0, 0.5);
+    --glass-outer-glow: var(--glass-outer-glow-dark);
+
+    --glass-blur: 20px saturate(180%);
+  }
+
+  :root.light {
+    --surface-0: #F2F2F7;
+    --surface-1: #FFFFFF;
+    --surface-2: #F9F9FB;
+    --surface-3: #FFFFFF;
+
+    --text-primary: #000000;
+    --text-secondary: rgba(60, 60, 67, 0.6);
+    --text-muted: rgba(60, 60, 67, 0.45);
+    --text-hint: rgba(60, 60, 67, 0.3);
+
+    --border: 1px solid rgba(0, 0, 0, 0.06);
+    --border-subtle: rgba(0, 0, 0, 0.06);
+    --border-default: rgba(0, 0, 0, 0.08);
+    --border-medium: rgba(0, 0, 0, 0.12);
+
+    --glass-bg: var(--glass-bg-light);
+    --glass-separator: var(--glass-separator-light);
+    --glass-inner-border: var(--glass-inner-border-light);
+    --glass-outer-glow: var(--glass-outer-glow-light);
+  }
+
+  @media (prefers-color-scheme: light) {
+    :root:not(.dark) {
+      color-scheme: light;
+    }
   }
 
   html {
     scroll-behavior: smooth;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
   }
 
   body {
@@ -90,15 +135,16 @@
     color: var(--text-primary);
     min-height: 100vh;
     overflow-x: hidden;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
   }
 
-  /* Thin scrollbar with accent */
   ::-webkit-scrollbar { width: 4px; height: 4px; }
   ::-webkit-scrollbar-track { background: var(--surface-1); }
   ::-webkit-scrollbar-thumb { background: var(--accent-blue); border-radius: var(--radius-full); }
-  ::-webkit-scrollbar-thumb:hover { background: #6aaae8; }
+  ::-webkit-scrollbar-thumb:hover { background: #A88EE0; }
 
-  ::selection { background: rgba(74, 144, 217, 0.35); color: white; }
+  ::selection { background: rgba(142, 111, 214, 0.35); color: white; }
 
   *:focus-visible {
     outline: 2px solid var(--accent-blue);
@@ -109,7 +155,6 @@
 
   img { user-select: none; -webkit-user-drag: none; }
 
-  /* Headings use Inter 300 (light) — the editorial, premium feel */
   h1, h2, h3, h4, h5 {
     font-family: var(--font-base);
     font-weight: 300;
@@ -118,11 +163,6 @@
 
 @layer components {
 
-  /* ============================
-     BUTTONS
-     ============================ */
-
-  /* Primary: white bg, dark text (HBO play button style) */
   .btn-primary {
     @apply inline-flex items-center justify-center gap-2 text-[#050508] font-medium;
     background: #ffffff;
@@ -141,7 +181,6 @@
   }
   .btn-primary:active { transform: scale(0.98); }
 
-  /* Secondary: glass, white text */
   .btn-secondary {
     @apply inline-flex items-center justify-center gap-2 font-medium text-white;
     background: rgba(255, 255, 255, 0.12);
@@ -157,7 +196,6 @@
     border-color: rgba(255, 255, 255, 0.3);
   }
 
-  /* Icon button — circular */
   .btn-icon {
     @apply inline-flex items-center justify-center text-white;
     width: 44px; height: 44px;
@@ -173,16 +211,11 @@
     transform: scale(1.08);
   }
 
-  /* ============================
-     CARDS — HBO Style (2:3 poster)
-     ============================ */
-
   .card-movie {
     @apply relative overflow-hidden cursor-pointer flex-shrink-0;
     aspect-ratio: 2 / 3;
     background: var(--surface-1);
     border-radius: var(--radius-md);
-    /* No border in default state */
     transition: transform var(--t-base) var(--ease-card),
                 box-shadow var(--t-base) var(--ease-card),
                 z-index 0ms;
@@ -193,24 +226,20 @@
     z-index: 10;
   }
 
-  /* Image inside card */
   .card-movie img {
     @apply w-full h-full object-cover;
     transition: transform var(--t-base) var(--ease-card);
   }
   .card-movie:hover img { transform: scale(1.03); }
 
-  /* Landscape card variant (16:9 for "Continue Watching") */
   .card-landscape { aspect-ratio: 16 / 9 !important; }
 
-  /* Default gradient at bottom of card (always visible, subtle) */
   .card-gradient {
     @apply absolute inset-x-0 bottom-0 z-[2] pointer-events-none;
     height: 35%;
     background: linear-gradient(to top, rgba(5, 5, 8, 0.92) 0%, transparent 100%);
   }
 
-  /* Title text sitting on the card gradient */
   .card-title {
     @apply absolute inset-x-0 bottom-0 z-[3] px-2 pb-2 pointer-events-none;
     font-size: 13px;
@@ -221,7 +250,6 @@
     text-overflow: ellipsis;
   }
 
-  /* Hover overlay — dark scrim over poster */
   .card-overlay {
     @apply absolute inset-0 z-[4] flex flex-col items-center justify-center gap-3;
     background: rgba(5, 5, 8, 0.75);
@@ -230,7 +258,6 @@
   }
   .card-movie:hover .card-overlay { opacity: 1; }
 
-  /* Play button (centered, large) */
   .card-play-btn {
     @apply flex items-center justify-center text-[#050508];
     width: 48px; height: 48px;
@@ -241,7 +268,6 @@
   }
   .card-play-btn:hover { transform: scale(1.1); background: #fff; }
 
-  /* Small action buttons below play */
   .card-action-btn {
     @apply flex items-center justify-center text-white;
     width: 32px; height: 32px;
@@ -252,7 +278,6 @@
   }
   .card-action-btn:hover { background: rgba(255, 255, 255, 0.25); }
 
-  /* Card hover metadata row */
   .card-meta {
     @apply absolute inset-x-0 bottom-0 z-[5] flex items-center gap-1.5 px-2 pb-2;
     font-size: 11px;
@@ -266,7 +291,6 @@
     transform: translateY(0);
   }
 
-  /* Progress bar — 3px, on absolute bottom of poster */
   .card-progress {
     @apply absolute inset-x-0 bottom-0 z-[6] pointer-events-none;
     height: 3px;
@@ -275,12 +299,7 @@
   .card-progress-fill {
     @apply h-full;
     background: var(--accent-blue);
-    /* No border-radius as spec says */
   }
-
-  /* ============================
-     BADGES — Only one per card
-     ============================ */
 
   .badge {
     @apply inline-flex items-center;
@@ -291,25 +310,18 @@
     border-radius: 3px;
     line-height: 1.4;
   }
-  /* TOP 10: gold */
   .badge-top10 {
     background: var(--accent-gold);
     color: #050508;
   }
-  /* NOVO: blue */
   .badge-new {
-    background: rgba(74, 144, 217, 0.9);
+    background: rgba(142, 111, 214, 0.9);
     color: #fff;
   }
-  /* LEGENDA: neutral */
   .badge-sub {
     background: rgba(255, 255, 255, 0.15);
     color: rgba(255, 255, 255, 0.8);
   }
-
-  /* ============================
-     BADGES — Category pill (banner/detail)
-     ============================ */
 
   .badge-category {
     @apply inline-flex items-center;
@@ -324,20 +336,12 @@
     color: var(--accent-blue);
   }
 
-  /* ============================
-     GLASS morphism
-     ============================ */
-
   .glass {
     background: rgba(13, 13, 20, 0.75);
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
     border: var(--border);
   }
-
-  /* ============================
-     SKELETON loading
-     ============================ */
 
   .skeleton {
     @apply relative overflow-hidden;
@@ -360,16 +364,11 @@
   }
   @keyframes shimmer { 100% { transform: translateX(100%); } }
 
-  /* ============================
-     SECTION / LAYOUT
-     ============================ */
-
   .section-container {
     padding-left: var(--section-padding);
     padding-right: var(--section-padding);
   }
 
-  /* Section title: Inter 400, not bold */
   .section-title {
     font-family: var(--font-base);
     font-weight: 400;
@@ -377,7 +376,6 @@
     color: var(--text-primary);
   }
 
-  /* Hero title: Inter 300 (light) — editorial */
   .hero-title {
     font-family: var(--font-base);
     font-size: var(--text-hero);
@@ -385,10 +383,6 @@
     line-height: 1.05;
     letter-spacing: -0.02em;
   }
-
-  /* ============================
-     CAROUSELS
-     ============================ */
 
   .carousel-container { @apply relative; overflow: visible; }
 
@@ -415,19 +409,17 @@
     transition: opacity var(--t-fast) var(--ease-base),
                 background-color var(--t-fast) var(--ease-base),
                 transform var(--t-fast) var(--ease-base);
-    /* Positioned outside card area */
     margin-top: -22px;
   }
   .carousel-container:hover .carousel-arrow { opacity: 1; }
   .carousel-arrow:hover {
-    background: rgba(74, 144, 217, 0.2);
+    background: rgba(142, 111, 214, 0.2);
     border-color: var(--accent-blue-border);
     transform: translateY(-50%) scale(1.08);
   }
   .carousel-arrow-left { left: -14px; }
   .carousel-arrow-right { right: -14px; }
 
-  /* Position indicator: thin 2px line under section title, segmented */
   .carousel-indicators {
     @apply flex gap-1 mt-2;
     height: 2px;
@@ -439,7 +431,6 @@
   }
   .carousel-indicator-seg.active { background: var(--accent-blue); }
 
-  /* Section header with "Ver tudo" that appears on hover */
   .section-header {
     @apply flex items-center justify-between mb-3;
   }
@@ -451,10 +442,6 @@
   }
   .section-header:hover .ver-tudo,
   .carousel-wrapper:hover .ver-tudo { opacity: 1; }
-
-  /* ============================
-     TOAST notifications
-     ============================ */
 
   .toast-container {
     @apply fixed z-[9999];
@@ -482,10 +469,6 @@
     to { opacity: 0; transform: translateY(20px) scale(0.96); }
   }
 
-  /* ============================
-     PLAYER controls
-     ============================ */
-
   .player-controls {
     transition: opacity var(--t-slow) var(--ease-base);
   }
@@ -494,7 +477,6 @@
     pointer-events: none;
   }
 
-  /* Progress track */
   .player-progress-track {
     @apply relative w-full cursor-pointer;
     height: 6px;
@@ -508,7 +490,6 @@
     background: var(--accent-blue);
     pointer-events: none;
   }
-  /* Drag handle: 12px, appears on hover */
   .player-progress-handle {
     @apply absolute top-1/2 -translate-y-1/2;
     width: 12px; height: 12px;
@@ -524,10 +505,6 @@
     opacity: 1;
     transform: translateY(-50%) scale(1);
   }
-
-  /* ============================
-     NAVIGATION
-     ============================ */
 
   .nav-link {
     @apply relative;
@@ -550,7 +527,6 @@
     to { transform: scaleX(1); opacity: 1; }
   }
 
-  /* Logo — Inter 300, accent blue */
   .kauanflix-logo {
     color: var(--accent-blue);
     font-weight: 300;
@@ -559,12 +535,8 @@
                 text-shadow var(--t-fast) var(--ease-base);
   }
   .kauanflix-logo:hover {
-    text-shadow: 0 0 20px rgba(74, 144, 217, 0.5);
+    text-shadow: 0 0 20px rgba(142, 111, 214, 0.5);
   }
-
-  /* ============================
-     MOBILE BOTTOM NAV
-     ============================ */
 
   .mobile-bottom-nav {
     @apply fixed bottom-0 left-0 right-0 z-50 flex items-center justify-around;
@@ -586,10 +558,6 @@
   .mobile-bottom-nav button.active { color: var(--accent-blue); }
   .mobile-bottom-nav a:hover,
   .mobile-bottom-nav button:hover { color: var(--text-primary); }
-
-  /* ============================
-     DETAILS MODAL — slide from bottom
-     ============================ */
 
   .details-modal-backdrop {
     @apply fixed inset-0 z-[9990];
@@ -622,7 +590,6 @@
     to { transform: translateY(100%); opacity: 0; }
   }
 
-  /* In mobile: full screen, fade only */
   @media (max-width: 767px) {
     .details-modal {
       @apply inset-0;
@@ -635,7 +602,6 @@
     }
   }
 
-  /* Tabs in details modal */
   .detail-tabs {
     @apply flex gap-0;
     border-bottom: 1px solid rgba(255, 255, 255, 0.06);
@@ -656,16 +622,14 @@
     border-radius: 1px 1px 0 0;
   }
 
-  /* Episode list row */
   .episode-row {
     @apply flex gap-4 p-4 rounded-lg cursor-pointer;
     background: transparent;
     transition: background-color var(--t-fast) var(--ease-base);
   }
   .episode-row:hover { background: var(--surface-1); }
-  .episode-row.current { background: rgba(74, 144, 217, 0.07); }
+  .episode-row.current { background: rgba(142, 111, 214, 0.07); }
 
-  /* Season pills */
   .season-pill {
     @apply px-4 py-1.5 text-sm font-medium rounded-full;
     background: var(--surface-2);
@@ -681,7 +645,6 @@
     border-color: var(--accent-blue);
   }
 
-  /* Search dropdown */
   .search-dropdown {
     @apply absolute left-0 right-0 z-50;
     background: var(--surface-1);
@@ -697,10 +660,6 @@
   .search-suggestion:hover,
   .search-suggestion.highlighted { background: var(--surface-2); }
 
-  /* ============================
-     SCROLL REVEAL
-     ============================ */
-
   .fade-in-section {
     opacity: 0;
     transform: translateY(16px);
@@ -709,10 +668,6 @@
   }
   .fade-in-section.visible { opacity: 1; transform: translateY(0); }
 
-  /* ============================
-     PAGE TRANSITIONS
-     ============================ */
-
   .page-enter {
     animation: page-fade-in 200ms var(--ease-base) forwards;
   }
@@ -720,10 +675,6 @@
     from { opacity: 0; }
     to { opacity: 1; }
   }
-
-  /* ============================
-     INSTALL / PWA banners
-     ============================ */
 
   .install-banner {
     position: fixed;
@@ -734,7 +685,7 @@
     background: rgba(13, 13, 20, 0.97);
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
-    border: 1px solid rgba(74, 144, 217, 0.25);
+    border: 1px solid rgba(142, 111, 214, 0.25);
     border-radius: var(--radius-lg);
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
     max-width: 480px;
@@ -750,15 +701,11 @@
     background: rgba(13, 13, 20, 0.97);
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
-    border: 1px solid rgba(74, 144, 217, 0.25);
+    border: 1px solid rgba(142, 111, 214, 0.25);
     border-radius: var(--radius-lg);
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
     max-width: 340px;
   }
-
-  /* ============================
-     BLUR-UP image loading
-     ============================ */
 
   .img-blur-load {
     filter: blur(10px);
@@ -770,14 +717,216 @@
     transform: scale(1);
   }
 
-  /* ============================
-     PROGRESS BAR (watch progress)
-     ============================ */
-
   .progress-bar { @apply w-full overflow-hidden; height: 3px; background: rgba(255, 255, 255, 0.12); }
   .progress-bar-fill { @apply h-full; background: var(--accent-blue); transition: width var(--t-base) var(--ease-base); }
 
-  /* Hero dot indicators */
+  /* ============================================================
+     iOS-style Glassmorphism Components
+     ============================================================ */
+
+  .glass-base {
+    position: relative;
+    background: var(--glass-bg);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+    border: 1px solid var(--glass-separator);
+    box-shadow: var(--glass-outer-glow), inset 0 1px 0 var(--glass-inner-border);
+    isolation: isolate;
+  }
+  .glass-base::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.18) 0%,
+      rgba(255, 255, 255, 0.03) 45%,
+      rgba(255, 255, 255, 0.08) 100%
+    );
+    -webkit-mask:
+      linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+            mask-composite: exclude;
+    pointer-events: none;
+    z-index: 1;
+  }
+  :root.light .glass-base::before {
+    background: linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.9) 0%,
+      rgba(255, 255, 255, 0.35) 45%,
+      rgba(255, 255, 255, 0.55) 100%
+    );
+  }
+
+  .glass-nav {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: color-mix(in srgb, var(--glass-bg) 96%, transparent);
+    backdrop-filter: blur(24px) saturate(180%);
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
+    border-bottom: 0.5px solid var(--glass-separator);
+    transition: background-color var(--t-base) var(--ease-base),
+                box-shadow var(--t-base) var(--ease-base);
+  }
+  .glass-nav.scrolled {
+    background: var(--glass-bg);
+    box-shadow: 0 1px 0 var(--glass-separator), 0 8px 24px rgba(0,0,0,0.12);
+  }
+
+  .glass-card {
+    position: relative;
+    border-radius: 16px;
+    background: var(--glass-bg);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+    border: 0.5px solid var(--glass-separator);
+    box-shadow: var(--glass-outer-glow),
+                inset 0 1px 0 var(--glass-inner-border),
+                inset 0 -1px 0 rgba(0, 0, 0, 0.08);
+    transition: transform var(--t-base) var(--ease-card),
+                box-shadow var(--t-base) var(--ease-card),
+                border-color var(--t-fast) var(--ease-base);
+    overflow: hidden;
+  }
+  .glass-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(
+      150deg,
+      rgba(255, 255, 255, 0.22) 0%,
+      rgba(255, 255, 255, 0.02) 55%,
+      rgba(255, 255, 255, 0.1) 100%
+    );
+    -webkit-mask:
+      linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+            mask-composite: exclude;
+    pointer-events: none;
+  }
+  .glass-card:hover {
+    transform: translateY(-2px);
+    border-color: var(--accent-blue-border);
+    box-shadow: 0 20px 60px rgba(0,0,0,0.35),
+                inset 0 1px 0 var(--glass-inner-border);
+  }
+
+  .glass-modal {
+    position: relative;
+    border-radius: 20px;
+    background: color-mix(in srgb, var(--glass-bg) 97%, transparent);
+    backdrop-filter: blur(30px) saturate(180%);
+    -webkit-backdrop-filter: blur(30px) saturate(180%);
+    border: 0.5px solid var(--glass-separator);
+    box-shadow: 0 30px 80px rgba(0, 0, 0, 0.55),
+                0 10px 30px rgba(0, 0, 0, 0.3),
+                inset 0 1px 0 var(--glass-inner-border);
+    overflow: hidden;
+  }
+  .glass-modal::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(
+      145deg,
+      rgba(255, 255, 255, 0.2) 0%,
+      rgba(255, 255, 255, 0.02) 50%,
+      rgba(255, 255, 255, 0.09) 100%
+    );
+    -webkit-mask:
+      linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+            mask-composite: exclude;
+    pointer-events: none;
+  }
+
+  .glass-button {
+    @apply inline-flex items-center justify-center font-medium;
+    min-height: 44px;
+    padding: 0 18px;
+    border-radius: 12px;
+    background: var(--glass-bg);
+    backdrop-filter: blur(12px) saturate(180%);
+    -webkit-backdrop-filter: blur(12px) saturate(180%);
+    border: 0.5px solid var(--glass-separator);
+    color: var(--text-primary);
+    transition: background-color var(--t-fast) var(--ease-base),
+                transform var(--t-fast) var(--ease-base),
+                box-shadow var(--t-fast) var(--ease-base);
+  }
+  .glass-button:hover {
+    background: color-mix(in srgb, var(--glass-bg) 85%, var(--accent-blue) 15%);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+  }
+  .glass-button:active { transform: scale(0.98); }
+  .glass-button.primary {
+    background: var(--accent-blue);
+    border-color: transparent;
+    color: #fff;
+  }
+  .glass-button.primary:hover {
+    background: #9e81e0;
+    box-shadow: 0 8px 24px rgba(142, 111, 214, 0.35);
+  }
+
+  .glass-icon-btn {
+    @apply flex items-center justify-center;
+    width: 40px; height: 40px;
+    border-radius: 9999px;
+    background: transparent;
+    color: var(--text-primary);
+    transition: background-color var(--t-fast) var(--ease-base),
+                transform var(--t-fast) var(--ease-base);
+  }
+  .glass-icon-btn:hover {
+    background: var(--glass-bg);
+    backdrop-filter: blur(8px) saturate(180%);
+    -webkit-backdrop-filter: blur(8px) saturate(180%);
+  }
+  .glass-icon-btn:active { transform: scale(0.94); }
+
+  /* Cloudflare Captcha Banner */
+  .player-error-card {
+    border-radius: 18px;
+    background: rgba(28, 28, 30, 0.92);
+    border: 0.5px solid var(--glass-separator);
+    backdrop-filter: blur(24px) saturate(180%);
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
+    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.45);
+  }
+
+  .captcha-warning {
+    @apply flex flex-col items-start gap-2 p-4;
+    border-radius: 14px;
+    background: linear-gradient(135deg, rgba(255, 149, 0, 0.14), rgba(255, 59, 48, 0.08));
+    border: 0.5px solid rgba(255, 149, 0, 0.35);
+    color: var(--text-primary);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+
+  .shield-badge {
+    @apply inline-flex items-center gap-1;
+    padding: 2px 8px;
+    border-radius: 9999px;
+    background: rgba(52, 199, 89, 0.12);
+    border: 0.5px solid rgba(52, 199, 89, 0.35);
+    color: #34C759;
+    font-size: 11px;
+    font-weight: 500;
+  }
+
   .hero-dots {
     @apply flex gap-2 items-center;
   }
@@ -791,7 +940,6 @@
   }
   .hero-dot.active { background: #ffffff; }
 
-  /* Add-to-list animation: + rotates to ✓ */
   .list-icon-enter {
     animation: list-add 0.3s var(--ease-modal);
   }
@@ -799,6 +947,261 @@
     0% { transform: scale(0.8) rotate(0deg); }
     50% { transform: scale(1.2) rotate(45deg); }
     100% { transform: scale(1) rotate(0deg); }
+  }
+
+  /* ============================================================
+     iOS-style Navigation Bar (Header)
+     ============================================================ */
+  .ios-nav {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    width: 100%;
+    background: color-mix(in srgb, var(--glass-bg) 96%, transparent);
+    backdrop-filter: blur(24px) saturate(180%);
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
+    border-bottom: 0.5px solid var(--glass-separator);
+    transition: background-color var(--t-base) var(--ease-base),
+                box-shadow var(--t-base) var(--ease-base);
+  }
+  .ios-nav.scrolled {
+    background: var(--glass-bg);
+    box-shadow: 0 1px 0 var(--glass-separator), 0 8px 24px rgba(0, 0, 0, 0.12);
+  }
+
+  .ios-nav-inner {
+    @apply flex items-center justify-between;
+    height: 56px;
+    max-width: 1440px;
+    margin: 0 auto;
+  }
+
+  .ios-nav-logo {
+    @apply flex items-center no-underline;
+    color: var(--text-primary);
+  }
+  .ios-nav-logo-text {
+    font-family: var(--font-base);
+    color: var(--accent-blue);
+    font-weight: 300;
+    letter-spacing: 0.12em;
+    transition: color var(--t-fast) var(--ease-base),
+                text-shadow var(--t-fast) var(--ease-base);
+  }
+  .ios-nav-logo-text:hover {
+    text-shadow: 0 0 20px rgba(142, 111, 214, 0.5);
+  }
+
+  .ios-nav-link {
+    @apply relative inline-flex items-center no-underline;
+    padding: 6px 14px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    transition: color var(--t-fast) var(--ease-base),
+                background-color var(--t-fast) var(--ease-base);
+  }
+  .ios-nav-link:hover {
+    color: var(--text-primary);
+    background: rgba(255, 255, 255, 0.06);
+  }
+  .ios-nav-link.active {
+    color: var(--text-primary);
+  }
+  .ios-nav-link.active::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 14px;
+    right: 14px;
+    height: 2px;
+    border-radius: 1px;
+    background: var(--accent-blue);
+    animation: nav-underline-in 0.2s var(--ease-base);
+  }
+
+  .ios-nav-icon-btn {
+    @apply inline-flex items-center justify-center;
+    width: 40px;
+    height: 40px;
+    border-radius: 9999px;
+    background: transparent;
+    color: var(--text-primary);
+    border: none;
+    cursor: pointer;
+    transition: background-color var(--t-fast) var(--ease-base),
+                transform var(--t-fast) var(--ease-base);
+  }
+  .ios-nav-icon-btn:hover {
+    background: rgba(255, 255, 255, 0.08);
+  }
+  .ios-nav-icon-btn:active {
+    transform: scale(0.94);
+  }
+
+  /* Search field */
+  .ios-search-field {
+    @apply relative flex items-center;
+    width: min(360px, 50vw);
+    height: 36px;
+    padding: 0 10px;
+    border-radius: 10px;
+    background: rgba(118, 118, 128, 0.24);
+    color: var(--text-primary);
+    transition: background-color var(--t-fast) var(--ease-base),
+                box-shadow var(--t-fast) var(--ease-base);
+  }
+  .ios-search-field:focus-within {
+    background: rgba(118, 118, 128, 0.32);
+    box-shadow: 0 0 0 4px rgba(142, 111, 214, 0.18);
+  }
+  .ios-search-icon {
+    flex-shrink: 0;
+    margin-right: 6px;
+    color: var(--text-muted);
+  }
+  .ios-search-input {
+    @apply flex-1 bg-transparent outline-none border-none;
+    font-size: 15px;
+    color: var(--text-primary);
+    height: 100%;
+    min-width: 0;
+  }
+  .ios-search-input::placeholder {
+    color: var(--text-muted);
+  }
+  .ios-search-clear {
+    @apply inline-flex items-center justify-center;
+    width: 20px;
+    height: 20px;
+    border-radius: 9999px;
+    background: rgba(118, 118, 128, 0.5);
+    color: var(--text-secondary);
+    border: none;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: background-color var(--t-fast) var(--ease-base);
+  }
+  .ios-search-clear:hover {
+    background: rgba(118, 118, 128, 0.7);
+  }
+
+  /* Mobile side menu */
+  .ios-menu-backdrop {
+    background: rgba(0, 0, 0, 0.4);
+    animation: fade-in-overlay 0.2s var(--ease-base);
+  }
+  .ios-side-menu {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: min(320px, 85vw);
+    z-index: 41;
+    background: var(--surface-1);
+    border-left: 0.5px solid var(--glass-separator);
+    box-shadow: -8px 0 40px rgba(0, 0, 0, 0.5);
+    display: flex;
+    flex-direction: column;
+    animation: slide-from-right 0.3s var(--ease-modal);
+  }
+  @keyframes slide-from-right {
+    from { transform: translateX(100%); }
+    to { transform: translateX(0); }
+  }
+  .ios-side-menu-header {
+    @apply flex items-center justify-between;
+    padding: 14px 16px;
+    min-height: 56px;
+    border-bottom: 0.5px solid var(--glass-separator);
+  }
+  .ios-side-menu-list {
+    @apply flex flex-col;
+    padding: 8px;
+    overflow-y: auto;
+    flex: 1;
+  }
+  .ios-side-menu-item {
+    @apply relative flex items-center no-underline;
+    padding: 12px 14px;
+    border-radius: 10px;
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--text-primary);
+    margin-bottom: 2px;
+    transition: background-color var(--t-fast) var(--ease-base);
+  }
+  .ios-side-menu-item:hover {
+    background: rgba(255, 255, 255, 0.06);
+  }
+  .ios-side-menu-item.active {
+    background: var(--accent-blue-dim);
+    color: var(--accent-blue);
+  }
+  .ios-side-menu-item-indicator {
+    width: 3px;
+    height: 20px;
+    border-radius: 2px;
+    margin-right: 12px;
+    background: transparent;
+    flex-shrink: 0;
+  }
+  .ios-side-menu-item.active .ios-side-menu-item-indicator {
+    background: var(--accent-blue);
+  }
+
+  /* ============================================================
+     iOS-style Tab Bar (BottomNav)
+     ============================================================ */
+  .ios-tab-bar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 100;
+    background: color-mix(in srgb, var(--surface-0) 94%, transparent);
+    backdrop-filter: blur(24px) saturate(180%);
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
+    border-top: 0.5px solid var(--glass-separator);
+  }
+  .ios-tab-bar-inner {
+    @apply flex items-center justify-around;
+    height: 56px;
+    max-width: 640px;
+    margin: 0 auto;
+  }
+  .ios-tab-bar-item {
+    @apply relative flex flex-col items-center justify-center no-underline;
+    flex: 1;
+    height: 100%;
+    color: var(--text-muted);
+    transition: color var(--t-fast) var(--ease-base);
+  }
+  .ios-tab-bar-item.active {
+    color: var(--accent-blue);
+  }
+  .ios-tab-bar-icon-wrap {
+    @apply relative flex items-center justify-center;
+    margin-bottom: 2px;
+    line-height: 0;
+  }
+  .ios-tab-bar-icon-active {
+    filter: drop-shadow(0 2px 6px rgba(142, 111, 214, 0.4));
+  }
+  .ios-tab-bar-label {
+    font-size: 10px;
+    font-weight: 500;
+    line-height: 1;
+    letter-spacing: -0.01em;
+  }
+  .ios-tab-bar-indicator {
+    position: absolute;
+    top: 4px;
+    width: 4px;
+    height: 4px;
+    border-radius: 9999px;
+    background: var(--accent-blue);
   }
 }
 
@@ -820,7 +1223,6 @@
   .safe-bottom { padding-bottom: env(safe-area-inset-bottom, 0px); }
 }
 
-/* Reduce motion — respect user preference */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;

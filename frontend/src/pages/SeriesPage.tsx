@@ -1,4 +1,3 @@
-/* KauanFlix — Series Page */
 import React, { useState, useEffect } from 'react';
 import { Tv } from 'lucide-react';
 import { ContentCarousel } from '../components/ContentCarousel';
@@ -29,8 +28,7 @@ const SeriesPage: React.FC = () => {
         const extract = (r: PromiseSettledResult<any>) =>
           r.status === 'fulfilled' ? (Array.isArray(r.value) ? r.value : r.value?.results || []) : [];
 
-        // Ensure media_type is set for all series items
-        const ensureTV = (items: Movie[]) => items.map(m => ({ ...m, media_type: m.media_type || 'tv' }));
+        const ensureTV = (items: Movie[]) => items.map((m) => ({ ...m, media_type: m.media_type || 'tv' }));
 
         setTrending(ensureTV(extract(trendingRes)));
         setPopular(ensureTV(extract(popularRes)));
@@ -42,7 +40,10 @@ const SeriesPage: React.FC = () => {
     }
 
     load();
-    return () => { cancelled = true; document.title = 'KauanFlix — Seu cinema, do seu jeito'; };
+    return () => {
+      cancelled = true;
+      document.title = 'KauanFlix — Seu cinema, do seu jeito';
+    };
   }, []);
 
   if (error && trending.length === 0) {

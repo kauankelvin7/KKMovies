@@ -1,25 +1,27 @@
-/* KauanFlix — Aggressive Popup Blocker
-   Blocks unwanted popups from streaming iframes by:
-   1. Overriding window.open globally
-   2. Intercepting suspicious click handlers
-   3. Monitoring and sandboxing iframes via MutationObserver
-   4. Blocking suspicious navigations */
+/* KauanFlix — Popup Blocker
+   Cross-origin iframes cannot have window.open intercepted from the parent.
+   Sandbox without allow-popups / allow-same-origin is what actually stops
+   the embed from opening ads. Parent-level window.open is a second layer. */
+
+const IFRAME_SANDBOX = 'allow-scripts allow-forms allow-presentation allow-fullscreen';
 
 export class PopupBlocker {
   private blockedCount = 0;
   private originalWindowOpen: typeof window.open;
   private observer: MutationObserver | null = null;
   private listeners: Array<() => void> = [];
+  private boundClick?: (e: MouseEvent) => void;
+  private boundAuxClick?: (e: MouseEvent) => void;
+  private boundPointerDown?: (e: PointerEvent) => void;
 
   constructor() {
-    this.originalWindowOpen = window.open;
+    this.originalWindowOpen = window.open.bind(window);
   }
 
   get blocked(): number {
     return this.blockedCount;
   }
 
-  /** Subscribe to blocked count changes */
   onBlock(cb: () => void): () => void {
     this.listeners.push(cb);
     return () => {
@@ -28,63 +30,70 @@ export class PopupBlocker {
   }
 
   private notify() {
+    this.blockedCount++;
     this.listeners.forEach((cb) => cb());
   }
 
-  /** Activate all blocking strategies */
   activate(): void {
     this.overrideWindowOpen();
     this.interceptClicks();
     this.watchIframes();
     this.blockBeforeUnload();
-    console.log('[KauanFlix] PopupBlocker ativado');
   }
 
-  /** Deactivate and clean up */
   deactivate(): void {
     window.open = this.originalWindowOpen;
     if (this.observer) {
       this.observer.disconnect();
       this.observer = null;
     }
-    console.log(`[KauanFlix] PopupBlocker desativado (${this.blockedCount} popups bloqueados)`);
+    if (this.boundClick) document.removeEventListener('click', this.boundClick, true);
+    if (this.boundAuxClick) document.removeEventListener('auxclick', this.boundAuxClick, true);
+    if (this.boundPointerDown) document.removeEventListener('pointerdown', this.boundPointerDown, true);
   }
 
-  /** 1. Override window.open to block unwanted popups */
   private overrideWindowOpen(): void {
     const self = this;
     window.open = function (url?: string | URL, target?: string, features?: string): Window | null {
-      // Allow same-origin navigations and explicit user actions
       const urlStr = url?.toString() || '';
       if (self.isTrustedUrl(urlStr)) {
-        return self.originalWindowOpen.call(window, url, target, features);
+        return self.originalWindowOpen(url, target, features);
       }
-      self.blockedCount++;
       self.notify();
-      console.warn(`[KauanFlix] Popup bloqueado: ${urlStr}`);
       return null;
     };
   }
 
-  /** 2. Intercept click events that try to open new tabs */
-  private interceptClicks(): void {
-    document.addEventListener('click', (e) => {
-      const target = e.target as HTMLElement;
-      const anchor = target.closest('a');
-      if (anchor && anchor.target === '_blank') {
-        const href = anchor.href || '';
-        if (!this.isTrustedUrl(href)) {
-          e.preventDefault();
-          e.stopPropagation();
-          this.blockedCount++;
-          this.notify();
-          console.warn(`[KauanFlix] Link popup bloqueado: ${href}`);
-        }
-      }
-    }, true); // capture phase
+  private shouldBlockAnchor(anchor: HTMLAnchorElement): boolean {
+    if (anchor.dataset.allowPopup === 'true') return false;
+    const href = anchor.getAttribute('href') || '';
+    if (!href || href.startsWith('#') || href.startsWith('javascript:')) return false;
+    const opensAway = anchor.target === '_blank' || anchor.rel.includes('opener');
+    return opensAway && !this.isTrustedUrl(anchor.href);
   }
 
-  /** 3. Watch for new iframes and sandbox them */
+  private interceptEvent(e: Event): void {
+    const target = e.target as HTMLElement | null;
+    if (!target) return;
+    const anchor = target.closest('a');
+    if (anchor && this.shouldBlockAnchor(anchor)) {
+      e.preventDefault();
+      e.stopPropagation();
+      this.notify();
+    }
+  }
+
+  private interceptClicks(): void {
+    this.boundClick = (e) => this.interceptEvent(e);
+    this.boundAuxClick = (e) => this.interceptEvent(e);
+    this.boundPointerDown = (e) => {
+      if (e.button === 1) this.interceptEvent(e);
+    };
+    document.addEventListener('click', this.boundClick, true);
+    document.addEventListener('auxclick', this.boundAuxClick, true);
+    document.addEventListener('pointerdown', this.boundPointerDown, true);
+  }
+
   private watchIframes(): void {
     this.observer = new MutationObserver((mutations) => {
       for (const mutation of mutations) {
@@ -92,51 +101,41 @@ export class PopupBlocker {
           if (node instanceof HTMLIFrameElement) {
             this.sandboxIframe(node);
           }
-          // Also check children
           if (node instanceof HTMLElement) {
-            const iframes = node.querySelectorAll('iframe');
-            iframes.forEach((iframe) => this.sandboxIframe(iframe));
+            node.querySelectorAll('iframe').forEach((iframe) => this.sandboxIframe(iframe));
           }
         }
       }
     });
 
-    this.observer.observe(document.body, {
+    this.observer.observe(document.documentElement, {
       childList: true,
       subtree: true,
     });
 
-    // Sandbox existing iframes
     document.querySelectorAll('iframe').forEach((iframe) => this.sandboxIframe(iframe));
   }
 
-  /** 4. Block beforeunload events from hijacking navigation */
   private blockBeforeUnload(): void {
     window.addEventListener('beforeunload', (e) => {
-      // Only block if it seems like a redirect from iframe
       const activeEl = document.activeElement;
       if (activeEl instanceof HTMLIFrameElement) {
         e.preventDefault();
-        this.blockedCount++;
         this.notify();
       }
     });
   }
 
-  /** Apply sandbox attributes to iframe to prevent popup opening */
-  private sandboxIframe(iframe: HTMLIFrameElement): void {
-    const src = iframe.src || '';
-    // Only sandbox streaming/external iframes, not our own
-    if (src && !this.isOwnOrigin(src)) {
-      // Set sandbox to allow scripts and same-origin but block popups and top navigation
-      const currentSandbox = iframe.getAttribute('sandbox');
-      if (!currentSandbox || currentSandbox.includes('allow-popups')) {
-        iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-forms');
-      }
+  sandboxIframe(iframe: HTMLIFrameElement): void {
+    const src = iframe.src || iframe.getAttribute('src') || '';
+    if (src && this.isOwnOrigin(src)) return;
+
+    const current = iframe.getAttribute('sandbox') || '';
+    if (current.includes('allow-popups') || current.includes('allow-same-origin') || !current) {
+      iframe.setAttribute('sandbox', IFRAME_SANDBOX);
     }
   }
 
-  /** Check if URL is from our own origin */
   private isOwnOrigin(url: string): boolean {
     try {
       const u = new URL(url, window.location.origin);
@@ -146,23 +145,22 @@ export class PopupBlocker {
     }
   }
 
-  /** Check if URL is trusted (our app or known good domains) */
   private isTrustedUrl(url: string): boolean {
     if (!url || url === 'about:blank') return true;
     try {
       const u = new URL(url, window.location.origin);
-      const trustedDomains = [
+      const trusted = [
         window.location.hostname,
         'image.tmdb.org',
         'youtube.com',
         'www.youtube.com',
+        'youtu.be',
       ];
-      return trustedDomains.some((d) => u.hostname === d || u.hostname.endsWith('.' + d));
+      return trusted.some((d) => u.hostname === d || u.hostname.endsWith('.' + d));
     } catch {
       return false;
     }
   }
 }
 
-/** Singleton instance */
 export const popupBlocker = new PopupBlocker();

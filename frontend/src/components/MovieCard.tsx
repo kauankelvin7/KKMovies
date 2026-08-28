@@ -1,12 +1,3 @@
-/* KauanFlix — Movie Card v4 (HBO Max style)
-   - 2:3 ratio poster card
-   - Default: poster only + base gradient + title below gradient
-   - Badge: one per card, priority: TOP10 > NOVO (no genre badges)
-   - Hover: scale(1.06) translateY(-4px), dark overlay, circular play btn (48px),
-     + and ℹ action buttons (32px), metadata row fades in
-   - Progress bar: 3px, accent blue, at absolute bottom of poster
-   - React.memo to prevent unnecessary re-renders */
-
 import React, { useState } from 'react';
 import { Play, Plus, Check, Info } from 'lucide-react';
 import { getImageUrl, getStreamingUrl, getSeriesStreamingUrl } from '../services/movieService';
@@ -18,7 +9,7 @@ import type { Movie } from '../types/movie';
 
 interface Props {
   movie: Movie;
-  rank?: number;           // if provided, shows TOP N badge
+  rank?: number;             // if provided, shows TOP N badge
   landscape?: boolean;     // 16:9 variant for "Continue Watching"
   showOverlay?: boolean;   // allow hiding the hover overlay (e.g., in search)
   size?: 'sm' | 'md' | 'lg'; // responsive size override
@@ -77,6 +68,7 @@ const MovieCard: React.FC<Props> = ({
         posterPath: movie.poster_path || '',
         backdropPath: movie.backdrop_path || '',
         mediaType: 'movie',
+        imdbId: movie.imdb_id,
       });
     }
   };
@@ -126,7 +118,7 @@ const MovieCard: React.FC<Props> = ({
               fontSize: 90,
               lineHeight: 1,
               color: 'transparent',
-              WebkitTextStroke: '1.5px rgba(74,144,217,0.4)',
+              WebkitTextStroke: '1.5px var(--accent-blue-border)',
             }}
           >
             {rank}
@@ -158,8 +150,8 @@ const MovieCard: React.FC<Props> = ({
             className={`img-blur-load ${imgLoaded ? 'loaded' : ''}`}
           />
         ) : (
-          <div className="absolute inset-0 flex items-center justify-center bg-surface-1">
-            <Play className="w-8 h-8 opacity-30" />
+          <div className="absolute inset-0 flex items-center justify-center bg-[var(--surface-1)]">
+            <Play className="w-8 h-8 opacity-30 text-white" />
           </div>
         )}
 
@@ -174,46 +166,50 @@ const MovieCard: React.FC<Props> = ({
         <div className="card-gradient" />
         <div className="card-title">{movie.title || movie.name}</div>
 
-        {/* Hover overlay */}
+        {/* Hover overlay (iOS Glassmorphism Refinement) */}
         {showOverlay && (
-          <div className="card-overlay">
-            {/* Play button — centered */}
+          <div className="card-overlay backdrop-blur-[2px]">
+            {/* Play button — centered (Glass Action Style) */}
             <button
-              className="card-play-btn"
+              className="card-play-btn glass-card hover:scale-105 active:scale-95 transition-transform"
               onClick={handlePlay}
               aria-label="Assistir"
             >
-              <Play className="w-5 h-5" fill="currentColor" />
+              <Play className="w-5 h-5 text-white ml-0.5" fill="currentColor" />
             </button>
 
             {/* Action row below play */}
             <div className="flex items-center gap-2">
               <button
-                className="card-action-btn"
+                className="card-action-btn glass-card hover:border-[var(--accent-blue-border)] transition-colors"
                 onClick={handleToggleList}
                 aria-label={inList ? 'Remover da lista' : 'Adicionar à lista'}
               >
                 {inList
-                  ? <Check className="w-3.5 h-3.5 text-accent-blue" style={{ color: '#4A90D9' }} />
-                  : <Plus className="w-3.5 h-3.5" />
+                  ? <Check className="w-3.5 h-3.5 text-[var(--accent-blue)]" />
+                  : <Plus className="w-3.5 h-3.5 text-white" />
                 }
               </button>
               <button
-                className="card-action-btn"
+                className="card-action-btn glass-card hover:border-[var(--accent-blue-border)] transition-colors"
                 onClick={handleDetails}
                 aria-label="Ver detalhes"
               >
-                <Info className="w-3.5 h-3.5" />
+                <Info className="w-3.5 h-3.5 text-white" />
               </button>
             </div>
 
             {/* Metadata row — fades in with delay */}
             <div className="card-meta justify-center">
               {movie.vote_average > 0 && (
-                <span style={{ color: '#C9973A', fontSize: 11 }}>★ {movie.vote_average.toFixed(1)}</span>
+                <span className="text-[var(--accent-gold)] flex items-center gap-0.5 font-medium text-[11px] drop-shadow-[0_0_6px_rgba(201,151,58,0.3)]">
+                  ★ {movie.vote_average.toFixed(1)}
+                </span>
               )}
-              {movie.vote_average > 0 && getYear(movie.release_date) && <span style={{ color: 'rgba(255,255,255,0.35)' }}>·</span>}
-              <span style={{ color: 'rgba(255,255,255,0.55)', fontSize: 11 }}>
+              {movie.vote_average > 0 && getYear(movie.release_date || movie.first_air_date || '') && (
+                <span className="text-[var(--text-hint)]">·</span>
+              )}
+              <span className="text-[var(--text-secondary)] text-[11px] font-medium">
                 {getYear(movie.release_date || movie.first_air_date || '')}
               </span>
             </div>
@@ -222,8 +218,8 @@ const MovieCard: React.FC<Props> = ({
 
         {/* Progress bar — absolute bottom, no border-radius */}
         {progressPercent > 0 && progressPercent < 100 && (
-          <div className="card-progress">
-            <div className="card-progress-fill" style={{ width: `${progressPercent}%` }} />
+          <div className="card-progress bg-[rgba(255,255,255,0.15)]">
+            <div className="card-progress-fill bg-[var(--accent-blue)]" style={{ width: `${progressPercent}%` }} />
           </div>
         )}
       </div>

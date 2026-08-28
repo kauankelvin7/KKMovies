@@ -57,7 +57,7 @@ const MyListPage: React.FC = () => {
             {t.count !== null && t.count > 0 && (
               <span
                 className="ml-2 text-xs px-1.5 py-0.5 rounded-full"
-                style={{ background: 'rgba(74,144,217,0.15)', color: '#4A90D9' }}
+                style={{ background: 'rgba(74,144,217,0.15)', color: '#8E6FD6' }}
               >
                 {t.count}
               </span>
@@ -164,13 +164,13 @@ const MyListPage: React.FC = () => {
       {tab === 'stats' && (
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4" style={{ maxWidth: 600 }}>
           <div className="glass rounded-xl p-6 text-center">
-            <p style={{ fontSize: 36, fontWeight: 300, color: '#4A90D9', marginBottom: 4 }}>
+            <p style={{ fontSize: 36, fontWeight: 300, color: '#8E6FD6', marginBottom: 4 }}>
               {history.length}
             </p>
             <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.55)' }}>Assistidos</p>
           </div>
           <div className="glass rounded-xl p-6 text-center">
-            <p style={{ fontSize: 36, fontWeight: 300, color: '#4A90D9', marginBottom: 4 }}>
+            <p style={{ fontSize: 36, fontWeight: 300, color: '#8E6FD6', marginBottom: 4 }}>
               {myList.length}
             </p>
             <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.55)' }}>Na lista</p>

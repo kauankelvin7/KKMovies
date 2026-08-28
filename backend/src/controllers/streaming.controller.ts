@@ -1,67 +1,77 @@
 import { Request, Response } from 'express';
 import superflixService from '../services/superflix.service';
+import { probeStreamUrl } from '../services/streamProbe';
 
-/**
- * Streaming controller - Handles streaming-related requests
- */
+function playerOptions(query: Request['query']) {
+  return {
+    noEpList: query.noEpList === 'true',
+    noLink: query.noLink !== 'false',
+    color: query.color as string,
+    transparent: query.transparent === 'true',
+    noBackground: query.noBackground === 'true',
+  };
+}
+
+function streamPayload(streamUrl: string, diagnostics: Awaited<ReturnType<typeof probeStreamUrl>>) {
+  const mode = diagnostics.captcha
+    ? 'iframe-captcha-required'
+    : diagnostics.unavailable
+      ? 'unavailable'
+      : 'iframe-direct';
+
+  return {
+    streamUrl,
+    directUrl: streamUrl,
+    mode,
+    diagnostics,
+    warning: diagnostics.unavailable
+      ? 'Este título não está disponível neste servidor no momento.'
+      : diagnostics.captcha
+        ? 'O servidor pediu uma verificação de segurança.'
+        : undefined,
+  };
+}
+
 class StreamingController {
-  /**
-   * Get movie stream URL
-   */
-  getMovieStream(req: Request, res: Response): void {
+  async getMovieStream(req: Request, res: Response): Promise<void> {
     try {
       const { imdbId } = req.params;
-      const options = {
-        noLink: req.query.noLink === 'true',
-        color: req.query.color as string,
-        transparent: req.query.transparent === 'true',
-        noBackground: req.query.noBackground === 'true',
-      };
-
       const baseUrl = superflixService.getMovieStreamUrl(imdbId);
-      const streamUrl = superflixService.buildPlayerUrl(baseUrl, options);
+      const streamUrl = superflixService.buildPlayerUrl(baseUrl, playerOptions(req.query));
+      const diagnostics = await probeStreamUrl(streamUrl);
 
-      res.json({ streamUrl });
+      res.json(streamPayload(streamUrl, diagnostics));
     } catch (error) {
       console.error('Error getting movie stream:', error);
-      res.status(500).json({ error: 'Failed to get movie stream' });
+      res.status(500).json({ error: 'Não foi possível obter o player deste filme.' });
     }
   }
 
-  /**
-   * Get series/episode stream URL
-   */
-  getSeriesStream(req: Request, res: Response): void {
+  async getSeriesStream(req: Request, res: Response): Promise<void> {
     try {
       const { tmdbId, season, episode } = req.params;
-      const options = {
-        noEpList: req.query.noEpList === 'true',
-        noLink: req.query.noLink === 'true',
-        color: req.query.color as string,
-        transparent: req.query.transparent === 'true',
-        noBackground: req.query.noBackground === 'true',
-      };
 
       let baseUrl: string;
 
       if (episode) {
         baseUrl = superflixService.getEpisodeStreamUrl(
           tmdbId,
-          parseInt(season),
-          parseInt(episode)
+          parseInt(season, 10),
+          parseInt(episode, 10),
         );
       } else if (season) {
-        baseUrl = superflixService.getSeasonStreamUrl(tmdbId, parseInt(season));
+        baseUrl = superflixService.getSeasonStreamUrl(tmdbId, parseInt(season, 10));
       } else {
         baseUrl = superflixService.getSeriesStreamUrl(tmdbId);
       }
 
-      const streamUrl = superflixService.buildPlayerUrl(baseUrl, options);
+      const streamUrl = superflixService.buildPlayerUrl(baseUrl, playerOptions(req.query));
+      const diagnostics = await probeStreamUrl(streamUrl);
 
-      res.json({ streamUrl });
+      res.json(streamPayload(streamUrl, diagnostics));
     } catch (error) {
       console.error('Error getting series stream:', error);
-      res.status(500).json({ error: 'Failed to get series stream' });
+      res.status(500).json({ error: 'Não foi possível obter o player desta série.' });
     }
   }
 

@@ -1,5 +1,5 @@
-/* KauanFlix — Player Store (Zustand) */
 import { create } from 'zustand';
+import type { StreamingServer, TMDBEmbedStream } from '../types/tmdbEmbed';
 
 export interface EpisodeInfo {
   season: number;
@@ -20,6 +20,10 @@ interface PlayerState {
   mediaType: 'movie' | 'tv';
   episodeInfo: EpisodeInfo | null;
   resumePosition?: number;
+  server: StreamingServer;
+  availableStreams: TMDBEmbedStream[];
+  selectedStream: TMDBEmbedStream | null;
+  imdbId?: string;
 
   openPlayer: (opts: {
     streamUrl: string;
@@ -30,9 +34,16 @@ interface PlayerState {
     mediaType?: 'movie' | 'tv';
     episodeInfo?: EpisodeInfo | null;
     resumePosition?: number;
+    server?: StreamingServer;
+    availableStreams?: TMDBEmbedStream[];
+    selectedStream?: TMDBEmbedStream | null;
+    imdbId?: string;
   }) => void;
   closePlayer: () => void;
   updateEpisode: (episode: EpisodeInfo) => void;
+  setServer: (server: StreamingServer) => void;
+  setStreams: (streams: TMDBEmbedStream[]) => void;
+  selectStream: (stream: TMDBEmbedStream | null) => void;
 }
 
 export const usePlayerStore = create<PlayerState>((set) => ({
@@ -45,6 +56,10 @@ export const usePlayerStore = create<PlayerState>((set) => ({
   mediaType: 'movie',
   episodeInfo: null,
   resumePosition: undefined,
+  server: 'superflix',
+  availableStreams: [],
+  selectedStream: null,
+  imdbId: undefined,
 
   openPlayer: ({
     streamUrl,
@@ -55,6 +70,10 @@ export const usePlayerStore = create<PlayerState>((set) => ({
     mediaType = 'movie',
     episodeInfo = null,
     resumePosition,
+    server = 'superflix',
+    availableStreams = [],
+    selectedStream = null,
+    imdbId,
   }) =>
     set({
       isOpen: true,
@@ -66,6 +85,10 @@ export const usePlayerStore = create<PlayerState>((set) => ({
       mediaType,
       episodeInfo,
       resumePosition,
+      server,
+      availableStreams,
+      selectedStream,
+      imdbId,
     }),
 
   closePlayer: () =>
@@ -79,8 +102,19 @@ export const usePlayerStore = create<PlayerState>((set) => ({
       mediaType: 'movie',
       episodeInfo: null,
       resumePosition: undefined,
+      server: 'superflix',
+      availableStreams: [],
+      selectedStream: null,
+      imdbId: undefined,
     }),
 
   updateEpisode: (episode) =>
     set((state) => ({ episodeInfo: episode, streamUrl: state.streamUrl })),
+
+  setServer: (server) => set({ server }),
+  setStreams: (streams) => set({ availableStreams: streams }),
+  selectStream: (stream) => set({
+    selectedStream: stream,
+    streamUrl: stream?.url || '',
+  }),
 }));

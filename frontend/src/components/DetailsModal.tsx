@@ -148,6 +148,7 @@ export const DetailsModal: React.FC = () => {
       posterPath: movie.poster_path || '',
       backdropPath: movie.backdrop_path || '',
       mediaType: isSeries ? 'tv' : 'movie',
+      imdbId: movie.imdb_id,
     });
     handleClose();
   };
@@ -317,7 +318,7 @@ export const DetailsModal: React.FC = () => {
                   aria-label={inList ? 'Remover da lista' : 'Adicionar à lista'}
                 >
                   {inList
-                    ? <Check className="w-4 h-4" style={{ color: '#4A90D9' }} />
+                    ? <Check className="w-4 h-4" style={{ color: '#8E6FD6' }} />
                     : <Plus className="w-4 h-4" />}
                   {inList ? 'Na Lista' : 'Minha Lista'}
                 </button>
@@ -407,7 +408,7 @@ export const DetailsModal: React.FC = () => {
                         {epProgress > 0 && epProgress < 100 && (
                           <div className="absolute bottom-0 left-0 right-0 h-[3px]"
                             style={{ background: 'rgba(255,255,255,0.15)' }}>
-                            <div className="h-full" style={{ width: `${epProgress}%`, background: '#4A90D9' }} />
+                            <div className="h-full" style={{ width: `${epProgress}%`, background: '#8E6FD6' }} />
                           </div>
                         )}
                       </div>

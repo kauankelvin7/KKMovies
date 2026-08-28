@@ -1,17 +1,6 @@
-/* KauanFlix — Hero Banner v4 (HBO Max style)
-   - 100vh fullscreen with triple gradient overlay
-   - Category badge (SÉRIE ORIGINAL / FILME)
-   - Title logo from TMDB if available, else Inter 300 text
-   - Inline metadata row
-   - Synopsis 2-line clamp
-   - White "Assistir" btn + glass "Minha Lista" btn
-   - Dot indicators bottom-left aligned with content
-   - YouTube IFrame API trailer autoplay after 3s idle
-   - Autorotate every 8s, 800ms ease-in-out transition */
-
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Play, Plus, Check } from 'lucide-react';
-import { getImageUrl, getMovieVideos, getSeriesVideos } from '../services/movieService';
+import { getImageUrl, getMovieVideos, getSeriesVideos, getStreamingUrl, getSeriesStreamingUrl } from '../services/movieService';
 import { getYear } from '../utils/helpers';
 import { usePlayerStore } from '../store/usePlayerStore';
 import { useAppStore } from '../store/useAppStore';
@@ -22,7 +11,6 @@ interface Props {
   movies: Movie[];
   loading?: boolean;
 }
-
 
 export const HeroBanner: React.FC<Props> = ({ movies, loading }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -133,12 +121,15 @@ export const HeroBanner: React.FC<Props> = ({ movies, loading }) => {
 
   const handlePlay = () => {
     openPlayer({
-      streamUrl: '', // Will be filled by streaming service
+      streamUrl: isSeries
+        ? getSeriesStreamingUrl(currentMovie.id, 1, 1)
+        : getStreamingUrl(currentMovie.id, currentMovie.imdb_id),
       movieId: currentMovie.id,
       movieTitle: currentMovie.title || currentMovie.name || '',
       posterPath: currentMovie.poster_path || '',
       backdropPath: currentMovie.backdrop_path || '',
       mediaType: isSeries ? 'tv' : 'movie',
+      imdbId: currentMovie.imdb_id,
     });
   };
 
@@ -256,8 +247,8 @@ export const HeroBanner: React.FC<Props> = ({ movies, loading }) => {
             {releaseYear && currentMovie.vote_average > 0 && <span>·</span>}
             {currentMovie.vote_average > 0 && (
               <>
-                <span style={{ color: '#C9973A' }}>★</span>
-                <span>{currentMovie.vote_average.toFixed(1)}</span>
+                <span className="text-[var(--accent-gold)] drop-shadow-[0_0_6px_rgba(201,151,58,0.3)]">★</span>
+                <span className="text-[var(--accent-gold)] font-medium">{currentMovie.vote_average.toFixed(1)}</span>
               </>
             )}
             {currentMovie.runtime && (
@@ -289,23 +280,23 @@ export const HeroBanner: React.FC<Props> = ({ movies, loading }) => {
             </p>
           )}
 
-          {/* Action buttons */}
+          {/* Action buttons (iOS Glassmorphism upgrade) */}
           <div className="flex items-center gap-3 flex-wrap">
             <button
               onClick={handlePlay}
-              className="btn-primary"
+              className="glass-button primary text-[15px] px-7 py-3"
               aria-label={`Assistir ${currentMovie.title}`}
             >
-              <Play className="w-5 h-5" fill="currentColor" />
+              <Play className="w-5 h-5 mr-2" fill="currentColor" />
               Assistir
             </button>
 
             <button
               onClick={handleToggleList}
-              className="btn-secondary"
+              className="glass-button text-[15px] px-6 py-3"
               aria-label={inList ? 'Remover da lista' : 'Adicionar à lista'}
             >
-              {inList ? <Check className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
+              {inList ? <Check className="w-4 h-4 mr-2 text-[var(--accent-blue)]" /> : <Plus className="w-4 h-4 mr-2" />}
               {inList ? 'Na Lista' : 'Minha Lista'}
             </button>
           </div>

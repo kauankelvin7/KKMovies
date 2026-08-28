@@ -31,110 +31,105 @@ const ContinueWatchingSection = memo(() => {
   };
 
   return (
-    <div className="py-3 md:py-4">
+    <div className="py-4 md:py-6 fade-in-section">
       {/* Header */}
-      <div className="mb-3 md:mb-4 px-4 sm:px-6 md:px-8">
-        <div className="flex items-center gap-2 mb-1">
-          <Clock className="w-5 h-5 text-primary-500" />
-          <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-white">
+      <div className="mb-4 section-container">
+        <div className="flex items-center gap-2.5 mb-1">
+          <div className="w-8 h-8 rounded-full bg-[var(--accent-blue-dim)] border border-[var(--accent-blue-border)] flex items-center justify-center">
+            <Clock className="w-4 h-4 text-[var(--accent-blue)]" />
+          </div>
+          <h2 className="text-[17px] md:text-[20px] font-normal tracking-wide text-white m-0">
             Continuar Assistindo
           </h2>
         </div>
-        <p className="text-xs sm:text-sm text-zinc-400">
+        <p className="text-[13px] text-[var(--text-muted)] font-light pl-10">
           Retome de onde você parou em qualquer dispositivo
         </p>
       </div>
 
-      {/* Cards */}
-      <div className="flex gap-3 md:gap-4 overflow-x-auto overflow-y-hidden pb-2 px-4 sm:px-6 md:px-8 scroll-smooth scrollbar-hide">
-        {continueWatching.map((item) => {
-          const imageUrl = item.poster_path
-            ? `https://image.tmdb.org/t/p/w342${item.poster_path}`
-            : '/placeholder-movie.jpg';
+      {/* Cards Scroll Container */}
+      <div className="relative carousel-container section-container">
+        <div className="carousel-scroll flex gap-4 overflow-x-auto overflow-y-hidden pb-4 scroll-smooth scrollbar-hide">
+          {continueWatching.map((item) => {
+            const imageUrl = item.poster_path
+              ? `https://image.tmdb.org/t/p/w342${item.poster_path}`
+              : '/placeholder-movie.jpg';
 
-          return (
-            <div
-              key={`${item.videoId}-${item.deviceId}`}
-              className="w-[280px] sm:w-[320px] md:w-[360px] flex-shrink-0 cursor-pointer group"
-            >
-              {/* Thumbnail Container */}
-              <div className="relative aspect-video rounded-lg overflow-hidden bg-zinc-900 shadow-lg mb-2">
-                {/* Background Image */}
-                <ProgressiveImage
-                  src={imageUrl}
-                  alt={item.title}
-                  className="w-full h-full scale-110 blur-sm"
-                />
-
-                {/* Dark overlay */}
-                <div className="absolute inset-0 bg-black/40" />
-
-                {/* Progress Bar */}
-                <div className="absolute bottom-0 left-0 right-0 h-1 bg-zinc-800">
-                  <div
-                    className="h-full bg-primary-500 transition-all"
-                    style={{ width: `${item.progress}%` }}
+            return (
+              <div
+                key={`${item.videoId}-${item.deviceId}`}
+                className="w-[280px] sm:w-[320px] md:w-[350px] flex-shrink-0 cursor-pointer group flex flex-col gap-2"
+              >
+                {/* Thumbnail Container (Glass Card Style) */}
+                <div className="relative aspect-video rounded-xl overflow-hidden glass-card border border-[var(--glass-separator)] group-hover:border-[var(--accent-blue-border)] shadow-md group-hover:shadow-[0_12px_40px_rgba(0,0,0,0.6)] transition-all duration-300">
+                  {/* Background Image with blur */}
+                  <ProgressiveImage
+                    src={imageUrl}
+                    alt={item.title}
+                    className="w-full h-full scale-110 filter blur-[2px] opacity-70 object-cover"
                   />
-                </div>
 
-                {/* Hover Overlay */}
-                <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                  {/* Dark overlay for contrast */}
+                  <div className="absolute inset-0 bg-black/50 backdrop-blur-[2px]" />
+
+                  {/* Progress Bar */}
+                  <div className="absolute bottom-0 left-0 right-0 h-1 bg-[rgba(255,255,255,0.15)] z-10">
+                    <div
+                      className="h-full bg-[var(--accent-blue)] transition-all rounded-r-full"
+                      style={{ width: `${item.progress}%` }}
+                    />
+                  </div>
+
+                  {/* Hover Overlay with Glass Play Button */}
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center z-20">
+                    <button
+                      onClick={() => navigate(`/watch/${item.videoId}`)}
+                      className="w-14 h-14 rounded-full bg-[var(--glass-bg)] backdrop-blur-md border border-[var(--glass-separator)] flex items-center justify-center transform scale-90 group-hover:scale-100 transition-transform duration-300 shadow-xl"
+                      aria-label="Assistir"
+                    >
+                      <Play size={24} className="text-white fill-white ml-0.5" />
+                    </button>
+                  </div>
+
+                  {/* Remove button (Glass style) */}
                   <button
-                    onClick={() => navigate(`/watch/${item.videoId}`)}
-                    className="w-16 h-16 rounded-full bg-primary-500 hover:bg-primary-600 flex items-center justify-center transform scale-90 group-hover:scale-100 transition-transform duration-300 shadow-xl"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      removeItem(item.videoId);
+                    }}
+                    className="absolute top-2.5 right-2.5 w-8 h-8 rounded-full bg-black/60 backdrop-blur-md border border-[var(--glass-separator)] hover:bg-black/90 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-30"
+                    aria-label="Remover"
                   >
-                    <Play size={28} className="text-white fill-white ml-1" />
+                    <X size={14} className="text-white" />
                   </button>
+
+                  {/* Progress percentage pill */}
+                  <div className="absolute top-2.5 left-2.5 px-2 py-0.5 bg-black/60 backdrop-blur-md border border-[var(--glass-separator)] rounded-md text-[11px] font-semibold text-white z-10">
+                    {Math.round(item.progress)}%
+                  </div>
                 </div>
 
-                {/* Remove button */}
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    removeItem(item.videoId);
-                  }}
-                  className="absolute top-2 right-2 w-8 h-8 rounded-full bg-black/70 hover:bg-black/90 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                >
-                  <X size={16} className="text-white" />
-                </button>
-
-                {/* Progress percentage */}
-                <div className="absolute top-2 left-2 px-2 py-1 bg-black/70 rounded text-xs font-semibold text-white">
-                  {Math.round(item.progress)}%
-                </div>
-              </div>
-
-              {/* Info */}
-              <div>
-                <h3 className="text-white text-sm font-semibold line-clamp-1 mb-1">
-                  {item.title}
-                </h3>
-                <div className="flex items-center justify-between text-xs text-zinc-400">
-                  <span>
-                    {formatTimeRemaining(item.currentTime, item.duration)} restantes
-                  </span>
-                  {item.season && item.episode && (
-                    <span>
-                      T{item.season} E{item.episode}
+                {/* Info Container */}
+                <div className="px-0.5">
+                  <h3 className="text-[14px] font-medium text-[var(--text-primary)] line-clamp-1 tracking-tight mb-1">
+                    {item.title}
+                  </h3>
+                  <div className="flex items-center justify-between text-[12px] text-[var(--text-muted)] font-medium">
+                    <span className="text-[var(--accent-blue)]">
+                      {formatTimeRemaining(item.currentTime, item.duration)} restantes
                     </span>
-                  )}
+                    {item.season && item.episode && (
+                      <span className="bg-[rgba(118,118,128,0.15)] px-2 py-0.5 rounded text-[10px] text-[var(--text-secondary)]">
+                        T{item.season} E{item.episode}
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
       </div>
-
-      {/* Scrollbar hide CSS */}
-      <style>{`
-        .scrollbar-hide::-webkit-scrollbar {
-          display: none;
-        }
-        .scrollbar-hide {
-          -ms-overflow-style: none;
-          scrollbar-width: none;
-        }
-      `}</style>
     </div>
   );
 });

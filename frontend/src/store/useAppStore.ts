@@ -8,6 +8,10 @@ interface DetailsModalState {
   mediaType: 'movie' | 'tv';
 }
 
+interface SettingsModalState {
+  isOpen: boolean;
+}
+
 interface AppState {
   /* Toast notifications */
   toasts: ToastMessage[];
@@ -31,6 +35,11 @@ interface AppState {
   detailsModal: DetailsModalState;
   openDetails: (contentId: number, mediaType: 'movie' | 'tv') => void;
   closeDetails: () => void;
+
+  /* Settings Modal */
+  settingsModal: SettingsModalState;
+  openSettings: () => void;
+  closeSettings: () => void;
 }
 
 export const useAppStore = create<AppState>((set) => ({
@@ -64,4 +73,11 @@ export const useAppStore = create<AppState>((set) => ({
     set({ detailsModal: { isOpen: true, contentId, mediaType } }),
   closeDetails: () =>
     set({ detailsModal: { isOpen: false, contentId: null, mediaType: 'movie' } }),
+
+  /* Settings Modal */
+  settingsModal: { isOpen: false },
+  openSettings: () =>
+    set({ settingsModal: { isOpen: true }, isMobileMenuOpen: false }),
+  closeSettings: () =>
+    set({ settingsModal: { isOpen: false } }),
 }));

@@ -1,11 +1,3 @@
-/* KauanFlix — Content Carousel v4 (HBO Max style)
-   - Section title: Inter 400 (not bold)
-   - "Ver tudo →" appears on hover of the section header
-   - Cards: gap 8px, padding 80px desktop / 40px tablet / 16px mobile
-   - Nav arrows: appear only on hover, 44px circles, rgba(13,13,20,0.9)
-   - Position indicators: thin 2px segmented line under title
-   - Lazy loads cards when section enters viewport (IntersectionObserver) */
-
 import React, { useRef, useState, useCallback, useEffect } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -78,38 +70,47 @@ export const ContentCarousel: React.FC<Props> = ({
   return (
     <div
       ref={sectionRef as React.RefObject<HTMLDivElement>}
-      className={`fade-in-section carousel-wrapper ${isVisible ? 'visible' : ''}`}
+      className={`fade-in-section group ${isVisible ? 'visible' : ''}`}
     >
-      <div
-        className="section-container"
-        style={{ paddingLeft: 'var(--section-padding)', paddingRight: 'var(--section-padding)' }}
-      >
-        {/* Section header */}
-        <div className="section-header carousel-wrapper">
-          <div>
-            <h2 className="section-title">{title}</h2>
-            {/* Position indicators */}
-            {totalSegments > 1 && (
-              <div className="carousel-indicators" style={{ maxWidth: 80 }}>
-                {Array.from({ length: Math.min(totalSegments, 5) }).map((_, i) => (
-                  <div
-                    key={i}
-                    className={`carousel-indicator-seg ${i === currentSegment ? 'active' : ''}`}
-                  />
-                ))}
-              </div>
+      <div className="section-container">
+        
+        {/* Section Header (Glass Typography & Interactions) */}
+        <div className="flex flex-col mb-3">
+          <div className="flex items-end justify-between group/header cursor-pointer">
+            <h2 className="text-[17px] md:text-[20px] font-normal tracking-wide text-[var(--text-primary)] m-0">
+              {title}
+            </h2>
+            
+            {viewAllLink && (
+              <Link 
+                to={viewAllLink} 
+                className="text-[13px] font-medium text-[var(--accent-blue)] opacity-0 md:group-hover/header:opacity-100 transition-opacity duration-300 hover:text-white flex items-center gap-1"
+              >
+                Ver tudo <ChevronRight className="w-3.5 h-3.5" />
+              </Link>
             )}
           </div>
-          {viewAllLink && (
-            <Link to={viewAllLink} className="ver-tudo flex items-center gap-1">
-              Ver tudo →
-            </Link>
+
+          {/* Position Indicators (HBO Max style) */}
+          {totalSegments > 1 && (
+            <div className="flex gap-1 mt-1.5 w-[60px] opacity-0 md:group-hover:opacity-100 transition-opacity duration-300">
+              {Array.from({ length: Math.min(totalSegments, 5) }).map((_, i) => (
+                <div
+                  key={i}
+                  className={`h-[2px] flex-1 rounded-full transition-colors duration-300 ${
+                    i === currentSegment 
+                      ? 'bg-[var(--accent-blue)]' 
+                      : 'bg-[rgba(255,255,255,0.15)]'
+                  }`}
+                />
+              ))}
+            </div>
           )}
         </div>
       </div>
 
-      {/* Carousel */}
-      <div className="carousel-container section-container">
+      {/* Carousel Container */}
+      <div className="relative carousel-container section-container">
         {loading ? (
           <SkeletonRow count={7} landscape={landscape} />
         ) : (
@@ -125,22 +126,24 @@ export const ContentCarousel: React.FC<Props> = ({
               ))}
             </div>
 
+            {/* Nav Arrows (Hidden on mobile, Glassmorphism on Desktop) */}
             {canScrollLeft && (
               <button
                 onClick={() => scroll('left')}
-                className="carousel-arrow carousel-arrow-left"
+                className="carousel-arrow carousel-arrow-left hidden md:flex glass-icon-btn shadow-2xl !w-11 !h-11 bg-[var(--surface-0)]/90 border border-[var(--glass-separator)] hover:scale-110"
                 aria-label="Rolar para esquerda"
               >
-                <ChevronLeft className="w-5 h-5" />
+                <ChevronLeft className="w-6 h-6 text-white ml-0.5" />
               </button>
             )}
+            
             {canScrollRight && (
               <button
                 onClick={() => scroll('right')}
-                className="carousel-arrow carousel-arrow-right"
+                className="carousel-arrow carousel-arrow-right hidden md:flex glass-icon-btn shadow-2xl !w-11 !h-11 bg-[var(--surface-0)]/90 border border-[var(--glass-separator)] hover:scale-110"
                 aria-label="Rolar para direita"
               >
-                <ChevronRight className="w-5 h-5" />
+                <ChevronRight className="w-6 h-6 text-white mr-0.5" />
               </button>
             )}
           </>

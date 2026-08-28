@@ -5,7 +5,7 @@ import { CheckCircle, XCircle, Info, X } from 'lucide-react';
 import { useAppStore } from '../../store/useAppStore';
 
 const icons = {
-  success: <CheckCircle className="w-4 h-4 flex-shrink-0" style={{ color: '#4A90D9' }} />,
+  success: <CheckCircle className="w-4 h-4 flex-shrink-0" style={{ color: '#8E6FD6' }} />,
   error: <XCircle className="w-4 h-4 flex-shrink-0" style={{ color: '#EF4444' }} />,
   info: <Info className="w-4 h-4 flex-shrink-0" style={{ color: 'rgba(255,255,255,0.6)' }} />,
 };

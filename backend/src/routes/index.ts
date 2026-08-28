@@ -1,21 +1,18 @@
-import { Router } from 'express';
+import { Router, Response } from 'express';
+
 import movieRoutes from './movie.routes';
 import seriesRoutes from './series.routes';
 import streamingRoutes from './streaming.routes';
+import tmdbEmbedApiRoutes from './tmdbEmbedApi.routes';
 
 const router = Router();
 
-// Mount movie routes
 router.use('/movies', movieRoutes);
-
-// Mount series routes
 router.use('/series', seriesRoutes);
-
-// Mount streaming routes
 router.use('/streaming', streamingRoutes);
+router.use('/tmdb-embed', tmdbEmbedApiRoutes);
 
-// Health check endpoint
-router.get('/health', (_req, res) => {
+router.get('/health', (_req, res: Response) => {
   res.json({
     status: 'OK',
     timestamp: new Date().toISOString(),

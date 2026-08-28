@@ -1,7 +1,6 @@
-/* KauanFlix — Series Detail Page with Seasons & Episodes */
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Play, Star, Calendar, Clock, ArrowLeft, ChevronDown, Plus, Check, Tv, Film } from 'lucide-react';
+import { Play, Star, Calendar, Clock, ChevronLeft, ChevronDown, Plus, Check, Tv, Film } from 'lucide-react';
 import { getSeriesDetails, getSeriesSeasonDetails, getSeriesVideos, getImageUrl, getBackdropUrl, getSeriesStreamingUrl } from '../services/movieService';
 import { usePlayerStore } from '../store/usePlayerStore';
 import { useAppStore } from '../store/useAppStore';
@@ -27,6 +26,7 @@ const SeriesDetailPage: React.FC = () => {
   const [inList, setInList] = useState(false);
   const [videos, setVideos] = useState<Video[]>([]);
   const [trailerOpen, setTrailerOpen] = useState(false);
+  const [showFullOverview, setShowFullOverview] = useState(false);
 
   /* Fetch series details */
   useEffect(() => {
@@ -37,21 +37,19 @@ const SeriesDetailPage: React.FC = () => {
     getSeriesDetails(Number(id))
       .then((data: any) => {
         setSeries(data);
-        // Extract seasons (filter out season 0 = Specials unless it has episodes)
         const allSeasons: Season[] = data.seasons || [];
         const filtered = allSeasons.filter((s: Season) => s.season_number > 0 || s.episode_count > 0);
         setSeasons(filtered);
-        // Default to season 1
+        
         const firstSeason = filtered.find((s: Season) => s.season_number === 1) || filtered[0];
         if (firstSeason) setSelectedSeason(firstSeason.season_number);
-        // Check list status
+        
         setInList(myListService.isInList(Number(id)));
         document.title = `${data.name || data.title || 'Série'} — KauanFlix`;
       })
       .catch((err: any) => setError(err.message || 'Erro ao carregar série'))
       .finally(() => setLoading(false));
 
-    // Fetch trailer videos
     getSeriesVideos(Number(id))
       .then((vids) => setVideos(vids))
       .catch(() => setVideos([]));
@@ -120,7 +118,7 @@ const SeriesDetailPage: React.FC = () => {
 
   if (loading) {
     return (
-      <main className="min-h-screen pt-24 section-container">
+      <main className="min-h-screen pt-24 section-container bg-[var(--surface-0)]">
         <SkeletonRow count={6} />
       </main>
     );
@@ -128,9 +126,9 @@ const SeriesDetailPage: React.FC = () => {
 
   if (error || !series) {
     return (
-      <main className="min-h-screen pt-24 section-container text-center">
-        <p className="text-kf-danger text-lg">{error || 'Série não encontrada'}</p>
-        <button onClick={() => navigate(-1)} className="btn-primary mt-4">Voltar</button>
+      <main className="min-h-screen flex flex-col items-center justify-center section-container text-center bg-[var(--surface-0)]">
+        <p className="text-[var(--text-secondary)] text-lg mb-4">{error || 'Série não encontrada'}</p>
+        <button onClick={() => navigate(-1)} className="glass-button">Voltar</button>
       </main>
     );
   }
@@ -139,207 +137,250 @@ const SeriesDetailPage: React.FC = () => {
   const posterUrl = getImageUrl(series.poster_path, 'w500');
 
   return (
-    <main className="min-h-screen pb-24">
-      {/* Hero Backdrop */}
-      <div className="relative w-full h-[60vh] min-h-[400px]">
+    <main className="min-h-screen bg-[var(--surface-0)] page-enter pb-24">
+      
+      {/* Hero Backdrop (Cinematographic Glass Gradients) */}
+      <div className="relative w-full h-[55vh] min-h-[400px] overflow-hidden">
         {backdropUrl && (
-          <img src={backdropUrl} alt="" className="absolute inset-0 w-full h-full object-cover" />
+          <div
+            className="absolute inset-0 bg-cover bg-top"
+            style={{ backgroundImage: `url(${backdropUrl})` }}
+          />
         )}
-        <div className="absolute inset-0 bg-gradient-to-t from-kf-bg via-kf-bg/70 to-transparent" />
-        <div className="absolute inset-0 bg-gradient-to-r from-kf-bg/90 via-transparent to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-[var(--surface-0)] via-[var(--surface-0)]/60 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-r from-[var(--surface-0)]/90 via-[var(--surface-0)]/30 to-transparent" />
 
         {/* Back button */}
         <button
           onClick={() => navigate(-1)}
-          className="absolute top-24 left-6 z-20 w-10 h-10 flex items-center justify-center rounded-full bg-black/40 backdrop-blur-sm text-white hover:bg-kf-accent/30 transition-colors"
+          className="absolute top-24 left-4 md:left-8 z-20 glass-icon-btn bg-black/20 backdrop-blur-md"
           aria-label="Voltar"
         >
-          <ArrowLeft className="w-5 h-5" />
+          <ChevronLeft className="w-6 h-6 text-white" />
         </button>
+      </div>
 
-        {/* Series info overlay */}
-        <div className="absolute bottom-0 left-0 right-0 px-6 pb-8 z-10">
-          <div className="section-container flex flex-col md:flex-row gap-6 items-end md:items-end">
-            {/* Poster */}
-            {posterUrl && (
-              <div className="hidden md:block flex-shrink-0 w-40 rounded-lg overflow-hidden shadow-2xl border border-white/10">
-                <img src={posterUrl} alt={series.name} className="w-full" />
+      {/* Series Info Container */}
+      <div className="section-container -mt-32 md:-mt-48 relative z-10">
+        <div className="flex flex-col md:flex-row gap-8 lg:gap-12 items-start">
+          
+          {/* Poster (Glass Card) */}
+          {posterUrl && (
+            <div className="flex-shrink-0 hidden md:block">
+              <div className="glass-card p-1 rounded-2xl">
+                <img
+                  src={posterUrl}
+                  alt={series.name}
+                  className="w-48 lg:w-64 rounded-xl object-cover shadow-2xl"
+                  loading="lazy"
+                />
               </div>
-            )}
+            </div>
+          )}
 
-            <div className="flex-1">
-              <span className="badge badge-series inline-flex items-center gap-1 mb-3">
-                <Tv className="w-3 h-3" /> SÉRIE
+          <div className="flex-1 max-w-4xl pt-4">
+            <span className="badge badge-category mb-3">
+              <Tv className="w-3.5 h-3.5 mr-1.5" /> SÉRIE
+            </span>
+            
+            <h1 className="text-3xl md:text-5xl lg:text-6xl font-light tracking-tight text-white mb-4 lg:mb-5">
+              {series.name}
+            </h1>
+
+            {/* Meta */}
+            <div className="flex flex-wrap items-center gap-3 lg:gap-4 mb-6 text-xs md:text-sm font-medium text-[var(--text-secondary)]">
+              {series.vote_average > 0 && (
+                <>
+                  <span className="flex items-center gap-1.5 text-[var(--accent-gold)]">
+                    <Star className="w-4 h-4" fill="currentColor" />
+                    {series.vote_average?.toFixed(1)}
+                  </span>
+                  <span className="w-1 h-1 rounded-full bg-[var(--text-hint)] hidden sm:block" />
+                </>
+              )}
+              <span className="flex items-center gap-1.5">
+                <Calendar className="w-4 h-4" />
+                {series.first_air_date?.split('-')[0] || '—'}
               </span>
-              <h1 className="text-3xl md:text-5xl font-display font-bold text-white mb-3">
-                {series.name}
-              </h1>
+              <span className="w-1 h-1 rounded-full bg-[var(--text-hint)] hidden sm:block" />
+              <span>{series.number_of_seasons} Temporada{(series.number_of_seasons || 0) !== 1 ? 's' : ''}</span>
+              <span className="w-1 h-1 rounded-full bg-[var(--text-hint)] hidden sm:block" />
+              <span>{series.number_of_episodes} Episódios</span>
+            </div>
 
-              <div className="flex flex-wrap items-center gap-3 text-sm text-kf-text-secondary mb-4">
-                <span className="flex items-center gap-1 text-kf-yellow">
-                  <Star className="w-4 h-4" fill="currentColor" />
-                  {series.vote_average?.toFixed(1)}
-                </span>
-                <span className="flex items-center gap-1">
-                  <Calendar className="w-4 h-4" />
-                  {series.first_air_date?.split('-')[0] || '—'}
-                </span>
-                <span>{series.number_of_seasons} temporada{(series.number_of_seasons || 0) !== 1 ? 's' : ''}</span>
-                <span>{series.number_of_episodes} episódios</span>
-              </div>
-
-              <p className="text-kf-text-secondary text-sm md:text-base max-w-2xl line-clamp-3 mb-4">
-                {series.overview || 'Sem descrição disponível.'}
+            {/* Overview */}
+            <div className="mb-8 max-w-3xl">
+              <p className="text-[15px] md:text-base text-[var(--text-secondary)] font-light leading-relaxed">
+                {showFullOverview || (series.overview || '').length <= 250
+                  ? series.overview
+                  : `${(series.overview || '').slice(0, 250)}…`}
               </p>
-
-              <div className="flex gap-3">
-                {(() => {
-                  const lastEp = id ? watchHistoryService.getLastEpisode(Number(id)) : undefined;
-                  if (lastEp) {
-                    return (
-                      <button
-                        onClick={() => handlePlayEpisode(lastEp.season, lastEp.episode)}
-                        className="btn-primary flex items-center gap-2 px-6 py-3"
-                      >
-                        <Play className="w-5 h-5" fill="currentColor" />
-                        Continuar S{String(lastEp.season).padStart(2, '0')}E{String(lastEp.episode).padStart(2, '0')}
-                      </button>
-                    );
-                  }
-                  return (
-                    <button
-                      onClick={() => handlePlayEpisode(1, 1)}
-                      className="btn-primary flex items-center gap-2 px-6 py-3"
-                    >
-                      <Play className="w-5 h-5" fill="currentColor" /> Assistir S01E01
-                    </button>
-                  );
-                })()}
+              {(series.overview || '').length > 250 && (
                 <button
-                  onClick={handleToggleList}
-                  className="btn-secondary flex items-center gap-2 px-5 py-3"
+                  onClick={() => setShowFullOverview(!showFullOverview)}
+                  className="text-[var(--accent-blue)] text-sm mt-2 font-medium hover:text-white transition-colors"
                 >
-                  {inList ? <Check className="w-5 h-5 text-kf-success" /> : <Plus className="w-5 h-5" />}
-                  {inList ? 'Na lista' : 'Minha Lista'}
+                  {showFullOverview ? 'Ocultar sinopse' : 'Ler mais'}
                 </button>
-                <button
-                  onClick={() => setTrailerOpen(true)}
-                  className="btn-secondary flex items-center gap-2 px-5 py-3"
-                >
-                  <Film className="w-4 h-4" />
-                  Trailer
-                </button>
-              </div>
-
-              {/* Genres */}
-              {series.genres && series.genres.length > 0 && (
-                <div className="flex flex-wrap gap-2 mt-4">
-                  {series.genres.map((g) => (
-                    <span key={g.id} className="px-3 py-1 text-xs rounded-full bg-white/5 text-kf-text-secondary border border-white/10">
-                      {g.name}
-                    </span>
-                  ))}
-                </div>
               )}
             </div>
+
+            {/* Action buttons (Glassmorphism) */}
+            <div className="flex flex-wrap items-center gap-3">
+              {(() => {
+                const lastEp = id ? watchHistoryService.getLastEpisode(Number(id)) : undefined;
+                if (lastEp) {
+                  return (
+                    <button
+                      onClick={() => handlePlayEpisode(lastEp.season, lastEp.episode)}
+                      className="glass-button primary text-[15px] px-6 py-2.5"
+                    >
+                      <Play className="w-4 h-4 mr-2" fill="currentColor" />
+                      Continuar S{String(lastEp.season).padStart(2, '0')}E{String(lastEp.episode).padStart(2, '0')}
+                    </button>
+                  );
+                }
+                return (
+                  <button
+                    onClick={() => handlePlayEpisode(1, 1)}
+                    className="glass-button primary text-[15px] px-6 py-2.5"
+                  >
+                    <Play className="w-4 h-4 mr-2" fill="currentColor" />
+                    Assistir S01E01
+                  </button>
+                );
+              })()}
+              
+              <div className="w-[1px] h-8 bg-[var(--glass-separator)] mx-1 hidden sm:block" />
+
+              <button onClick={handleToggleList} className={`glass-button text-[14px] px-5 py-2.5 ${inList ? 'text-[var(--accent-blue)]' : ''}`}>
+                {inList ? <Check className="w-4 h-4 mr-2" /> : <Plus className="w-4 h-4 mr-2" />}
+                {inList ? 'Na lista' : 'Minha Lista'}
+              </button>
+              
+              <button onClick={() => setTrailerOpen(true)} className="glass-button text-[14px] px-5 py-2.5">
+                <Film className="w-4 h-4 mr-2" />
+                Trailer
+              </button>
+            </div>
+
+            {/* Genres */}
+            {series.genres && series.genres.length > 0 && (
+              <div className="flex flex-wrap gap-2 mt-8">
+                {series.genres.map((g) => (
+                  <span key={g.id} className="badge badge-sub border border-[var(--glass-separator)] bg-[rgba(255,255,255,0.05)] text-[var(--text-secondary)] px-3 py-1 rounded-full font-medium">
+                    {g.name}
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </div>
 
-      {/* Season Selector & Episodes */}
-      <div className="section-container mt-8">
-        <div className="flex items-center gap-4 mb-6">
-          <h2 className="section-title mb-0">Episódios</h2>
+      {/* Season Selector & Episodes Grid */}
+      <div className="section-container mt-12 lg:mt-16">
+        
+        {/* Header with Custom iOS Select */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+          <h2 className="text-xl md:text-2xl font-light tracking-wide text-white m-0">Episódios</h2>
           <div className="relative">
             <select
               value={selectedSeason}
               onChange={(e) => setSelectedSeason(Number(e.target.value))}
-              className="appearance-none h-10 pl-4 pr-10 text-sm bg-kf-bg-secondary border border-[rgba(123,47,255,0.2)] rounded-lg text-white focus:outline-none focus:border-kf-accent transition-colors cursor-pointer"
+              className="w-full sm:w-auto min-w-[200px] h-11 pl-4 pr-10 text-sm font-medium bg-[rgba(118,118,128,0.12)] rounded-xl border-none text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-[var(--accent-blue-glow)] transition-all appearance-none cursor-pointer shadow-sm"
             >
               {seasons.map((s) => (
-                <option key={s.season_number} value={s.season_number}>
+                <option key={s.season_number} value={s.season_number} className="bg-[var(--surface-1)]">
                   {s.name || `Temporada ${s.season_number}`}
                 </option>
               ))}
             </select>
-            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-kf-text-muted pointer-events-none" />
+            <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)] pointer-events-none" />
           </div>
         </div>
 
+        {/* Episode Grid */}
         {loadingEpisodes ? (
-          <div className="space-y-4">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="skeleton h-24 rounded-lg" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <div key={i} className="flex flex-col gap-2">
+                <div className="skeleton aspect-video rounded-xl" />
+                <div className="skeleton h-4 w-3/4 rounded mt-1" />
+                <div className="skeleton h-3 w-full rounded" />
+              </div>
             ))}
           </div>
         ) : episodes.length === 0 ? (
-          <p className="text-kf-text-muted text-center py-12">Nenhum episódio disponível para esta temporada.</p>
+          <div className="glass-card flex flex-col items-center justify-center py-16 px-4 text-center mt-4">
+            <Tv className="w-12 h-12 text-[var(--text-hint)] mb-4" />
+            <p className="text-[var(--text-secondary)] text-sm">Nenhum episódio disponível para esta temporada.</p>
+          </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
             {episodes.map((ep) => (
               <div
                 key={ep.id}
-                className="group cursor-pointer"
+                className="group cursor-pointer flex flex-col gap-2.5"
                 onClick={() => handlePlayEpisode(selectedSeason, ep.episode_number)}
                 role="button"
                 tabIndex={0}
                 onKeyDown={(e) => e.key === 'Enter' && handlePlayEpisode(selectedSeason, ep.episode_number)}
               >
-                {/* Episode thumbnail — landscape card */}
-                <div className="relative aspect-video rounded-lg overflow-hidden bg-kf-bg-secondary border border-white/5 group-hover:border-kf-accent/30 transition-all">
+                {/* Thumbnail Card (Glass Style) */}
+                <div className="relative aspect-video rounded-xl overflow-hidden bg-[var(--surface-1)] border border-[var(--glass-separator)] group-hover:border-[var(--accent-blue-border)] shadow-sm group-hover:shadow-[0_8px_30px_rgba(0,0,0,0.5)] transition-all duration-300">
                   {ep.still_path ? (
                     <img
                       src={getImageUrl(ep.still_path, 'w500')}
                       alt={ep.name}
-                      className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                       loading="lazy"
                     />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center bg-kf-bg-secondary">
-                      <Tv className="w-8 h-8 text-kf-text-muted" />
+                    <div className="w-full h-full flex items-center justify-center bg-[var(--surface-2)]">
+                      <Tv className="w-8 h-8 text-[var(--text-hint)]" />
                     </div>
                   )}
 
-                  {/* Gradient overlay */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
+                  <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors duration-300" />
 
-                  {/* Episode number badge */}
-                  <div className="absolute top-2 left-2 px-2 py-0.5 rounded text-xs font-bold bg-kf-accent/90 text-white">
+                  {/* Episode Badge */}
+                  <div className="absolute top-2.5 left-2.5 px-2 py-0.5 rounded-md text-[11px] font-semibold bg-[var(--surface-0)]/80 backdrop-blur-md text-white border border-[var(--glass-separator)]">
                     E{String(ep.episode_number).padStart(2, '0')}
                   </div>
 
-                  {/* Play icon on hover */}
-                  <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                    <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
-                      <Play className="w-6 h-6 text-white" fill="currentColor" />
+                  {/* Hover Play Button */}
+                  <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                    <div className="w-12 h-12 rounded-full bg-[var(--glass-bg)] backdrop-blur-md border border-[var(--glass-separator)] flex items-center justify-center shadow-lg transform scale-90 group-hover:scale-100 transition-transform duration-300">
+                      <Play className="w-5 h-5 text-white ml-1" fill="currentColor" />
                     </div>
                   </div>
 
-                  {/* Runtime badge */}
+                  {/* Runtime */}
                   {ep.runtime > 0 && (
-                    <div className="absolute bottom-2 right-2 flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] bg-black/60 text-white/80">
-                      <Clock className="w-3 h-3" /> {ep.runtime}min
+                    <div className="absolute bottom-2.5 right-2.5 flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-black/60 backdrop-blur-md text-white/90">
+                      <Clock className="w-3 h-3" /> {ep.runtime}m
                     </div>
                   )}
-
-                  {/* Title + rating at bottom of card */}
-                  <div className="absolute bottom-0 left-0 right-0 p-2.5">
-                    <h3 className="text-sm font-semibold text-white line-clamp-1">{ep.name}</h3>
-                  </div>
                 </div>
 
-                {/* Info below card */}
-                <div className="mt-1.5 px-0.5">
-                  <p className="text-xs text-kf-text-secondary line-clamp-2">
+                {/* Details Below Card */}
+                <div className="px-1">
+                  <h3 className="text-[14px] font-medium text-[var(--text-primary)] line-clamp-1 mb-1 tracking-tight">
+                    {ep.name}
+                  </h3>
+                  <p className="text-[12px] text-[var(--text-muted)] line-clamp-2 leading-snug mb-2">
                     {ep.overview || 'Sem descrição.'}
                   </p>
-                  <div className="flex items-center gap-2 text-[11px] text-kf-text-muted mt-1">
+                  
+                  <div className="flex items-center gap-2.5 text-[11px] text-[var(--text-hint)] font-medium">
                     {ep.vote_average > 0 && (
-                      <span className="flex items-center gap-0.5 text-kf-yellow">
+                      <span className="flex items-center gap-1 text-[var(--accent-gold)]">
                         <Star className="w-3 h-3" fill="currentColor" /> {ep.vote_average.toFixed(1)}
                       </span>
                     )}
-                    {ep.air_date && <span>{ep.air_date}</span>}
+                    {ep.vote_average > 0 && ep.air_date && <span className="w-1 h-1 rounded-full bg-[var(--text-hint)]" />}
+                    {ep.air_date && <span>{ep.air_date.split('-').reverse().join('/')}</span>}
                   </div>
                 </div>
               </div>
