@@ -16,7 +16,7 @@
   },
   "dependencies": {
     "axios": "^1.6.0",
-    "freekeys": "0.0.4"
+    "freekeys": "^0.0.4"
   },
   "devDependencies": {
     "@vercel/node": "^5.1.8",
@@ -34,4 +34,3 @@
   "author": "Kauan",
   "license": "MIT"
 }
-

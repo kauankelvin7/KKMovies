@@ -285,7 +285,7 @@ export async function searchSeries(query: string, page = 1) {
 
 /* ---- Streaming URLs ---- */
 
-const SUPERFLIX_BASE = import.meta.env.VITE_SUPERFLIX_BASE || 'https://superflixapi.bond';
+const SUPERFLIX_BASE = import.meta.env.VITE_SUPERFLIX_BASE || 'https://superflixapi.beer';
 
 export function getStreamingUrl(movieId: number, imdbId?: string): string {
   const id = imdbId || movieId;

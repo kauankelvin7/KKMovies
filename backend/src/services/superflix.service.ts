@@ -8,7 +8,7 @@ class SuperFlixService {
   private baseURL: string;
 
   constructor() {
-    this.baseURL = 'https://superflixapi.bond';
+    this.baseURL = 'https://superflixapi.beer';
     
     this.api = axios.create({
       baseURL: this.baseURL,

@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const BASE_URL = 'https://superflixapi.bond';
+const BASE_URL = 'https://superflixapi.beer';
 
 export const superflixService = {
   getMovieStreamUrl(imdbId: string): string {
