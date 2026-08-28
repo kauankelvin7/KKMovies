@@ -149,6 +149,13 @@ class TMDBService {
     return this.transformResponse(response.data);
   }
 
+  async getMovieCredits(movieId: number) {
+      await this.ensureInitialized();
+        const response = await this.api.get(`/movie/${movieId}/credits`);
+          return response.data;
+          
+  }
+
   async getByGenre(genreId: number, page: number = 1) {
     await this.ensureInitialized();
     const response = await this.api.get<TMDBResponse<Movie>>('/discover/movie', {
@@ -217,6 +224,11 @@ class TMDBService {
     return this.transformSeriesResponse(response.data);
   }
 
+  async getClient(): Promise<AxiosInstance> {
+    await this.ensureInitialized();
+    return this.api;
+  }
+
   async getSeriesDetails(seriesId: number) {
     await this.ensureInitialized();
     const response = await this.api.get(`/tv/${seriesId}`);
@@ -258,3 +270,6 @@ class TMDBService {
 }
 
 export const tmdbService = new TMDBService();
+export async function getTMDBClient(): Promise<AxiosInstance> {
+    return tmdbService.getClient();
+}
