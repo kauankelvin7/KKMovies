@@ -4,7 +4,7 @@
   "description": "KKMovies - Streaming Platform with TMDb and 111movies integration",
   "private": true,
   "engines": {
-    "node": "20.x"
+    "node": "24.x"
   },
   "scripts": {
     "dev": "concurrently -n \"BACKEND,FRONTEND\" -c \"cyan,magenta\" \"npm run dev:backend\" \"npm run dev:frontend\"",
@@ -22,6 +22,7 @@
     "freekeys": "^0.0.4"
   },
   "devDependencies": {
+    "@types/node": "^26.4.0",
     "@vercel/node": "^5.1.8",
     "concurrently": "^8.2.2",
     "typescript": "^5.0.0",

@@ -1,5 +1,5 @@
 import axios, { AxiosInstance, AxiosError } from 'axios';
-import { logDebug, handleError as logError } from './helpers';
+import { logDebug } from './helpers';
 
 const IMAGE_BASE_URL = 'https://image.tmdb.org/t/p';
 let cachedKeys: any = null;
