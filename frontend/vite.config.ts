@@ -63,13 +63,7 @@ export default defineConfig({
     },
   },
   build: {
-    // Otimizações para build em produção
-    minify: 'terser',
-    terserOptions: {
-      compress: {
-        drop_console: true, // Remove console.logs em produção
-      },
-    },
+    minify: 'esbuild',
     // Code splitting para melhor caching
     rollupOptions: {
       output: {
@@ -81,7 +75,7 @@ export default defineConfig({
       },
     },
     // Chunksize warning threshold
-    chunkSizeWarningLimit: 500,
+    chunkSizeWarningLimit: 1000,
     // CSS optimization
     cssCodeSplit: true,
     // Source maps apenas em desenvolvimento
