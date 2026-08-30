@@ -1,14 +1,26 @@
 import axios, { AxiosInstance, AxiosError } from 'axios';
+import { logDebug, handleError as logError } from './helpers';
 
 const IMAGE_BASE_URL = 'https://image.tmdb.org/t/p';
-let freekeys: any;
+let cachedKeys: any = null;
+let initPromise: Promise<any> | null = null;
 
-// Dynamic import for freekeys
-async function getFreekeys() {
-  if (!freekeys) {
-    freekeys = require('freekeys');
+async function getFreekeysSafe(): Promise<any> {
+  if (cachedKeys) return cachedKeys;
+  if (initPromise) return initPromise;
+  try {
+    initPromise = (async () => {
+      const mod = await import('freekeys');
+      const fn = (mod as any).default || mod;
+      cachedKeys = await fn();
+      logDebug('tmdb_freekeys_loaded', { hasKey: !!cachedKeys?.tmdb_key });
+      return cachedKeys;
+    })();
+    return initPromise;
+  } catch (e) {
+    logDebug('tmdb_freekeys_failed', e);
+    throw e;
   }
-  return freekeys;
 }
 
 export interface Movie {
@@ -67,15 +79,18 @@ class TMDBService {
     if (this.apiKey) return;
     
     try {
-      const freekeysModule = await getFreekeys();
-      const keys = await freekeysModule();
+      const keys = await getFreekeysSafe();
       this.apiKey = keys.tmdb_key;
+      if (!this.apiKey) {
+        throw new Error('TMDB key not found in freekeys response');
+      }
       this.api.defaults.params = {
         ...this.api.defaults.params,
         api_key: this.apiKey,
       };
+      logDebug('tmdb_api_initialized');
     } catch (error) {
-      console.error('Failed to get API key:', error);
+      logDebug('tmdb_init_failed', error);
       throw new Error('Failed to initialize TMDB API');
     }
   }

@@ -20,7 +20,7 @@ export const BROWSER_HEADERS = {
   'Upgrade-Insecure-Requests': '1',
 };
 
-export const 111moviesService = {
+export const movies111Service = {
   getMovieStreamUrl(id: string): string {
     return `${BASE_URL}/movie/${id}`;
   },

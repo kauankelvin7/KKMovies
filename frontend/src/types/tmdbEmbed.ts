@@ -63,26 +63,26 @@ export const SERVER_INFO: Record<StreamingServer, {
 }> = {
   '111movies': {
     name: '111movies',
-    description: 'Player oficial com anúncios mínimos',
-    icon: '🎬',
+    description: 'Player oficial com anuncios minimos',
+    icon: 'icon',
     type: 'iframe',
   },
   vidsrc: {
     name: 'VidSrc',
-    description: 'Fonte principal do Streambert - estável e rápido',
-    icon: '💎',
+    description: 'Fonte principal do Streambert - estavel e rapido',
+    icon: 'icon',
     type: 'iframe',
   },
   vidking: {
     name: 'VidKing',
     description: 'Fonte alternativa - grande acervo',
-    icon: '👑',
+    icon: 'icon',
     type: 'iframe',
   },
   'tmdb-embed': {
     name: 'Fontes nativas',
-    description: 'Reprodução direta, sem iframe de terceiros',
-    icon: '⚡',
+    description: 'Reproducao direta, sem iframe de terceiros',
+    icon: 'icon',
     type: 'native',
   },
 };

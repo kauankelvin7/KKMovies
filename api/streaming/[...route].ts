@@ -1,7 +1,15 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import axios from 'axios';
-import { 111moviesService, vidsrcService, vidkingService, BROWSER_HEADERS } from '../lib/111movies';
-import { cors, handleOptions, handleError } from '../lib/helpers';
+import { movies111Service, vidsrcService, vidkingService, BROWSER_HEADERS } from '../lib/superflix';
+import {
+  cors,
+  handleOptions,
+  handleError,
+  logDebug,
+  validateRequiredParams,
+  safeParseInt,
+  getQueryParam,
+} from '../lib/helpers';
 
 export const config = {
   runtime: '@vercel/node@5',
@@ -10,38 +18,54 @@ export const config = {
 
 export type StreamingServer = '111movies' | 'vidsrc' | 'vidking';
 
+const VALID_SERVERS: StreamingServer[] = ['111movies', 'vidsrc', 'vidking'];
+
 function resolveServer(req: VercelRequest): StreamingServer {
-  const server = (req.query.server as string) || '111movies';
-  if (server === 'vidsrc' || server === 'vidking') return server;
-  return '111movies';
+  const server = (getQueryParam(req, 'server') || '111movies').toLowerCase() as StreamingServer;
+  const resolved = VALID_SERVERS.includes(server) ? server : '111movies';
+  logDebug('resolveServer', { requested: server, resolved });
+  return resolved;
 }
 
 function getMovieUrl(server: StreamingServer, id: string): string {
-  switch (server) {
-    case 'vidsrc':
-      return vidsrcService.getMovieStreamUrl(id);
-    case 'vidking':
-      return vidkingService.getMovieStreamUrl(id);
-    case '111movies':
-    default:
-      return 111moviesService.getMovieStreamUrl(id);
-  }
+  const url = (() => {
+    switch (server) {
+      case 'vidsrc':
+        return vidsrcService.getMovieStreamUrl(id);
+      case 'vidking':
+        return vidkingService.getMovieStreamUrl(id);
+      case '111movies':
+      default:
+        return movies111Service.getMovieStreamUrl(id);
+    }
+  })();
+  logDebug('getMovieUrl', { server, id, url });
+  return url;
 }
 
-function getSeriesUrl(server: StreamingServer, id: string, season?: number, episode?: number): string {
-  switch (server) {
-    case 'vidsrc':
-      if (season && episode) return vidsrcService.getEpisodeStreamUrl(id, season, episode);
-      return vidsrcService.getMovieStreamUrl(id);
-    case 'vidking':
-      if (season && episode) return vidkingService.getEpisodeStreamUrl(id, season, episode);
-      return vidkingService.getMovieStreamUrl(id);
-    case '111movies':
-    default:
-      if (season && episode) return 111moviesService.getEpisodeStreamUrl(id, season, episode);
-      if (season) return 111moviesService.getSeasonStreamUrl(id, season);
-      return 111moviesService.getSeriesStreamUrl(id);
-  }
+function getSeriesUrl(
+  server: StreamingServer,
+  id: string,
+  season?: number,
+  episode?: number,
+): string {
+  const url = (() => {
+    switch (server) {
+      case 'vidsrc':
+        if (season && episode) return vidsrcService.getEpisodeStreamUrl(id, season, episode);
+        return vidsrcService.getMovieStreamUrl(id);
+      case 'vidking':
+        if (season && episode) return vidkingService.getEpisodeStreamUrl(id, season, episode);
+        return vidkingService.getMovieStreamUrl(id);
+      case '111movies':
+      default:
+        if (season && episode) return movies111Service.getEpisodeStreamUrl(id, season, episode);
+        if (season) return movies111Service.getSeasonStreamUrl(id, season);
+        return movies111Service.getSeriesStreamUrl(id);
+    }
+  })();
+  logDebug('getSeriesUrl', { server, id, season, episode, url });
+  return url;
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -50,81 +74,110 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const parts = ([] as string[]).concat((req.query.route as string[]) || []);
   const [type, id, season, episode] = parts;
 
+  logDebug('incoming_request', {
+    method: req.method,
+    type,
+    id: id || 'N/A',
+    season,
+    episode,
+    query: { ...req.query, route: undefined },
+    parts,
+  });
+
   try {
     switch (type) {
       case 'movie': {
-        if (!id) return cors(res).status(400).json({ error: 'IMDB or TMDB id is required' });
-        const server = resolveServer(req);
-        const noLink = req.query.noLink === 'true';
-        const color = req.query.color as string;
-        const transparent = req.query.transparent === 'true';
-        const noBackground = req.query.noBackground === 'true';
+        const missing = validateRequiredParams({ id }, ['id']);
+        if (missing) {
+          return cors(res).status(400).json({ error: missing });
+        }
 
-        const resolvedId = /^tt\d+/.test(String(id)) ? id : id;
-        const baseUrl = getMovieUrl(server, String(resolvedId));
-        const streamUrl = server === '111movies'
-          ? 111moviesService.buildPlayerUrl(baseUrl, {
-            noLink,
-            color,
-            transparent,
-            noBackground,
-          })
-          : baseUrl;
+        const server = resolveServer(req);
+        const noLink = getQueryParam(req, 'noLink') === 'true';
+        const color = getQueryParam(req, 'color');
+        const transparent = getQueryParam(req, 'transparent') === 'true';
+        const noBackground = getQueryParam(req, 'noBackground') === 'true';
+
+        const resolvedId = /^tt\d+/.test(String(id)) ? id : String(id);
+        logDebug('movie_request_params', { server, resolvedId, noLink, color, transparent, noBackground });
+
+        const baseUrl = getMovieUrl(server, resolvedId);
+        const streamUrl =
+          server === '111movies'
+            ? movies111Service.buildPlayerUrl(baseUrl, { noLink, color, transparent, noBackground })
+            : baseUrl;
+
+        logDebug('movie_stream_url', { streamUrl });
 
         const diagnostics = await checkCloudflare(streamUrl);
+        logDebug('movie_diagnostics', { server, status: diagnostics.status, captcha: diagnostics.captcha, unavailable: diagnostics.unavailable });
+
         return cors(res).status(200).json(streamPayload(streamUrl, diagnostics, server));
       }
 
       case 'series': {
-        if (!id) return cors(res).status(400).json({ error: 'TMDB id is required' });
+        const missing = validateRequiredParams({ id }, ['id']);
+        if (missing) {
+          return cors(res).status(400).json({ error: missing });
+        }
+
         const server = resolveServer(req);
-        const noEpList = req.query.noEpList === 'true';
-        const noLink = req.query.noLink === 'true';
-        const color = req.query.color as string;
-        const transparent = req.query.transparent === 'true';
-        const noBackground = req.query.noBackground === 'true';
+        const noEpList = getQueryParam(req, 'noEpList') === 'true';
+        const noLink = getQueryParam(req, 'noLink') === 'true';
+        const color = getQueryParam(req, 'color');
+        const transparent = getQueryParam(req, 'transparent') === 'true';
+        const noBackground = getQueryParam(req, 'noBackground') === 'true';
+        const seasonNum = season ? safeParseInt(season, 0) : undefined;
+        const episodeNum = episode ? safeParseInt(episode, 0) : undefined;
 
-        const baseUrl = getSeriesUrl(
-          server,
-          id,
-          season ? parseInt(season) : undefined,
-          episode ? parseInt(episode) : undefined,
-        );
+        logDebug('series_request_params', { server, id, noEpList, noLink, color, transparent, noBackground, seasonNum, episodeNum });
 
-        const streamUrl = server === '111movies'
-          ? 111moviesService.buildPlayerUrl(baseUrl, {
-            noEpList,
-            noLink,
-            color,
-            transparent,
-            noBackground,
-          })
-          : baseUrl;
+        const baseUrl = getSeriesUrl(server, id, seasonNum, episodeNum);
+        const streamUrl =
+          server === '111movies'
+            ? movies111Service.buildPlayerUrl(baseUrl, { noEpList, noLink, color, transparent, noBackground })
+            : baseUrl;
+
+        logDebug('series_stream_url', { streamUrl });
 
         const diagnostics = await checkCloudflare(streamUrl);
+        logDebug('series_diagnostics', { server, status: diagnostics.status, captcha: diagnostics.captcha, unavailable: diagnostics.unavailable });
+
         return cors(res).status(200).json(streamPayload(streamUrl, diagnostics, server));
       }
 
       case 'calendar': {
-        const calendar = await 111moviesService.getCalendar();
-        return cors(res).status(200).json(calendar);
+        logDebug('calendar_request');
+        try {
+          const calendar = await movies111Service.getCalendar();
+          logDebug('calendar_success', { count: Array.isArray(calendar) ? calendar.length : 0 });
+          return cors(res).status(200).json(calendar);
+        } catch (calErr) {
+          logDebug('calendar_failed', calErr);
+          return cors(res).status(200).json([]);
+        }
       }
 
       case 'servers': {
+        logDebug('servers_list_request');
         return cors(res).status(200).json({
           servers: [
-            { id: '111movies', name: '111movies', description: 'Player oficial com anúncios mínimos', supportsImdb: true, supportsTmdb: true },
-            { id: 'vidsrc', name: 'VidSrc', description: 'Fonte principal do Streambert - estável e rápido', supportsImdb: true, supportsTmdb: true },
+            { id: '111movies', name: '111movies', description: 'Player oficial com anuncios minimos', supportsImdb: true, supportsTmdb: true },
+            { id: 'vidsrc', name: 'VidSrc', description: 'Fonte principal do Streambert - estavel e rapido', supportsImdb: true, supportsTmdb: true },
             { id: 'vidking', name: 'VidKing', description: 'Fonte alternativa - grande acervo', supportsImdb: true, supportsTmdb: true },
           ],
+          timestamp: new Date().toISOString(),
         });
       }
 
       case 'proxy': {
-        const targetUrl = Array.isArray(req.query.url) ? req.query.url[0] : req.query.url;
+        const targetUrl = Array.isArray(req.query.url) ? req.query.url[0] : (req.query.url as string);
         if (!targetUrl || typeof targetUrl !== 'string') {
           return cors(res).status(400).json({ error: 'url query param is required' });
         }
+
+        logDebug('proxy_request', { targetUrl: targetUrl.substring(0, 120) });
+
         try {
           const response = await axios.get(targetUrl, {
             headers: {
@@ -136,31 +189,53 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             validateStatus: () => true,
           });
 
-          const hasCaptcha = /captcha|challenge|cf-turnstile|cloudflare/i.test(response.data.slice(0, 20000));
+          const bodySlice = String(response.data || '').slice(0, 20000);
+          const hasCaptcha = /captcha|challenge|cf-turnstile|cloudflare/i.test(bodySlice);
+
+          logDebug('proxy_response', {
+            status: response.status,
+            contentLength: (response.data as string)?.length || 0,
+            hasCaptcha,
+          });
 
           return cors(res)
             .status(response.status)
             .setHeader('X-111movies-Captcha', hasCaptcha ? 'required' : 'none')
             .setHeader('Content-Type', 'text/html; charset=utf-8')
             .send(response.data);
-        } catch (proxyErr: any) {
-          return handleError(res, proxyErr, 'Proxy request failed');
+        } catch (proxyErr: unknown) {
+          logDebug('proxy_error', proxyErr);
+          return handleError(res, proxyErr, 'Proxy request failed', 502);
         }
       }
 
+      case 'health': {
+        logDebug('health_check');
+        return cors(res).status(200).json({
+          status: 'ok',
+          timestamp: new Date().toISOString(),
+          servers: VALID_SERVERS,
+          uptime: process.uptime(),
+        });
+      }
+
       default:
+        logDebug('route_not_found', { type });
         return cors(res).status(404).json({
           error: 'Route not found',
+          requestedType: type,
           availableRoutes: [
             '/api/streaming/movie/:imdbId?server=111movies|vidsrc|vidking',
             '/api/streaming/series/:tmdbId[/:season/:episode]?server=111movies|vidsrc|vidking',
             '/api/streaming/calendar',
             '/api/streaming/servers',
             '/api/streaming/proxy?url=...',
+            '/api/streaming/health',
           ],
         });
     }
-  } catch (error) {
+  } catch (error: unknown) {
+    logDebug('unhandled_error', error);
     return handleError(res, error, 'Failed to process streaming request');
   }
 }
@@ -182,10 +257,11 @@ function streamPayload(
     mode,
     server,
     diagnostics,
+    generatedAt: new Date().toISOString(),
     warning: diagnostics.unavailable
-      ? `Este título não está disponível no servidor ${server} no momento. Tente outra fonte.`
+      ? `Este titulo nao esta disponivel no servidor ${server} no momento. Tente outra fonte.`
       : diagnostics.captcha
-        ? 'O servidor pediu uma verificação de segurança.'
+        ? 'O servidor pediu uma verificacao de seguranca.'
         : undefined,
   };
 }
@@ -197,7 +273,9 @@ async function checkCloudflare(url: string): Promise<{
   server: string;
   cloudflare: boolean;
   ray?: string;
+  responseTimeMs?: number;
 }> {
+  const startTime = Date.now();
   try {
     const resp = await axios.get(url.split('#')[0], {
       headers: { ...BROWSER_HEADERS, Referer: 'https://www.google.com/' },
@@ -207,6 +285,7 @@ async function checkCloudflare(url: string): Promise<{
       validateStatus: () => true,
     });
 
+    const responseTimeMs = Date.now() - startTime;
     const server = String(resp.headers['server'] || '');
     const cfRay = resp.headers['cf-ray'] as string | undefined;
     const bodySlice = String(resp.data || '').slice(0, 24000);
@@ -222,6 +301,16 @@ async function checkCloudflare(url: string): Promise<{
           bodySlice,
         ));
 
+    logDebug('checkCloudflare', {
+      url: url.substring(0, 100),
+      status: resp.status,
+      captcha,
+      unavailable,
+      server,
+      responseTimeMs,
+      hasCfRay: !!cfRay,
+    });
+
     return {
       status: resp.status,
       captcha,
@@ -229,14 +318,23 @@ async function checkCloudflare(url: string): Promise<{
       server,
       cloudflare: server.toLowerCase().includes('cloudflare') || !!cfRay,
       ray: cfRay,
+      responseTimeMs,
     };
-  } catch (e: any) {
+  } catch (e: unknown) {
+    const responseTimeMs = Date.now() - startTime;
+    const err = e as Error;
+    logDebug('checkCloudflare_error', {
+      url: url.substring(0, 100),
+      message: err?.message,
+      responseTimeMs,
+    });
     return {
       status: 0,
       captcha: false,
       unavailable: true,
-      server: e.message || 'unreachable',
+      server: err?.message || 'unreachable',
       cloudflare: false,
+      responseTimeMs,
     };
   }
 }
