@@ -54,7 +54,7 @@ KauanFlix/
     └── src/
         ├── routes/            # movie, series, streaming
         ├── controllers/
-        ├── services/          # TMDB proxy, SuperFlix
+        ├── services/          # TMDB proxy, 111movies
         └── middleware/        # error, logger
 ```
 
@@ -109,7 +109,7 @@ Open **http://localhost:5173**
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `VITE_API_URL` | `http://localhost:3001` | Backend API URL |
-| `VITE_SUPERFLIX_BASE` | `https://superflixapi.bond` | Streaming provider |
+| `VITE_111movies_BASE` | `https://111moviesapi.bond` | Streaming provider |
 
 ## 🎨 Design System
 

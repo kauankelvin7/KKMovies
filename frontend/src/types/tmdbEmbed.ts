@@ -1,4 +1,5 @@
-export type StreamingServer = 'superflix' | 'tmdb-embed';
+export type EmbedServer = '111movies' | 'vidsrc' | 'vidking';
+export type StreamingServer = EmbedServer | 'tmdb-embed';
 
 export interface TMDBEmbedStream {
   name: string;
@@ -49,6 +50,8 @@ export const PROVIDER_DISPLAY_NAMES: Record<string, string> = {
   netmirror: 'NetMirror',
   onetouchtv: 'OneTouchTV',
   zxcstreams: 'ZXCStreams',
+  vidsrc: 'VidSrc',
+  vidking: 'VidKing',
   unknown: 'Desconhecido',
 };
 
@@ -58,10 +61,22 @@ export const SERVER_INFO: Record<StreamingServer, {
   icon: string;
   type: 'iframe' | 'native';
 }> = {
-  superflix: {
-    name: 'SuperFlix',
-    description: 'Player incorporado com proteção contra pop-ups',
-    icon: '📺',
+  '111movies': {
+    name: '111movies',
+    description: 'Player oficial com anúncios mínimos',
+    icon: '🎬',
+    type: 'iframe',
+  },
+  vidsrc: {
+    name: 'VidSrc',
+    description: 'Fonte principal do Streambert - estável e rápido',
+    icon: '💎',
+    type: 'iframe',
+  },
+  vidking: {
+    name: 'VidKing',
+    description: 'Fonte alternativa - grande acervo',
+    icon: '👑',
     type: 'iframe',
   },
   'tmdb-embed': {
@@ -74,10 +89,8 @@ export const SERVER_INFO: Record<StreamingServer, {
 
 export function qualityToNumber(quality: string): number {
   const q = quality.toLowerCase().trim();
-  const num = parseInt(q.replace(/\D/g, ''), 10);
-  if (!isNaN(num)) return num;
 
-  const map: Record<string, number> = {
+  const aliasMap: Record<string, number> = {
     auto: 1080,
     hd: 720,
     sd: 480,
@@ -86,24 +99,25 @@ export function qualityToNumber(quality: string): number {
     '4k': 2160,
     '2k': 1440,
   };
-  return map[q] || 0;
+
+  if (q in aliasMap) return aliasMap[q];
+
+  const match = q.match(/\d+/);
+  if (!match) return 0;
+
+  return parseInt(match[0], 10);
 }
 
 export function sortByQuality(streams: TMDBEmbedStream[]): TMDBEmbedStream[] {
-  return [...streams].sort((a, b) => {
-    const qa = qualityToNumber(a.quality);
-    const qb = qualityToNumber(b.quality);
-    return qb - qa;
-  });
+  return [...streams].sort((a, b) => qualityToNumber(b.quality) - qualityToNumber(a.quality));
 }
 
 export function groupByProvider(streams: TMDBEmbedStream[]): Record<string, TMDBEmbedStream[]> {
-  return streams.reduce((acc, stream) => {
+  return streams.reduce<Record<string, TMDBEmbedStream[]>>((acc, stream) => {
     const key = stream.provider || 'unknown';
-    if (!acc[key]) acc[key] = [];
-    acc[key].push(stream);
+    (acc[key] ??= []).push(stream);
     return acc;
-  }, {} as Record<string, TMDBEmbedStream[]>);
+  }, {});
 }
 
 export function formatQualityLabel(quality: string): string {
@@ -114,4 +128,8 @@ export function formatQualityLabel(quality: string): string {
   if (num >= 720) return 'HD';
   if (num >= 480) return 'SD';
   return quality || 'Auto';
+}
+
+export function getProviderDisplayName(provider: string): string {
+  return PROVIDER_DISPLAY_NAMES[provider] ?? PROVIDER_DISPLAY_NAMES.unknown;
 }

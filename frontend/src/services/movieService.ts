@@ -5,21 +5,23 @@
 
 import api from './api';
 import type { Movie, Genre, Credits, Video, TMDBResponse } from '../types/movie';
+import axios from 'axios';
+
 
 /* ---- Dual-Layer Cache ---- */
 const LS_PREFIX = 'kf_cache_';
-const DEFAULT_TTL = 5 * 60 * 1000; // 5 minutes
+const DEFAULT_TTL = 5 * 60 * 1000;
 
 const TTL_MAP: Record<string, number> = {
-  trending: 10 * 60 * 1000,   // 10 min
-  popular: 10 * 60 * 1000,    // 10 min
-  'top-rated': 30 * 60 * 1000, // 30 min
-  genres: 60 * 60 * 1000,     // 1 hour
-  movie: 30 * 60 * 1000,      // 30 min (details)
-  series: 30 * 60 * 1000,     // 30 min
-  credits: 30 * 60 * 1000,    // 30 min
-  search: 5 * 60 * 1000,      // 5 min
-  discover: 10 * 60 * 1000,   // 10 min
+  trending: 10 * 60 * 1000,
+  popular: 10 * 60 * 1000,
+  'top-rated': 30 * 60 * 1000,
+  genres: 60 * 60 * 1000,
+  movie: 30 * 60 * 1000,
+  series: 30 * 60 * 1000,
+  credits: 30 * 60 * 1000,
+  search: 5 * 60 * 1000,
+  discover: 10 * 60 * 1000,
 };
 
 function getTTL(key: string): number {
@@ -29,11 +31,36 @@ function getTTL(key: string): number {
   return DEFAULT_TTL;
 }
 
-// Memory layer (fast)
+
 const memCache = new Map<string, { data: unknown; timestamp: number }>();
 
+
+function isRetryableError(err: unknown): boolean {
+  if (axios.isAxiosError(err)) {
+    if (!err.response) return true;
+    return err.response.status >= 500 || err.response.status === 429;
+  }
+  return false;
+}
+
+async function retryWithBackoff<T>(
+  fn: () => Promise<T>,
+  { retries = 2, baseDelayMs = 700 }: { retries?: number; baseDelayMs?: number } = {},
+): Promise<T> {
+  let lastError: unknown;
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      return await fn();
+    } catch (err) {
+      lastError = err;
+      if (attempt === retries || !isRetryableError(err)) break;
+      await new Promise((r) => setTimeout(r, baseDelayMs * 2 ** attempt));
+    }
+  }
+  throw lastError;
+}
+
 function getCached<T>(key: string): T | null {
-  // 1) Check memory
   const mem = memCache.get(key);
   const ttl = getTTL(key);
   if (mem && Date.now() - mem.timestamp < ttl) {
@@ -41,19 +68,17 @@ function getCached<T>(key: string): T | null {
   }
   memCache.delete(key);
 
-  // 2) Check localStorage
   try {
     const raw = localStorage.getItem(LS_PREFIX + key);
     if (raw) {
       const entry = JSON.parse(raw) as { data: T; timestamp: number };
       if (Date.now() - entry.timestamp < ttl) {
-        // Promote to memory
         memCache.set(key, entry);
         return entry.data;
       }
       localStorage.removeItem(LS_PREFIX + key);
     }
-  } catch { /* ignore parse errors */ }
+  } catch {}
 
   return null;
 }
@@ -62,15 +87,13 @@ function setCache(key: string, data: unknown) {
   const entry = { data, timestamp: Date.now() };
   memCache.set(key, entry);
 
-  // Persist to localStorage (skip very large payloads)
   try {
     const json = JSON.stringify(entry);
-    if (json.length < 500_000) { // < 500KB
+    if (json.length < 500_000) {
       localStorage.setItem(LS_PREFIX + key, json);
     }
-  } catch { /* quota exceeded — silently skip */ }
+  } catch {}
 
-  // Auto-prune memory if too large
   if (memCache.size > 200) {
     const oldest = [...memCache.entries()].sort((a, b) => a[1].timestamp - b[1].timestamp);
     for (let i = 0; i < 50; i++) {
@@ -88,7 +111,6 @@ async function fetchCached<T>(key: string, fetcher: () => Promise<T>): Promise<T
   return data;
 }
 
-/** Clear all API cache (memory + localStorage) */
 export function clearApiCache() {
   memCache.clear();
   try {
@@ -99,7 +121,6 @@ export function clearApiCache() {
 
 const TMDB_IMAGE_BASE = 'https://image.tmdb.org/t/p';
 
-/* Helper to ensure image URLs are full */
 export function getImageUrl(path: string | null, size: 'w200' | 'w300' | 'w500' | 'w780' | 'w1280' | 'original' = 'w500'): string {
   if (!path) return '';
   if (path.startsWith('http')) return path;
@@ -163,7 +184,6 @@ export async function searchMovies(query: string, page = 1): Promise<TMDBRespons
   });
 }
 
-/* Multi-search: returns both movies and TV series */
 export async function searchMulti(query: string, page = 1): Promise<TMDBResponse<Movie>> {
   const key = `search-multi-${query}-${page}`;
   return fetchCached(key, async () => {
@@ -285,20 +305,44 @@ export async function searchSeries(query: string, page = 1) {
 
 /* ---- Streaming URLs ---- */
 
-const SUPERFLIX_BASE = import.meta.env.VITE_SUPERFLIX_BASE || 'https://superflixapi.beer';
+export type StreamingEmbedServer = '111movies' | 'vidsrc' | 'vidking';
+
+const BASE_URLS: Record<StreamingEmbedServer, string> = {
+  '111movies': import.meta.env.VITE_111movies_BASE || 'https://111movies.net',
+  vidsrc: import.meta.env.VITE_VIDSRC_BASE || 'https://vidsrc.to',
+  vidking: import.meta.env.VITE_VIDKING_BASE || 'https://vidking.xyz',
+};
 
 function isImdbId(id: string | number | undefined | null): boolean {
   if (!id) return false;
   return /^tt\d{7,}$/.test(String(id));
 }
 
-export function getStreamingUrl(movieId: number, imdbId?: string): string {
+export function getStreamingUrl(movieId: number, imdbId?: string, server: StreamingEmbedServer = '111movies'): string {
+  const base = BASE_URLS[server];
   const id = isImdbId(imdbId) ? imdbId! : movieId;
-  return `${SUPERFLIX_BASE}/filme/${id}`;
+  switch (server) {
+    case 'vidsrc':
+      return `${base}/embed/movie/${id}`;
+    case 'vidking':
+      return `${base}/embed/movie/${id}`;
+    case '111movies':
+    default:
+      return `${base}/movie/${id}`;
+  }
 }
 
-export function getSeriesStreamingUrl(tmdbId: number, season: number, episode: number): string {
-  return `${SUPERFLIX_BASE}/serie/${tmdbId}/${season}/${episode}`;
+export function getSeriesStreamingUrl(tmdbId: number, season: number, episode: number, server: StreamingEmbedServer = '111movies'): string {
+  const base = BASE_URLS[server];
+  switch (server) {
+    case 'vidsrc':
+      return `${base}/embed/tv/${tmdbId}/${season}/${episode}`;
+    case 'vidking':
+      return `${base}/embed/tv/${tmdbId}/${season}/${episode}`;
+    case '111movies':
+    default:
+      return `${base}/tv/${tmdbId}/${season}/${episode}`;
+  }
 }
 
 export interface StreamDiagnostics {
@@ -314,6 +358,7 @@ export interface ResolvedStream {
   streamUrl: string;
   directUrl: string;
   mode: 'iframe-direct' | 'iframe-captcha-required' | 'unavailable';
+  server?: StreamingEmbedServer;
   diagnostics?: StreamDiagnostics;
   warning?: string;
 }
@@ -338,27 +383,38 @@ async function resolveFromProxy(
 export async function resolveMovieStream(
   movieId: number,
   imdbId?: string,
-  options?: { noLink?: boolean; color?: string; transparent?: boolean; noBackground?: boolean },
+  options?: {
+    server?: StreamingEmbedServer;
+    noLink?: boolean;
+    color?: string;
+    transparent?: boolean;
+    noBackground?: boolean;
+  },
 ): Promise<ResolvedStream> {
+  const server = options?.server || '111movies';
   const hasValidImdb = isImdbId(imdbId);
   const id = hasValidImdb ? imdbId! : String(movieId);
 
   const proxy = await resolveFromProxy(`/api/streaming/movie/${id}`, {
+    server,
     noLink: true,
-    ...options,
+    ...(options || {}),
   });
 
   if (proxy.streamUrl) {
-    if (!hasValidImdb) {
+    if (!hasValidImdb && server === 'vidking') {
+      proxy.warning = proxy.warning || '⚠️ VidKing requer IMDB ID — Player pode não carregar. Tente outro servidor.';
+    } else if (!hasValidImdb && server !== 'vidsrc') {
       proxy.warning = proxy.warning || '⚠️ Filme sem IMDB ID — Player pode não carregar. Tente abrir em nova aba.';
     }
     return proxy;
   }
 
   return {
-    streamUrl: getStreamingUrl(movieId, imdbId),
-    directUrl: getStreamingUrl(movieId, imdbId),
+    streamUrl: getStreamingUrl(movieId, imdbId, server),
+    directUrl: getStreamingUrl(movieId, imdbId, server),
     mode: 'iframe-direct',
+    server,
     warning: hasValidImdb ? undefined : '⚠️ Filme sem IMDB ID — Player pode não carregar.',
   };
 }
@@ -367,16 +423,44 @@ export async function resolveSeriesStream(
   tmdbId: number,
   season: number,
   episode: number,
-  options?: { noEpList?: boolean; noLink?: boolean; color?: string; transparent?: boolean; noBackground?: boolean },
+  options?: {
+    server?: StreamingEmbedServer;
+    noEpList?: boolean;
+    noLink?: boolean;
+    color?: string;
+    transparent?: boolean;
+    noBackground?: boolean;
+  },
 ): Promise<ResolvedStream> {
-  const params: Record<string, unknown> = { noLink: true, noEpList: true, ...(options || {}) };
-  const proxy = await resolveFromProxy(`/api/streaming/series/${tmdbId}/${season}/${episode}`, params);
+  const server = options?.server || '111movies';
+  const params: Record<string, unknown> = {
+    server,
+    noLink: true,
+    noEpList: true,
+    ...(options || {}),
+  };
+  const proxy = await resolveFromProxy(
+    `/api/streaming/series/${tmdbId}/${season}/${episode}`,
+    params,
+  );
 
   if (proxy.streamUrl) return proxy;
 
   return {
-    streamUrl: getSeriesStreamingUrl(tmdbId, season, episode),
-    directUrl: getSeriesStreamingUrl(tmdbId, season, episode),
+    streamUrl: getSeriesStreamingUrl(tmdbId, season, episode, server),
+    directUrl: getSeriesStreamingUrl(tmdbId, season, episode, server),
     mode: 'iframe-direct',
+    server,
   };
 }
+
+export const EMBED_SERVERS: Array<{
+  id: StreamingEmbedServer;
+  name: string;
+  description: string;
+  icon: string;
+}> = [
+  { id: '111movies', name: '111movies', description: 'Player oficial com anúncios mínimos', icon: '🎬' },
+  { id: 'vidsrc', name: 'VidSrc', description: 'Fonte principal do Streambert - estável e rápido', icon: '💎' },
+  { id: 'vidking', name: 'VidKing', description: 'Fonte alternativa - grande acervo', icon: '👑' },
+];

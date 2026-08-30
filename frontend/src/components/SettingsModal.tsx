@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { X, Settings as SettingsIcon, Zap, Server, Trash2, Check, Globe, Info } from 'lucide-react';
 import { useAppStore } from '../store/useAppStore';
 import { tmdbEmbedSettings, checkHealth, getProviders } from '../services/tmdbEmbedService';
-import { PROVIDER_DISPLAY_NAMES } from '../types/tmdbEmbed';
+import { getProviderDisplayName } from '../types/tmdbEmbed';
 import type { TMDBEmbedProvider, TMDBEmbedHealthResponse } from '../types/tmdbEmbed';
 
 export const SettingsModal: React.FC = () => {
@@ -227,7 +227,7 @@ export const SettingsModal: React.FC = () => {
                       Ativar TMDB Embed
                     </p>
                     <p style={{ fontSize: 12, color: 'var(--text-muted)' }}>
-                      Quando ativado, o player usará fontes nativas como alternativa ao SuperFlix
+                      Quando ativado, o player usará fontes nativas como alternativa ao 111movies
                     </p>
                   </div>
                   <button
@@ -406,7 +406,7 @@ export const SettingsModal: React.FC = () => {
                             className="w-1.5 h-1.5 rounded-full"
                             style={{ background: p.enabled ? '#34C759' : '#8E8E93' }}
                           />
-                          {p.displayName || PROVIDER_DISPLAY_NAMES[p.name] || p.name}
+                          {p.displayName || getProviderDisplayName(p.name)}
                         </span>
                       ))}
                     </div>

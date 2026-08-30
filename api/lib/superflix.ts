@@ -1,6 +1,8 @@
 import axios from 'axios';
 
-const BASE_URL = 'https://superflixapi.beer';
+const BASE_URL = 'https://111movies.net';
+const VIDSRC_BASE_URL = 'https://vidsrc.to';
+const VIDKING_BASE_URL = 'https://vidking.xyz';
 
 export const BROWSER_HEADERS = {
   'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36',
@@ -18,21 +20,21 @@ export const BROWSER_HEADERS = {
   'Upgrade-Insecure-Requests': '1',
 };
 
-export const superflixService = {
-  getMovieStreamUrl(imdbId: string): string {
-    return `${BASE_URL}/filme/${imdbId}`;
+export const 111moviesService = {
+  getMovieStreamUrl(id: string): string {
+    return `${BASE_URL}/movie/${id}`;
   },
 
-  getSeriesStreamUrl(tmdbId: string): string {
-    return `${BASE_URL}/serie/${tmdbId}`;
+  getSeriesStreamUrl(id: string): string {
+    return `${BASE_URL}/tv/${id}`;
   },
 
-  getSeasonStreamUrl(tmdbId: string, season: number): string {
-    return `${BASE_URL}/serie/${tmdbId}/${season}`;
+  getSeasonStreamUrl(id: string, season: number): string {
+    return `${BASE_URL}/tv/${id}/${season}`;
   },
 
-  getEpisodeStreamUrl(tmdbId: string, season: number, episode: number): string {
-    return `${BASE_URL}/serie/${tmdbId}/${season}/${episode}`;
+  getEpisodeStreamUrl(id: string, season: number, episode: number): string {
+    return `${BASE_URL}/tv/${id}/${season}/${episode}`;
   },
 
   async getCalendar(): Promise<any[]> {
@@ -68,6 +70,44 @@ export const superflixService = {
     }
 
     return url;
+  },
+
+  isImdbId(id: string | number | undefined | null): boolean {
+    if (!id) return false;
+    return /^tt\d{7,}$/.test(String(id));
+  },
+};
+
+export const vidsrcService = {
+  getMovieStreamUrl(id: string): string {
+    return `${VIDSRC_BASE_URL}/embed/movie/${id}`;
+  },
+
+  getEpisodeStreamUrl(id: string, season: number, episode: number): string {
+    return `${VIDSRC_BASE_URL}/embed/tv/${id}/${season}/${episode}`;
+  },
+
+  buildPlayerUrl(baseUrl: string): string {
+    return baseUrl;
+  },
+
+  isImdbId(id: string | number | undefined | null): boolean {
+    if (!id) return false;
+    return /^tt\d{7,}$/.test(String(id));
+  },
+};
+
+export const vidkingService = {
+  getMovieStreamUrl(imdbId: string): string {
+    return `${VIDKING_BASE_URL}/embed/movie/${imdbId}`;
+  },
+
+  getEpisodeStreamUrl(tmdbId: string, season: number, episode: number): string {
+    return `${VIDKING_BASE_URL}/embed/tv/${tmdbId}/${season}/${episode}`;
+  },
+
+  buildPlayerUrl(baseUrl: string): string {
+    return baseUrl;
   },
 
   isImdbId(id: string | number | undefined | null): boolean {

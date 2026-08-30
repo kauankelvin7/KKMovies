@@ -32,12 +32,12 @@ import {
   getSeriesStreams as getTMDBEmbedSeriesStreams,
   tmdbEmbedSettings,
 } from '../../services/tmdbEmbedService';
-import type { StreamingServer, TMDBEmbedStream } from '../../types/tmdbEmbed';
+import type { StreamingServer, TMDBEmbedStream, EmbedServer } from '../../types/tmdbEmbed';
 import {
-  PROVIDER_DISPLAY_NAMES,
   SERVER_INFO,
   formatQualityLabel,
   qualityToNumber,
+  getProviderDisplayName,
 } from '../../types/tmdbEmbed';
 import { getStreamsGrouped } from '../../services/tmdbEmbedService';
 import { resolveMovieStream, resolveSeriesStream } from '../../services/movieService';
@@ -87,8 +87,15 @@ export const PlayerModal: React.FC = () => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const hlsRef = useRef<Hls | null>(null);
   const hideTimer = useRef<ReturnType<typeof setTimeout>>();
+  const MAX_AUTO_RETRIES = 2;
+  const [autoRetryCount, setAutoRetryCount] = useState(0);
+
 
   const serverInfo = SERVER_INFO[server];
+
+  useEffect(() => {
+    setAutoRetryCount(0);
+  }, [movieId, episodeInfo?.season, episodeInfo?.episode, server]);
 
   useEffect(() => {
     setTmdbEmbedAvailable(tmdbEmbedSettings.isEnabled());
@@ -201,16 +208,18 @@ export const PlayerModal: React.FC = () => {
       };
     }
 
-    async function bootSuperflix() {
+    async function bootEmbedServer() {
+      const embedServer = server as EmbedServer;
       try {
         const resolved =
           mediaType === 'tv'
             ? await resolveSeriesStream(
-                movieId!,
-                episodeInfo?.season || 1,
-                episodeInfo?.episode || 1,
-              )
-            : await resolveMovieStream(movieId!, imdbId);
+              movieId!,
+              episodeInfo?.season || 1,
+              episodeInfo?.episode || 1,
+              { server: embedServer },
+            )
+            : await resolveMovieStream(movieId!, imdbId, { server: embedServer });
 
         if (cancelled) return;
 
@@ -238,7 +247,7 @@ export const PlayerModal: React.FC = () => {
       }
     }
 
-    void bootSuperflix();
+    void bootEmbedServer();
     return () => {
       cancelled = true;
     };
@@ -271,19 +280,19 @@ export const PlayerModal: React.FC = () => {
     try {
       const result = mediaType === 'tv'
         ? await getTMDBEmbedSeriesStreams(movieId, {
-            season: episodeInfo?.season,
-            episode: episodeInfo?.episode,
-          })
+          season: episodeInfo?.season,
+          episode: episodeInfo?.episode,
+        })
         : await getTMDBEmbedMovieStreams(movieId);
 
       if (result.available && result.streams.length > 0) {
         setStreams(result.streams);
         selectStream(result.streams[0]);
       } else {
-        setServer('superflix');
+        setServer('vidsrc');
       }
     } catch {
-      setServer('superflix');
+      setServer('vidsrc');
     } finally {
       setStreamLoading(false);
     }
@@ -475,7 +484,7 @@ export const PlayerModal: React.FC = () => {
         </div>
       )}
 
-      {server === 'superflix' && !playerError && activeSrc ? (
+      {(server === '111movies' || server === 'vidsrc' || server === 'vidking') && !playerError && activeSrc ? (
         <iframe
           key={`player-${userRequestedRefresh}`}
           ref={iframeRef}
@@ -483,13 +492,12 @@ export const PlayerModal: React.FC = () => {
           className="w-full h-full border-none bg-black"
           allowFullScreen
           allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
-          // Corrigido: allow-same-origin incluído para permitir a verificação do Cloudflare / Turnstile sem erro de CORS (origin 'null')
           sandbox="allow-scripts allow-same-origin allow-forms allow-presentation"
           title={movieTitle}
           onLoad={handleIframeLoad}
           referrerPolicy="no-referrer"
         />
-      ) : server !== 'superflix' ? (
+      ) : server === 'tmdb-embed' ? (
         <div className="w-full h-full flex items-center justify-center bg-black">
           <video
             ref={videoRef}
@@ -507,7 +515,7 @@ export const PlayerModal: React.FC = () => {
         </div>
       ) : null}
 
-      {playerError && server === 'superflix' && (
+      {playerError && (server === '111movies' || server === 'vidsrc' || server === 'vidking') && (
         <div className="absolute inset-0 z-30 flex items-center justify-center px-4 bg-[var(--surface-0)]">
           <div className="player-error-card max-w-md w-full text-center p-6">
             <div className="w-14 h-14 mx-auto mb-4 rounded-full bg-[rgba(255,59,48,0.14)] border border-[rgba(255,59,48,0.35)] flex items-center justify-center">
@@ -517,7 +525,7 @@ export const PlayerModal: React.FC = () => {
               Servidor Temporariamente Indisponível
             </h3>
             <p className="text-[13.5px] text-[var(--text-secondary)] leading-relaxed mb-5">
-              Não foi possível estabelecer conexão com o servidor no momento. Tente novamente ou altere a fonte de vídeo.
+              Não foi possível estabelecer conexão com o servidor <strong>{SERVER_INFO[server].name}</strong> no momento. Tente novamente ou escolha outra fonte de vídeo.
             </p>
             <div className="flex flex-wrap items-center justify-center gap-2">
               <button
@@ -528,6 +536,33 @@ export const PlayerModal: React.FC = () => {
                 <RefreshCw className="w-4 h-4" />
                 Tentar Novamente
               </button>
+              {server !== 'vidsrc' && (
+                <button
+                  type="button"
+                  onClick={() => switchServer('vidsrc')}
+                  className="glass-button !py-2.5 !px-4"
+                >
+                  💎 VidSrc
+                </button>
+              )}
+              {server !== '111movies' && (
+                <button
+                  type="button"
+                  onClick={() => switchServer('111movies')}
+                  className="glass-button !py-2.5 !px-4"
+                >
+                  🎬 111movies
+                </button>
+              )}
+              {server !== 'vidking' && (
+                <button
+                  type="button"
+                  onClick={() => switchServer('vidking')}
+                  className="glass-button !py-2.5 !px-4"
+                >
+                  👑 VidKing
+                </button>
+              )}
               {tmdbEmbedAvailable && (
                 <button
                   type="button"
@@ -535,7 +570,7 @@ export const PlayerModal: React.FC = () => {
                   className="glass-button primary !py-2.5 !px-4"
                 >
                   <Zap className="w-4 h-4" />
-                  Outras Fontes
+                  Fontes Nativas
                 </button>
               )}
               <button
@@ -554,18 +589,33 @@ export const PlayerModal: React.FC = () => {
         <div className="absolute inset-0 flex items-center justify-center z-30 pointer-events-none">
           <div className="text-center max-w-md p-6 pointer-events-auto glass-modal">
             <Zap className="w-12 h-12 mx-auto mb-3 text-ios-yellow" />
-            <h3 className="text-lg font-semibold mb-2">Nenhuma fonte alternativa encontrada</h3>
+            <h3 className="text-lg font-semibold mb-2">Nenhuma fonte nativa encontrada</h3>
             <p className="text-sm text-[var(--text-secondary)] mb-4">
-              As fontes secundárias não retornaram transmissão para este título. Você pode retornar ao player principal.
+              As fontes nativas não retornaram transmissão para este título. Você pode usar os players incorporados.
             </p>
-            <button
-              onClick={() => switchServer('superflix')}
-              className="glass-button primary"
-              type="button"
-            >
-              <Film className="w-4 h-4" />
-              Retornar ao Servidor Principal
-            </button>
+            <div className="flex flex-wrap items-center justify-center gap-2">
+              <button
+                onClick={() => switchServer('vidsrc')}
+                className="glass-button primary"
+                type="button"
+              >
+                💎 VidSrc
+              </button>
+              <button
+                onClick={() => switchServer('111movies')}
+                className="glass-button"
+                type="button"
+              >
+                🎬 111movies
+              </button>
+              <button
+                onClick={() => switchServer('vidking')}
+                className="glass-button"
+                type="button"
+              >
+                👑 VidKing
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -618,8 +668,8 @@ export const PlayerModal: React.FC = () => {
                     Servidores disponíveis
                   </p>
                 </div>
-                {(['superflix', 'tmdb-embed'] as StreamingServer[]).filter((s) =>
-                  s === 'superflix' || (s === 'tmdb-embed' && tmdbEmbedAvailable)
+                {(['111movies', 'vidsrc', 'vidking', 'tmdb-embed'] as StreamingServer[]).filter((s) =>
+                  (s !== 'tmdb-embed') || (s === 'tmdb-embed' && tmdbEmbedAvailable)
                 ).map((s) => {
                   const info = SERVER_INFO[s];
                   const active = s === server;
@@ -627,9 +677,8 @@ export const PlayerModal: React.FC = () => {
                     <button
                       key={s}
                       onClick={() => switchServer(s)}
-                      className={`w-full flex items-start gap-3 px-4 py-3 text-left transition-colors ${
-                        active ? 'bg-[var(--accent-blue-dim)]' : 'hover:bg-[var(--surface-2)]'
-                      }`}
+                      className={`w-full flex items-start gap-3 px-4 py-3 text-left transition-colors ${active ? 'bg-[var(--accent-blue-dim)]' : 'hover:bg-[var(--surface-2)]'
+                        }`}
                       type="button"
                     >
                       <span className="text-2xl">{info.icon}</span>
@@ -667,7 +716,7 @@ export const PlayerModal: React.FC = () => {
               >
                 <SFIcon icon={Server} size={14} />
                 <span className="hidden xs:inline">
-                  {selectedStream ? PROVIDER_DISPLAY_NAMES[selectedStream.provider] || selectedStream.provider : 'Fontes'}
+                  {selectedStream ? getProviderDisplayName(selectedStream.provider) : 'Fontes'}
                 </span>
                 {selectedStream && (
                   <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-[var(--ios-green)] text-black font-semibold">
@@ -687,11 +736,14 @@ export const PlayerModal: React.FC = () => {
                     <div key={provider}>
                       <div className="px-4 py-2 bg-[var(--surface-2)]/50">
                         <p className="text-[11px] uppercase tracking-wide text-[var(--text-muted)] font-medium">
-                          {PROVIDER_DISPLAY_NAMES[provider] || provider}
+                          {getProviderDisplayName(provider)}
                         </p>
                       </div>
                       {(streams as TMDBEmbedStream[]).map((stream: TMDBEmbedStream, idx: number) => {
                         const isActive = selectedStream?.url === stream.url;
+                        const qNum = qualityToNumber(stream.quality);
+                        const isFullHdPlus = qNum >= 1080;
+                        const isHdPlus = qNum >= 720;
                         return (
                           <button
                             key={`${provider}-${idx}`}
@@ -699,9 +751,8 @@ export const PlayerModal: React.FC = () => {
                               selectStream(stream);
                               setShowStreamPicker(false);
                             }}
-                            className={`w-full flex items-center justify-between gap-3 px-4 py-3 text-left transition-colors ${
-                              isActive ? 'bg-[var(--accent-blue-dim)]' : 'hover:bg-[var(--surface-2)]'
-                            }`}
+                            className={`w-full flex items-center justify-between gap-3 px-4 py-3 text-left transition-colors ${isActive ? 'bg-[var(--accent-blue-dim)]' : 'hover:bg-[var(--surface-2)]'
+                              }`}
                             type="button"
                           >
                             <div className="flex-1 min-w-0">
@@ -710,12 +761,8 @@ export const PlayerModal: React.FC = () => {
                               </p>
                             </div>
                             <span className="flex-shrink-0 text-[11px] px-2 py-1 rounded-md font-semibold" style={{
-                              background: `var(--ios-${
-                                qualityToNumber(stream.quality) >= 1080 ? 'green' :
-                                qualityToNumber(stream.quality) >= 720 ? 'blue' : 'gray'
-                              }, ${qualityToNumber(stream.quality) >= 1080 ? '#34C759' :
-                                qualityToNumber(stream.quality) >= 720 ? '#007AFF' : '#8E8E93'})`,
-                              color: qualityToNumber(stream.quality) >= 720 ? 'white' : 'black',
+                              background: `var(--ios-${isFullHdPlus ? 'green' : isHdPlus ? 'blue' : 'gray'}, ${isFullHdPlus ? '#34C759' : isHdPlus ? '#007AFF' : '#8E8E93'})`,
+                              color: isHdPlus ? 'white' : 'black',
                             }}>
                               {formatQualityLabel(stream.quality)}
                             </span>

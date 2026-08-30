@@ -20,4 +20,7 @@ router.get('/list', streamingController.getList.bind(streamingController));
 // Streamtape player
 router.get('/streamtape/:videoId', streamingController.getStreamtapePlayer.bind(streamingController));
 
+// Available servers list
+router.get('/servers', streamingController.getServers.bind(streamingController));
+
 export default router;

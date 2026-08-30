@@ -1,7 +1,7 @@
 {
   "name": "kkmovies",
   "version": "1.0.0",
-  "description": "KKMovies - Streaming Platform with TMDb and SuperFlix integration",
+  "description": "KKMovies - Streaming Platform with TMDb and 111movies integration",
   "private": true,
   "scripts": {
     "dev": "concurrently -n \"BACKEND,FRONTEND\" -c \"cyan,magenta\" \"npm run dev:backend\" \"npm run dev:frontend\"",
