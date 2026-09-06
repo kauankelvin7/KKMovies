@@ -15,7 +15,7 @@ Configure `TMDB_API_KEY` no ambiente do servidor (ou em `.env.local` na raiz par
 
 Variáveis opcionais:
 
-- `WAREZCDN_BASE_URL`: domínio do provedor no backend; padrão `https://warezcdn.sbs`.
+- `WAREZCDN_BASE_URL` (ou `STREAMING_BASE_URL`): domínio do provedor no backend; padrão `https://warezcdn.sbs`.
 - `VITE_WAREZCDN_BASE_URL`: mesmo domínio para o iframe no frontend. Se alterar o domínio, configure ambos.
 - `VITE_API_URL`: use somente para backend separado. Sem ela, o frontend usa a mesma origem, com proxy Vite no desenvolvimento.
 - `PORT`: porta do backend; ao alterá-la, ajuste também o destino do proxy no Vite.
@@ -54,4 +54,4 @@ Reprodução: `/api/streaming/movie/:id`, `/api/streaming/series/:id[/temporada[
 
 ## Publicação
 
-A configuração existente da Vercel foi preservada. Configure os valores do ambiente no projeto Vercel antes de publicar. Este trabalho não altera o acesso nem publica automaticamente o projeto existente.
+Na Vercel, configure `TMDB_API_KEY` para os ambientes Production, Preview e Development e faça um novo deploy. `WAREZCDN_BASE_URL`/`STREAMING_BASE_URL` é opcional se o domínio padrão for o correto. As funções em `api/` têm limite de 30 segundos, mas a consulta opcional da lista do provedor falha em 4 segundos para não segurar a resposta. Caso o provedor bloqueie a Vercel, o catálogo continuará a responder com resultados do TMDB sem o filtro de disponibilidade (`availability_filtered: false`), em vez de falhar com 502; a reprodução continua dependendo de o iframe do provedor estar acessível no navegador.

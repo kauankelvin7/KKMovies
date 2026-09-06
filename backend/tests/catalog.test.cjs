@@ -24,7 +24,10 @@ test('upstream availability, request deduplication, details, search and errors',
   let failureCalls = 0;
   axios.get = async (url, options) => {
     await new Promise(resolve => setTimeout(resolve, 5));
-    if (url.endsWith('/lista')) return { data: options.params.category === 'filme' ? ['101', '102'] : ['201'] };
+    if (url.endsWith('/lista')) {
+      if (options.params.category === 'filme') return { data: ['101', '102'] };
+      throw { isAxiosError: true, response: { status: 503 } };
+    }
     if (url.endsWith('/movie/101/videos')) return { data: { results: [{ key: 'trailer' }] } };
     if (url.endsWith('/tv/201/season/0')) return { data: { episodes: [{ episode_number: 1 }] } };
     if (url.endsWith('/movie/101')) return { data: { id: 101, title: 'Filme de teste' } };
@@ -42,6 +45,9 @@ test('upstream availability, request deduplication, details, search and errors',
     assert.equal((await catalog.catalogRoute('movie', ['101'], {})).title, 'Filme de teste');
     assert.equal((await catalog.catalogRoute('movie', ['101', 'videos'], {})).results.length, 1);
     assert.equal((await catalog.catalogRoute('tv', ['201', 'season', '0'], {})).episodes.length, 1);
+    const unfilteredSeries = await catalog.catalogRoute('tv', ['popular'], {});
+    assert.equal(unfilteredSeries.availability_filtered, false);
+    assert.deepEqual(unfilteredSeries.results.map(item => item.id), [101, 999]);
     assert.equal((await catalog.catalogRoute('movie', ['search-multi'], { query: 'teste' })).results.length, 2);
     await assert.rejects(catalog.catalogRoute('movie', ['999'], {}), error => error.status === 404);
     await assert.rejects(catalog.catalogRoute('movie', ['search'], {}), error => error.status === 400);

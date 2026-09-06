@@ -5,6 +5,7 @@ export class CatalogError extends Error {
 }
 type MediaType = 'movie' | 'tv';
 type Params = Record<string, string | number | undefined>;
+type Availability = { ids: Set<number>; filtered: boolean };
 const cache = new Map<string, { expires: number; value: any }>();
 const pending = new Map<string, Promise<any>>();
 let active = 0;
@@ -32,9 +33,9 @@ async function cached(key: string, fetcher: () => Promise<any>, ttl = 600_000): 
   try { return await task; } finally { pending.delete(key); }
 }
 
-async function request(url: string, params: Params = {}) {
+async function request(url: string, params: Params = {}, timeout = 12_000) {
   for (let attempt = 0; ; attempt++) {
-    try { return (await axios.get(url, { params, timeout: 12_000 })).data; }
+    try { return (await axios.get(url, { params, timeout })).data; }
     catch (error) {
       if (!axios.isAxiosError(error)) throw error;
       const status = error.response?.status;
@@ -52,13 +53,29 @@ export function providerBase() {
   return (process.env.WAREZCDN_BASE_URL || process.env.STREAMING_BASE_URL || 'https://warezcdn.sbs').replace(/\/+$/, '');
 }
 
+/**
+ * The streaming host can reject serverless/data-centre IPs. Its availability
+ * list is optional metadata: TMDB must keep the catalogue usable when it is
+ * unavailable. A failed check is cached briefly to avoid retrying it for every
+ * request in the same serverless instance.
+ */
+async function availability(type: MediaType): Promise<Availability> {
+  return cached(`available:${type}`, async () => {
+    try {
+      // Fail well before a serverless invocation can be terminated by Vercel.
+      const data = await request(`${providerBase()}/lista`, { category: type === 'movie' ? 'filme' : 'serie', type: 'tmdb', format: 'json' }, 4_000);
+      if (!Array.isArray(data)) throw new CatalogError('A lista do provedor está temporariamente indisponível.');
+      return { ids: data.map(Number).filter((id: number) => Number.isSafeInteger(id) && id > 0), filtered: true };
+    } catch (error) {
+      // Do not expose provider details or turn a catalogue request into a 502.
+      console.warn(`[catalog] Availability list unavailable for ${type}; serving unfiltered TMDB results.`, error instanceof Error ? error.message : error);
+      return { ids: [], filtered: false };
+    }
+  }, 60_000).then((value: { ids: number[]; filtered: boolean }) => ({ ids: new Set(value.ids), filtered: value.filtered }));
+}
+
 export async function availableIds(type: MediaType): Promise<Set<number>> {
-  const ids = await cached(`available:${type}`, async () => {
-    const data = await request(`${providerBase()}/lista`, { category: type === 'movie' ? 'filme' : 'serie', type: 'tmdb', format: 'json' });
-    if (!Array.isArray(data)) throw new CatalogError('A lista do provedor está temporariamente indisponível.');
-    return data.map(Number).filter((id: number) => Number.isSafeInteger(id) && id > 0);
-  }, 900_000);
-  return new Set(ids);
+  return (await availability(type)).ids;
 }
 
 async function metadata(path: string, params: Params = {}) {
@@ -87,8 +104,9 @@ export function pageNumber(value: unknown) {
 }
 
 export async function catalogList(type: MediaType, path: string, params: Params) {
-  const [data, ids] = await Promise.all([metadata(path, params), availableIds(type)]);
-  return { ...data, total_pages: Math.min(data.total_pages || 0, 500), results: (data.results || []).filter((item: any) => ids.has(item.id)).map((item: any) => normalizeItem(item, type)), availability_filtered: true };
+  const [data, available] = await Promise.all([metadata(path, params), availability(type)]);
+  const results = available.filtered ? (data.results || []).filter((item: any) => available.ids.has(item.id)) : (data.results || []);
+  return { ...data, total_pages: Math.min(data.total_pages || 0, 500), results: results.map((item: any) => normalizeItem(item, type)), availability_filtered: available.filtered };
 }
 
 /** Same route contract in Express and Vercel. Pagination remains TMDB pagination after filtering. */
@@ -99,8 +117,8 @@ export async function catalogRoute(type: MediaType, parts: string[], query: Para
   if (/^\d+$/.test(first || '')) {
     const id = Number(first);
     if (!Number.isSafeInteger(id) || id < 1) throw new CatalogError('ID inválido.', 400);
-    const allowed = await availableIds(type);
-    if (!allowed.has(id)) throw new CatalogError('Este título não está no catálogo disponível.', 404);
+    const available = await availability(type);
+    if (available.filtered && !available.ids.has(id)) throw new CatalogError('Este título não está no catálogo disponível.', 404);
     const path = `/${type}/${id}`;
     if (!second && parts.length === 1) return normalizeItem(await metadata(path, { append_to_response: 'external_ids' }), type);
     if (parts.length === 2 && ['credits', 'videos'].includes(second)) return metadata(`${path}/${second}`);
@@ -112,8 +130,15 @@ export async function catalogRoute(type: MediaType, parts: string[], query: Para
   if (first === 'genres') return metadata(`/genre/${type}/list`);
   if (first === 'search-multi') {
     if (!search) throw new CatalogError('Informe um termo de busca.', 400);
-    const [data, movies, series] = await Promise.all([metadata('/search/multi', { query: search, page }), availableIds('movie'), availableIds('tv')]);
-    return { ...data, total_pages: Math.min(data.total_pages || 0, 500), results: data.results.filter((item: any) => item.media_type === 'movie' ? movies.has(item.id) : item.media_type === 'tv' && series.has(item.id)).map((item: any) => normalizeItem(item, item.media_type)) };
+    const [data, movies, series] = await Promise.all([metadata('/search/multi', { query: search, page }), availability('movie'), availability('tv')]);
+    return {
+      ...data,
+      total_pages: Math.min(data.total_pages || 0, 500),
+      results: data.results
+        .filter((item: any) => item.media_type === 'movie' ? !movies.filtered || movies.ids.has(item.id) : item.media_type === 'tv' && (!series.filtered || series.ids.has(item.id)))
+        .map((item: any) => normalizeItem(item, item.media_type)),
+      availability_filtered: movies.filtered && series.filtered,
+    };
   }
   if (first === 'search') {
     if (!search) throw new CatalogError('Informe um termo de busca.', 400);

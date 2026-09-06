@@ -3,6 +3,11 @@
   "installCommand": "npm install --no-audit --no-fund",
   "buildCommand": "cd frontend && npm install --no-audit --no-fund --loglevel=error && npm run build",
   "outputDirectory": "frontend/dist",
+  "functions": {
+    "api/**/*.ts": {
+      "maxDuration": 30
+    }
+  },
   "cleanUrls": true,
   "trailingSlash": false,
   "headers": [
