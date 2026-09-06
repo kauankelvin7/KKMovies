@@ -1,132 +1,34 @@
-import React, { useMemo } from 'react';
+import { useEffect, useState, useMemo } from 'react';
+import { Link } from 'react-router-dom';
+import { ArrowUpRight, RotateCw, Film, Tv, Bookmark } from 'lucide-react';
 import { HeroBanner } from '../components/HeroBanner';
 import { ContentCarousel } from '../components/ContentCarousel';
 import { ErrorMessage } from '../components/ui/ErrorBoundary';
 import { useHomeMovies } from '../hooks/useMovies';
-import type { Movie } from '../types/movie';
 import { historyService } from '../services/storageService';
-
-/* Convert history items to Movie shapes for the carousel */
-function historyToMovies(): Movie[] {
-  return historyService.getRecent(20).map((h) => ({
-    id: h.id,
-    title: h.title,
-    overview: '',
-    poster_path: h.posterPath,
-    backdrop_path: null,
-    release_date: '',
-    vote_average: 0,
-    vote_count: 0,
-    popularity: 0,
-    adult: false,
-    original_language: 'pt',
-    media_type: h.type,
-  }));
+import type { Movie } from '../types/movie';
+export default function HomePage() {
+  const data = useHomeMovies();
+  const [revision, setRevision] = useState(0);
+  useEffect(() => { const refresh = () => setRevision(value => value + 1); window.addEventListener('kkm-storage', refresh); return () => window.removeEventListener('kkm-storage', refresh); }, []);
+  const recent = useMemo<Movie[]>(() => historyService.getRecent(12).map(item => ({ id: item.id, title: item.title, overview: '', poster_path: item.posterPath, backdrop_path: null, release_date: '', vote_average: 0, vote_count: 0, popularity: 0, adult: false, original_language: '', media_type: item.type })), [revision]);
+  const featured = data.trending.length ? data.trending : data.popular.length ? data.popular : data.series;
+  const unique = (items: Movie[]) => items.filter((item, index, all) => all.findIndex(other => other.id === item.id && other.media_type === item.media_type) === index);
+  const popular = data.popular.filter(item => !data.trending.slice(0, 10).some(other => item.id === other.id));
+  if (data.error && !data.loading && ![...featured, ...data.topRated, ...data.nowPlaying, ...data.actionMovies, ...data.comedyMovies].length) return <main><ErrorMessage message={data.error} onRetry={data.refetch}/></main>;
+  return <main className="home-page">
+    <HeroBanner movies={featured} loading={data.loading}/>
+    <div className="home-discovery section-container"><span>Explore o catálogo</span><div><Link to="/filmes"><Film size={16}/> Filmes <ArrowUpRight size={14}/></Link><Link to="/series"><Tv size={16}/> Séries <ArrowUpRight size={14}/></Link><Link to="/minha-lista"><Bookmark size={16}/> Minha lista <ArrowUpRight size={14}/></Link></div></div>
+    {data.error && <div className="section-container"><div className="catalog-notice" role="status"><span>{data.error} As outras seleções continuam disponíveis.</span><button onClick={data.refetch} disabled={data.loading}><RotateCw size={15}/> Tentar novamente</button></div></div>}
+    <div className="home-shelves">
+      <ContentCarousel title="Em alta esta semana" movies={data.trending.slice(0, 10)} ranked loading={data.pending.includes('trending')} viewAllLink="/top10"/>
+      {recent.length > 0 && <ContentCarousel title="Vistos recentemente" movies={recent} viewAllLink="/minha-lista?tab=history"/>}
+      <ContentCarousel title="Filmes populares" movies={unique(popular)} loading={data.pending.includes('popular')} viewAllLink="/filmes"/>
+      <ContentCarousel title="Séries em alta" movies={data.series} loading={data.pending.includes('series')} viewAllLink="/series"/>
+      <ContentCarousel title="Lançamentos" movies={data.nowPlaying} loading={data.pending.includes('nowPlaying')}/>
+      <ContentCarousel title="Mais bem avaliados" movies={data.topRated} loading={data.pending.includes('topRated')}/>
+      <ContentCarousel title="Ação" movies={data.actionMovies} loading={data.pending.includes('actionMovies')}/>
+      <ContentCarousel title="Comédias" movies={data.comedyMovies} loading={data.pending.includes('comedyMovies')}/>
+    </div>
+  </main>;
 }
-
-const HomePage: React.FC = () => {
-  const {
-    trending, popular, topRated, upcoming, nowPlaying,
-    actionMovies, comedyMovies, dramaMovies, horrorMovies,
-    loading, error, refetch,
-  } = useHomeMovies();
-
-  const continueWatching = useMemo(() => historyToMovies(), []);
-
-  if (error && trending.length === 0) {
-    return <ErrorMessage message={error} onRetry={refetch} />;
-  }
-
-  return (
-    <main className="min-h-screen bg-[var(--surface-0)] pb-20 sm:pb-28 page-enter">
-
-      {/* Hero Banner — 100vh com gradiente cinematográfico nativo */}
-      <HeroBanner movies={trending} loading={loading} />
-
-      {/* 
-        Carousels Container
-        - Overlap responsivo sobre o Hero (-mt-24 no mobile, -mt-32 no desktop)
-        - bg-gradient garante uma transição suave da arte do Hero para o fundo escuro
-      */}
-      <div className="relative z-10 mt-4 sm:mt-8 flex flex-col gap-6 sm:gap-10">
-
-        {/* Layer de transição invisível para suavisar a entrada do primeiro carrossel */}
-        <div className="absolute inset-0 top-0 h-40 bg-gradient-to-b from-transparent to-[var(--surface-0)] pointer-events-none -z-10" />
-
-        {/* 1. Continue Assistindo */}
-        {continueWatching.length > 0 && (
-          <ContentCarousel
-            title="Continue Assistindo"
-            movies={continueWatching}
-            viewAllLink="/explorar"
-          />
-        )}
-
-        {/* 2. Em Alta Hoje */}
-        <ContentCarousel
-          title="Em Alta Hoje"
-          movies={(trending || []).slice(0, 10)}
-          loading={loading}
-          ranked
-          viewAllLink="/top10"
-        />
-
-        {/* 3. Populares */}
-        <ContentCarousel
-          title="Populares"
-          movies={popular}
-          loading={loading}
-        />
-
-        {/* 4. Lançamentos */}
-        <ContentCarousel
-          title="Lançamentos Recentes"
-          movies={upcoming}
-          loading={loading}
-        />
-
-        {/* 5. Em Cartaz */}
-        <ContentCarousel
-          title="Em Cartaz"
-          movies={nowPlaying}
-          loading={loading}
-        />
-
-        {/* 6. Mais Bem Avaliados */}
-        <ContentCarousel
-          title="Mais Bem Avaliados"
-          movies={topRated}
-          loading={loading}
-        />
-
-        {/* Genre carousels */}
-        <ContentCarousel
-          title="Ação"
-          movies={actionMovies}
-          loading={loading}
-        />
-
-        <ContentCarousel
-          title="Comédia"
-          movies={comedyMovies}
-          loading={loading}
-        />
-
-        <ContentCarousel
-          title="Drama"
-          movies={dramaMovies}
-          loading={loading}
-        />
-
-        <ContentCarousel
-          title="Terror"
-          movies={horrorMovies}
-          loading={loading}
-        />
-
-      </div>
-    </main>
-  );
-};
-
-export default HomePage;

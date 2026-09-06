@@ -1,4 +1,4 @@
-/* KauanFlix — Global App Store (Zustand) */
+/* KKMovies — Global App Store (Zustand) */
 import { create } from 'zustand';
 import type { ToastMessage, Genre } from '../types/movie';
 

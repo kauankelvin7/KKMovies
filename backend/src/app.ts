@@ -9,6 +9,7 @@ import { logger } from './middleware/logger.middleware';
 import { httpCacheMiddleware } from './middleware/cache.middleware';
 
 // Load environment variables
+dotenv.config({ path: '../.env.local' });
 dotenv.config();
 
 /**

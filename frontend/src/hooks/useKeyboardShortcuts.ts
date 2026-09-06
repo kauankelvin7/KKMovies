@@ -1,4 +1,4 @@
-/* KauanFlix — Global Keyboard Shortcuts
+/* KKMovies — Global Keyboard Shortcuts
    /  or S → focus search
    H → Home
    F → Filmes

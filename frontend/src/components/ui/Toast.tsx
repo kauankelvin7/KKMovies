@@ -1,4 +1,4 @@
-/* KauanFlix — Toast Notification System */
+/* KKMovies — Toast Notification System */
 import React from 'react';
 import { createPortal } from 'react-dom';
 import { CheckCircle, XCircle, Info, X } from 'lucide-react';

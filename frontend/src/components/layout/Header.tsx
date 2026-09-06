@@ -1,152 +1,33 @@
-/* KauanFlix — Header (iOS Glass) */
-import React, { useState, useEffect, useRef } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Search, Menu, X } from 'lucide-react';
+import { useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
+import { Link, useLocation } from 'react-router-dom';
+import { Search, Menu, X, ArrowUpRight, Bookmark } from 'lucide-react';
 import { useAppStore } from '../../store/useAppStore';
-
-const NAV_LINKS = [
-  { to: '/', label: 'Início' },
-  { to: '/filmes', label: 'Filmes' },
-  { to: '/series', label: 'Séries' },
-  { to: '/explorar', label: 'Explorar' },
-  { to: '/minha-lista', label: 'Minha Lista' },
-];
-
-export const Header: React.FC = () => {
-  const [scrolled, setScrolled] = useState(false);
-  const [searchOpen, setSearchOpen] = useState(false);
-  const [searchInput, setSearchInput] = useState('');
+const links = [{ to: '/', label: 'Início' }, { to: '/filmes', label: 'Filmes' }, { to: '/series', label: 'Séries' }, { to: '/explorar', label: 'Explorar' }, { to: '/minha-lista', label: 'Minha Lista' }];
+export function Header() {
   const { isMobileMenuOpen, toggleMobileMenu, closeMobileMenu } = useAppStore();
   const location = useLocation();
-  const navigate = useNavigate();
-  const searchRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 24);
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
+  const dialog = useRef<HTMLDialogElement>(null);
+  const trigger = useRef<HTMLButtonElement>(null);
+  const active = (path: string) => path === '/' ? location.pathname === '/' : location.pathname.startsWith(path);
   useEffect(() => { closeMobileMenu(); }, [location.pathname, closeMobileMenu]);
-  useEffect(() => { if (searchOpen && searchRef.current) searchRef.current.focus(); }, [searchOpen]);
-
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    const trimmed = searchInput.trim();
-    if (trimmed) {
-      navigate(`/buscar?q=${encodeURIComponent(trimmed)}`);
-      setSearchOpen(false);
-      setSearchInput('');
-    }
-  };
-
-  const isActive = (to: string) =>
-    to === '/' ? location.pathname === '/' : location.pathname.startsWith(to);
-
-  return (
-    <header className={`ios-nav ${scrolled ? 'scrolled' : ''}`}>
-      <div className="ios-nav-inner section-container">
-        {/* Logo */}
-        <Link to="/" className="ios-nav-logo" aria-label="KauanFlix Home">
-          <span className="ios-nav-logo-text" style={{ fontSize: 20, letterSpacing: '0.18em' }}>
-            KAUANFLIX
-          </span>
-        </Link>
-
-        {/* Desktop Nav */}
-        <nav className="hidden md:flex items-center gap-1" aria-label="Navegação principal">
-          {NAV_LINKS.map((link) => (
-            <Link
-              key={link.to}
-              to={link.to}
-              className={`ios-nav-link ${isActive(link.to) ? 'active' : ''}`}
-            >
-              {link.label}
-            </Link>
-          ))}
-        </nav>
-
-        {/* Right side */}
-        <div className="flex items-center gap-1">
-          {searchOpen ? (
-            <form onSubmit={handleSearch} className="flex items-center gap-2">
-              <div className="ios-search-field">
-                <Search className="ios-search-icon w-4 h-4" />
-                <input
-                  ref={searchRef}
-                  type="text"
-                  value={searchInput}
-                  onChange={(e) => setSearchInput(e.target.value)}
-                  placeholder="Buscar filmes e séries"
-                  className="ios-search-input"
-                  aria-label="Buscar filmes e séries"
-                />
-                {searchInput && (
-                  <button
-                    type="button"
-                    onClick={() => setSearchInput('')}
-                    className="ios-search-clear"
-                    aria-label="Limpar busca"
-                  >
-                    <X className="w-3 h-3" />
-                  </button>
-                )}
-              </div>
-              <button
-                type="button"
-                onClick={() => { setSearchOpen(false); setSearchInput(''); }}
-                className="ios-nav-link"
-                style={{ padding: '6px 10px' }}
-              >
-                Cancelar
-              </button>
-            </form>
-          ) : (
-            <button
-              onClick={() => setSearchOpen(true)}
-              className="ios-nav-icon-btn"
-              aria-label="Buscar"
-            >
-              <Search className="w-5 h-5" />
-            </button>
-          )}
-
-          <button
-            onClick={toggleMobileMenu}
-            className="md:hidden ios-nav-icon-btn"
-            aria-label={isMobileMenuOpen ? 'Fechar menu' : 'Menu'}
-          >
-            {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-          </button>
-        </div>
-      </div>
-
-      {/* Mobile Side Menu — estilo Settings do iOS */}
-      {isMobileMenuOpen && (
-        <>
-          <div className="fixed inset-0 z-40 md:hidden ios-menu-backdrop" onClick={closeMobileMenu} />
-          <nav className="ios-side-menu md:hidden" aria-label="Menu mobile">
-            <div className="ios-side-menu-header">
-              <span className="ios-nav-logo-text" style={{ fontSize: 17 }}>KAUANFLIX</span>
-              <button onClick={closeMobileMenu} className="ios-nav-icon-btn" aria-label="Fechar">
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-            <div className="ios-side-menu-list">
-              {NAV_LINKS.map((link) => (
-                <Link
-                  key={link.to}
-                  to={link.to}
-                  className={`ios-side-menu-item ${isActive(link.to) ? 'active' : ''}`}
-                >
-                  <span className="ios-side-menu-item-indicator" />
-                  {link.label}
-                </Link>
-              ))}
-            </div>
-          </nav>
-        </>
-      )}
-    </header>
-  );
-};
+  useEffect(() => {
+    const el = dialog.current;
+    if (!isMobileMenuOpen) { el?.close(); return; }
+    const previous = document.body.style.overflow;
+    el?.showModal(); document.body.style.overflow = 'hidden';
+    const resize = () => { if (window.innerWidth >= 1024) closeMobileMenu(); };
+    window.addEventListener('resize', resize);
+    return () => { el?.close(); document.body.style.overflow = previous; window.removeEventListener('resize', resize); trigger.current?.focus(); };
+  }, [isMobileMenuOpen, closeMobileMenu]);
+  return <>
+    <header className="site-header"><div className="site-header-inner">
+      <Link to="/" className="brand" aria-label="KKMovies, início">KK<span>MOVIES</span><i /></Link>
+      <nav className="desktop-links" aria-label="Navegação principal">{links.map(link => <Link key={link.to} to={link.to} className={active(link.to) ? 'active' : ''} aria-current={active(link.to) ? 'page' : undefined}>{link.label}</Link>)}</nav>
+      <div className="header-actions"><Link className="glass-icon-btn" to="/buscar" aria-label="Buscar filmes e séries"><Search size={19} /></Link><button ref={trigger} className="glass-icon-btn mobile-menu-trigger" aria-label="Abrir menu" aria-expanded={isMobileMenuOpen} aria-controls="mobile-navigation" onClick={toggleMobileMenu}><Menu size={21} /></button></div>
+    </div></header>
+    {createPortal(<dialog ref={dialog} id="mobile-navigation" className="mobile-navigation" aria-label="Menu de navegação" onCancel={event => { event.preventDefault(); closeMobileMenu(); }} onClick={event => { if (event.target === event.currentTarget) closeMobileMenu(); }}>
+      <div className="mobile-menu-panel"><div className="mobile-menu-heading"><span className="brand">KK<span>MOVIES</span><i /></span><button className="glass-icon-btn" onClick={closeMobileMenu} aria-label="Fechar menu"><X size={20} /></button></div><p className="eyebrow">O QUE VAMOS ASSISTIR?</p><nav>{links.map((link, index) => <Link key={link.to} to={link.to} onClick={closeMobileMenu} className={active(link.to) ? 'active' : ''} aria-current={active(link.to) ? 'page' : undefined}><small>0{index + 1}</small>{link.label}<ArrowUpRight size={18} /></Link>)}</nav><Link className="mobile-library-link" to="/minha-lista" onClick={closeMobileMenu}><Bookmark size={20} /><span>Suas próximas histórias<small>Organize os títulos que quer assistir.</small></span></Link></div>
+    </dialog>, document.body)}
+  </>;
+}

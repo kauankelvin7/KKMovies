@@ -1,4 +1,4 @@
-/* KauanFlix — Watch History Service
+/* KKMovies — Watch History Service
    Manages watch progress using localStorage.
    No IP-based keying — uses a stable browser ID. */
 

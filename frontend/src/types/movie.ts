@@ -1,4 +1,4 @@
-/* KauanFlix — Movie & Media Types */
+/* KKMovies — Movie & Media Types */
 
 export interface Movie {
   id: number;

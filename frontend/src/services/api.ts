@@ -1,7 +1,7 @@
-/* KauanFlix — API Service with request queue and 429 retry */
+/* KKMovies — API Service with request queue and 429 retry */
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+const API_URL = import.meta.env.VITE_API_URL || '';
 
 /* ---- Request Queue (limits concurrent requests) ---- */
 const MAX_CONCURRENT = 3;
@@ -92,7 +92,8 @@ api.interceptors.response.use(
     if (!error.response) {
       return Promise.reject(new Error('Erro de conexão. Verifique sua internet.'));
     }
-    return Promise.reject(error);
+    const message = (error.response.data as { error?: string })?.error;
+    return Promise.reject(new Error(typeof message === 'string' ? message : 'Não foi possível carregar o catálogo. Tente novamente.'));
   }
 );
 

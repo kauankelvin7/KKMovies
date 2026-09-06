@@ -1,136 +1,57 @@
-# KauanFlix — Seu cinema, do seu jeito 🎬
+# KKMovies
 
-A Netflix-inspired streaming platform built with **React 18 + TypeScript + Tailwind CSS** and a **Node.js/Express** backend that proxies TMDB.
+Catálogo de filmes e séries em React + Vite, com API Express local e adaptadores Vercel. TMDB fornece apenas metadados e imagens. WarezCDN é o único provedor de reprodução e sua lista de IDs filtra os resultados exibidos. Não há canais ou eventos na navegação nem na API de catálogo.
 
-![KauanFlix](https://img.shields.io/badge/KauanFlix-7B2FFF?style=for-the-badge&logo=tv&logoColor=white)
-![React](https://img.shields.io/badge/React_18-61DAFB?style=for-the-badge&logo=react&logoColor=black)
-![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
-![Tailwind](https://img.shields.io/badge/Tailwind_CSS-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white)
+## Executar
 
-## ✨ Features
-
-| Feature | Description |
-|---------|-------------|
-| 🏠 **Home** | Hero banner with auto-rotate, Top 10 ranked, genre carousels |
-| 🎬 **Movie Details** | Full details, cast, trailer link, similar movies |
-| 🔍 **Search** | Debounced search with genre/rating/sort filters |
-| 🧭 **Explore** | Infinite-scroll catalog with grid/list toggle |
-| 📺 **Series** | Browse trending series, season/episode picker |
-| ❤️ **My List** | Save movies to a personal watchlist (localStorage) |
-| 🔥 **Top 10** | Ranked trending movies with large rank numbers |
-| ▶️ **Player** | Fullscreen iframe player with PiP, keyboard shortcuts |
-| 📊 **Stats** | Watch history, progress tracking, hours watched |
-| 🔔 **Toasts** | Success/error/info notifications |
-| 🎨 **Design System** | Purple electric accent, Bebas Neue + Inter fonts |
-| 📱 **Responsive** | Mobile-first with hamburger drawer |
-| ⚡ **Performance** | Lazy-loaded routes, 5-min API cache, code splitting |
-
-## 🏗 Tech Stack
-
-**Frontend:** React 18, TypeScript, Vite, Tailwind CSS, Zustand, React Router v6, Axios, Lucide Icons
-
-**Backend:** Node.js, Express, TypeScript — proxies TMDB API with caching
-
-## 📁 Project Structure
-
-```
-KauanFlix/
-├── frontend/
-│   └── src/
-│       ├── components/
-│       │   ├── layout/        # Header, Footer
-│       │   ├── player/        # PlayerModal (iframe)
-│       │   ├── ui/            # Skeleton, Toast, StarRating, ErrorBoundary
-│       │   ├── HeroBanner.tsx
-│       │   ├── MovieCard.tsx
-│       │   └── ContentCarousel.tsx
-│       ├── pages/             # HomePage, MovieDetails, Search, Catalog, Series, MyList, Top10, Filmes
-│       ├── services/          # api, movieService, watchHistory, myList, searchHistory
-│       ├── store/             # useAppStore, usePlayerStore (Zustand)
-│       ├── hooks/             # useMovies, useDebounce, useIntersectionObserver
-│       ├── types/             # Movie, Series, WatchProgress, etc.
-│       └── utils/             # helpers
-└── backend/
-    └── src/
-        ├── routes/            # movie, series, streaming
-        ├── controllers/
-        ├── services/          # TMDB proxy, 111movies
-        └── middleware/        # error, logger
-```
-
-## 🚀 Getting Started
-
-### 1. Clone & install
-
-```bash
-git clone <repo-url>
-cd KauanFlix
-
-# Install both frontend and backend
-cd frontend && npm install && cd ..
-cd backend && npm install && cd ..
-```
-
-### 2. Configure environment
-
-```bash
-# Backend
-cp backend/.env.example backend/.env
-# → Set TMDB_API_KEY
-
-# Frontend (optional overrides)
-cp frontend/.env.example frontend/.env
-```
-
-### 3. Run
-
-```bash
-# Terminal 1 — Backend (port 3001)
-cd backend
-npm run dev
-
-# Terminal 2 — Frontend (port 5173)
-cd frontend
+```sh
+npm run install:all
 npm run dev
 ```
 
-Open **http://localhost:5173**
+Frontend: http://localhost:3000. API: http://localhost:3001. A porta do frontend é fixa para não ocupar acidentalmente a porta da API; se estiver em uso, encerre sua outra instância ou execute `npm run dev --prefix frontend -- --port 3002`.
 
-## 🔑 Environment Variables
+Configure `TMDB_API_KEY` no ambiente do servidor (ou em `.env.local` na raiz para desenvolvimento). O fallback legado `freekeys` permanece exclusivamente no servidor para compatibilidade, com prazo de espera limitado. Uma chave própria elimina a dependência desse serviço externo. Nunca exponha a chave usando prefixo `VITE_`.
 
-### Backend `.env`
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `PORT` | `3001` | Server port |
-| `TMDB_API_KEY` | — | Your TMDB v3 API key |
-| `TMDB_BASE_URL` | `https://api.themoviedb.org/3` | TMDB API base URL |
+Variáveis opcionais:
 
-### Frontend `.env` (optional)
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `VITE_API_URL` | `http://localhost:3001` | Backend API URL |
-| `VITE_111movies_BASE` | `https://111moviesapi.bond` | Streaming provider |
+- `WAREZCDN_BASE_URL`: domínio do provedor no backend; padrão `https://warezcdn.sbs`.
+- `VITE_WAREZCDN_BASE_URL`: mesmo domínio para o iframe no frontend. Se alterar o domínio, configure ambos.
+- `VITE_API_URL`: use somente para backend separado. Sem ela, o frontend usa a mesma origem, com proxy Vite no desenvolvimento.
+- `PORT`: porta do backend; ao alterá-la, ajuste também o destino do proxy no Vite.
 
-## 🎨 Design System
+## Verificar
 
-- **Background:** `#08080F` (deep dark)
-- **Accent:** `#7B2FFF → #BF5AF2` (purple electric gradient)
-- **Fonts:** Bebas Neue (titles), Inter (UI), Roboto (body)
-- **Spacing:** 8px grid
-- **Components:** Glass morphism cards, skeleton loading, smooth transitions
+```sh
+npm run check
+npm run build
+```
 
-## ⌨️ Keyboard Shortcuts (Player)
+Os testes não acessam serviços reais: exercitam a lista de disponibilidade, respostas concorrentes, exclusão de pessoas na busca, temporadas especiais, URLs, erros e paginação. As consultas reais de integração dependem da disponibilidade dos serviços externos.
 
-| Key | Action |
-|-----|--------|
-| `Esc` | Close player |
-| `F` | Toggle fullscreen |
-| `Space` | Play/Pause |
+## Estrutura e rotas
 
-## 📝 License
+- `backend/src/services/catalog.service.ts`: contrato único de catálogo e reprodução, compartilhado por Express e Vercel.
+- `backend/src/routes/catalog.routes.ts`: adaptador Express.
+- `api/lib/catalog-handler.ts`: adaptador Vercel; suporta GET e OPTIONS e responde 405 para outros métodos.
+- `frontend/src/design-system.css`: tokens, superfícies, controles glass, proporções das capas, responsividade e movimento reduzido.
+- Páginas: `/`, `/filmes`, `/series`, `/series/:id`, `/serie/:id`, `/filme/:id`, `/buscar`, `/explorar`, `/minha-lista`, `/top10`. Endereços desconhecidos mostram 404.
 
-MIT
+Catálogo: `/api/movies` e `/api/series`, com `popular`, `trending`, `top-rated`, `genres`, `discover`, `search`, detalhes, `credits`, `videos`, `similar`, `recommendations` e temporadas para séries. Busca unificada: `/api/movies/search-multi?query=...`.
 
----
+Reprodução: `/api/streaming/movie/:id`, `/api/streaming/series/:id[/temporada[/episodio]]`. Listas aceitam apenas filmes e séries. O iframe abre diretamente o domínio documentado, sem proxies de HTML, sondagens de CAPTCHA ou troca automática de servidor.
 
-**Feito com 💜 por Kauan**
+## Limitações verificadas e decisões
+
+- `/lista?category=filme&type=tmdb&format=json` entrega IDs, sem títulos ou capas. Na consulta realizada, a pesquisa pública retornou somente grupos de canais e eventos. Por isso o uso de TMDB apenas para metadados foi autorizado.
+- Disponibilidade na lista não garante reprodução de cada episódio. O provedor pode solicitar verificação no iframe; ela deve ser concluída pelo visitante. `onLoad` do iframe não prova que o vídeo iniciou.
+- Paginação usa as páginas do TMDB, limitadas a 500, filtradas pela disponibilidade. Uma página pode ter menos de 20 títulos ou ficar vazia; os controles permitem seguir para a próxima. Totais são os do metadado, não uma contagem exata do acervo filtrado.
+- Até três consultas externas simultâneas por processo, cache limitado a 250 entradas, reutilização de chamadas idênticas, timeout e duas novas tentativas para 429. Não substitui um limite distribuído entre instâncias.
+- Erros não entram no cache do servidor; respostas de erro usam `no-store`. Sem uma lista válida do provedor, o catálogo falha explicitamente, em vez de oferecer títulos sem disponibilidade confirmada.
+- Histórico registra acesso ao player. Não são inventados minutos assistidos ou porcentagens: o iframe não documenta um protocolo de progresso para a aplicação.
+- Favoritos usam o mesmo armazenamento e distinguem filme e série com IDs iguais. A lista legada é migrada quando não existe a lista atual; entradas antigas sem tipo são tratadas como filmes.
+- Este projeto é Vite/React, não Next.js. Não existe `generateStaticParams`; o risco de pré-gerar todo o catálogo não se aplica. As antigas implementações duplicadas foram substituídas pelo contrato compartilhado.
+
+## Publicação
+
+A configuração existente da Vercel foi preservada. Configure os valores do ambiente no projeto Vercel antes de publicar. Este trabalho não altera o acesso nem publica automaticamente o projeto existente.

@@ -1,130 +1,43 @@
-/* KauanFlix — useMovies hook
-   Fetches and manages movie data for the homepage sections.
-   Uses sequential batch loading to avoid 429 rate limiting. */
-
 import { useState, useEffect, useCallback, useRef } from 'react';
 import type { Movie } from '../types/movie';
 import * as movieService from '../services/movieService';
-import { useAppStore } from '../store/useAppStore';
-
-interface HomeData {
-  trending: Movie[];
-  popular: Movie[];
-  topRated: Movie[];
-  upcoming: Movie[];
-  nowPlaying: Movie[];
-  actionMovies: Movie[];
-  comedyMovies: Movie[];
-  dramaMovies: Movie[];
-  horrorMovies: Movie[];
-  loading: boolean;
-  error: string | null;
-}
-
-const BATCH_DELAY = 200; // ms between batches
-
-function delay(ms: number) {
-  return new Promise(resolve => setTimeout(resolve, ms));
-}
-
+const loaders = {
+  trending: () => movieService.getTrending(),
+  popular: () => movieService.getPopular(),
+  series: () => movieService.getPopularSeries(),
+  nowPlaying: () => movieService.getNowPlaying(),
+  topRated: () => movieService.getTopRated(),
+  actionMovies: () => movieService.getMoviesByGenre(28),
+  comedyMovies: () => movieService.getMoviesByGenre(35),
+};
+type Section = keyof typeof loaders;
+const keys = Object.keys(loaders) as Section[];
+const empty: Record<Section, Movie[]> = { trending: [], popular: [], series: [], nowPlaying: [], topRated: [], actionMovies: [], comedyMovies: [] };
 export function useHomeMovies() {
-  const [data, setData] = useState<HomeData>({
-    trending: [], popular: [], topRated: [], upcoming: [], nowPlaying: [],
-    actionMovies: [], comedyMovies: [], dramaMovies: [], horrorMovies: [],
-    loading: true, error: null,
-  });
-  const setGenres = useAppStore((s) => s.setGenres);
-  const abortRef = useRef(false);
-
+  const [data, setData] = useState(empty);
+  const [pending, setPending] = useState<Section[]>(keys);
+  const [error, setError] = useState<string | null>(null);
+  const generation = useRef(0);
   const fetchAll = useCallback(async () => {
-    abortRef.current = false;
-    setData((d) => ({ ...d, loading: true, error: null }));
-
-    const extract = (res: PromiseSettledResult<any>) =>
-      res.status === 'fulfilled'
-        ? (Array.isArray(res.value) ? res.value : res.value?.results || [])
-        : [];
-
-    try {
-
-      // Batch 1: Essential above-the-fold content (2 requests)
-      const [trendingRes, genresRes] = await Promise.allSettled([
-        movieService.getTrending(),
-        movieService.getGenres(),
-      ]);
-      if (abortRef.current) return;
-
-      if (genresRes.status === 'fulfilled') {
-        const gVal = genresRes.value as any;
-        setGenres(Array.isArray(gVal) ? gVal : gVal?.genres || []);
-      }
-      setData((d) => ({ ...d, trending: extract(trendingRes) }));
-
-      await delay(BATCH_DELAY);
-      if (abortRef.current) return;
-
-      // Batch 2: Popular + Top Rated (2 requests)
-      const [popularRes, topRatedRes] = await Promise.allSettled([
-        movieService.getPopular(),
-        movieService.getTopRated(),
-      ]);
-      if (abortRef.current) return;
-      setData((d) => ({ ...d, popular: extract(popularRes), topRated: extract(topRatedRes) }));
-
-      await delay(BATCH_DELAY);
-      if (abortRef.current) return;
-
-      // Batch 3: Now Playing + Upcoming (2 requests)
-      const [nowPlayingRes, upcomingRes] = await Promise.allSettled([
-        movieService.getNowPlaying(),
-        movieService.getUpcoming(),
-      ]);
-      if (abortRef.current) return;
-      setData((d) => ({ ...d, nowPlaying: extract(nowPlayingRes), upcoming: extract(upcomingRes) }));
-
-      await delay(BATCH_DELAY);
-      if (abortRef.current) return;
-
-      // Batch 4: Genre carousels (2 requests)
-      const [actionRes, comedyRes] = await Promise.allSettled([
-        movieService.getMoviesByGenre(28),
-        movieService.getMoviesByGenre(35),
-      ]);
-      if (abortRef.current) return;
-      setData((d) => ({ ...d, actionMovies: extract(actionRes), comedyMovies: extract(comedyRes) }));
-
-      await delay(BATCH_DELAY);
-      if (abortRef.current) return;
-
-      // Batch 5: More genre carousels (2 requests)
-      const [dramaRes, horrorRes] = await Promise.allSettled([
-        movieService.getMoviesByGenre(18),
-        movieService.getMoviesByGenre(27),
-      ]);
-      if (abortRef.current) return;
-      setData((d) => ({
-        ...d,
-        dramaMovies: extract(dramaRes),
-        horrorMovies: extract(horrorRes),
-        loading: false,
-      }));
-
-    } catch (err: any) {
-      if (!abortRef.current) {
-        setData((d) => ({ ...d, loading: false, error: err.message || 'Erro ao carregar filmes' }));
-      }
-    }
-  }, [setGenres]);
-
-  useEffect(() => {
-    fetchAll();
-    return () => { abortRef.current = true; };
-  }, [fetchAll]);
-
-  return { ...data, refetch: fetchAll };
+    const current = ++generation.current;
+    setPending(keys); setError(null);
+    const results = await Promise.allSettled(keys.map(async key => {
+      try {
+        const response = await loaders[key]();
+        const items: Movie[] = Array.isArray(response) ? response : response.results || [];
+        if (current === generation.current) setData(previous => ({ ...previous, [key]: items }));
+        return items;
+      } finally { if (current === generation.current) setPending(previous => previous.filter(item => item !== key)); }
+    }));
+    if (current !== generation.current) return;
+    const failed = results.filter(result => result.status === 'rejected');
+    if (failed.length) setError(failed.length === keys.length ? 'Não conseguimos atualizar o catálogo agora.' : 'Algumas seleções não puderam ser atualizadas.');
+  }, []);
+  useEffect(() => { fetchAll(); return () => { generation.current++; }; }, [fetchAll]);
+  return { ...data, loading: pending.length > 0, pending, error, refetch: fetchAll };
 }
 
-export function useMovieSearch(query: string, page = 1) {
+export function useMovieSearch(query: string, page = 1, type: 'all' | 'movie' | 'tv' = 'all', retry = 0) {
   const [movies, setMovies] = useState<Movie[]>([]);
   const [totalPages, setTotalPages] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -132,14 +45,15 @@ export function useMovieSearch(query: string, page = 1) {
 
   useEffect(() => {
     if (!query.trim()) {
-      setMovies([]);
+      setMovies([]); setLoading(false); setError(null); setTotalPages(0);
       return;
     }
     let cancelled = false;
     setLoading(true);
     setError(null);
 
-    movieService.searchMulti(query, page).then((res) => {
+    const request = type === 'movie' ? movieService.searchMovies(query, page) : type === 'tv' ? movieService.searchSeries(query, page) : movieService.searchMulti(query, page);
+    request.then((res) => {
       if (cancelled) return;
       const results = Array.isArray(res) ? res : res.results || [];
       setMovies(results);
@@ -152,7 +66,7 @@ export function useMovieSearch(query: string, page = 1) {
     });
 
     return () => { cancelled = true; };
-  }, [query, page]);
+  }, [query, page, type, retry]);
 
   return { movies, totalPages, loading, error };
 }

@@ -1,4 +1,4 @@
-/* KauanFlix — Search History Service */
+/* KKMovies — Search History Service */
 
 const STORAGE_KEY = 'kauanflix_search_history';
 const MAX_ITEMS = 5;

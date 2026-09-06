@@ -1,60 +1,16 @@
-/* KauanFlix — My List Service
-   Manages the user's personal watchlist using localStorage. */
+import type { Movie } from '../types/movie';
+import { watchlistService } from './storageService';
 
-import type { MyListItem, Movie } from '../types/movie';
-
-const STORAGE_KEY = 'kauanflix_my_list';
-
-function getAll(): MyListItem[] {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? JSON.parse(raw) : [];
-  } catch {
-    return [];
-  }
-}
-
-function saveAll(items: MyListItem[]) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
-}
-
+/** All entry points share the same watchlist. */
 export const myListService = {
-  getAll,
-
-  isInList(movieId: number): boolean {
-    return getAll().some((item) => item.movieId === movieId);
+  getAll: () => watchlistService.getAll().map(item => ({ ...item, movieId: item.id })),
+  isInList: (id: number, type: 'movie' | 'tv' = 'movie') => watchlistService.isInList(id, type),
+  add: (movie: Movie) => watchlistService.add({ id: movie.id, type: movie.media_type === 'tv' ? 'tv' : 'movie', title: movie.title || movie.name || '', posterPath: movie.poster_path, backdropPath: movie.backdrop_path, voteAverage: movie.vote_average, releaseDate: movie.release_date }),
+  remove: (id: number, type: 'movie' | 'tv' = 'movie') => watchlistService.remove(id, type),
+  toggle(movie: Movie) {
+    const type = movie.media_type === 'tv' ? 'tv' : 'movie';
+    if (watchlistService.isInList(movie.id, type)) { watchlistService.remove(movie.id, type); return false; }
+    this.add(movie); return true;
   },
-
-  add(movie: Movie) {
-    const items = getAll();
-    if (items.some((item) => item.movieId === movie.id)) return;
-    items.push({
-      movieId: movie.id,
-      title: movie.title,
-      posterPath: movie.poster_path,
-      backdropPath: movie.backdrop_path,
-      voteAverage: movie.vote_average,
-      releaseDate: movie.release_date,
-      addedAt: Date.now(),
-      genres: movie.genres,
-    });
-    saveAll(items);
-  },
-
-  remove(movieId: number) {
-    saveAll(getAll().filter((item) => item.movieId !== movieId));
-  },
-
-  toggle(movie: Movie): boolean {
-    if (myListService.isInList(movie.id)) {
-      myListService.remove(movie.id);
-      return false;
-    }
-    myListService.add(movie);
-    return true;
-  },
-
-  clear() {
-    localStorage.removeItem(STORAGE_KEY);
-  },
+  clear() { for (const item of watchlistService.getAll()) watchlistService.remove(item.id, item.type); },
 };

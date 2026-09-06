@@ -1,154 +1,37 @@
-import React, { useRef, useState, useCallback, useEffect } from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { useRef, useState, useEffect, useId } from 'react';
+import { ChevronLeft, ChevronRight, ArrowUpRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import MovieCard from './MovieCard';
 import { SkeletonRow } from './ui/Skeleton';
-import { useIntersectionObserver } from '../hooks/useIntersectionObserver';
 import type { Movie } from '../types/movie';
-
-interface Props {
-  title: string;
-  movies: Movie[];
-  loading?: boolean;
-  landscape?: boolean;
-  ranked?: boolean;
-  viewAllLink?: string;       // Optional "Ver tudo" link
-  icon?: React.ReactNode;     // Optional icon (kept for compat, not rendered prominently)
-  progressMap?: Map<number, { progress: number }>; // legacy compat
-}
-
-export const ContentCarousel: React.FC<Props> = ({
-  title,
-  movies,
-  loading,
-  landscape,
-  ranked,
-  viewAllLink,
-}) => {
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const [canScrollLeft, setCanScrollLeft] = useState(false);
-  const [canScrollRight, setCanScrollRight] = useState(true);
-  const [currentSegment, setCurrentSegment] = useState(0);
-  const [totalSegments, setTotalSegments] = useState(1);
-  const [sectionRef, isVisible] = useIntersectionObserver({ threshold: 0.1 });
-
-  const cardWidth = landscape ? 270 : 168; // includes gap
-  const gap = 8;
-
-  const checkScroll = useCallback(() => {
-    const el = scrollRef.current;
-    if (!el) return;
-    const left = el.scrollLeft;
-    const maxScroll = el.scrollWidth - el.clientWidth;
-    setCanScrollLeft(left > 10);
-    setCanScrollRight(left < maxScroll - 10);
-
-    // Update position indicators
-    const visibleWidth = el.clientWidth;
-    const segments = Math.ceil(el.scrollWidth / visibleWidth);
-    setTotalSegments(Math.max(1, segments));
-    setCurrentSegment(Math.round((left / maxScroll) * (segments - 1)) || 0);
-  }, []);
-
+interface Props { title: string; movies: Movie[]; loading?: boolean; landscape?: boolean; ranked?: boolean; viewAllLink?: string; icon?: React.ReactNode; progressMap?: Map<number, { progress: number }> }
+export function ContentCarousel({ title, movies, loading, landscape, ranked, viewAllLink }: Props) {
+  const rail = useRef<HTMLDivElement>(null);
+  const drag = useRef({ start: 0, scroll: 0, active: false, moved: false });
+  const [position, setPosition] = useState({ left: false, right: false, progress: 0 });
+  const label = useId();
   useEffect(() => {
-    const el = scrollRef.current;
-    if (!el) return;
-    el.addEventListener('scroll', checkScroll, { passive: true });
-    checkScroll();
-    return () => el.removeEventListener('scroll', checkScroll);
-  }, [checkScroll, movies]);
-
-  const scroll = (direction: 'left' | 'right') => {
-    const el = scrollRef.current;
-    if (!el) return;
-    const amount = (cardWidth + gap) * 3;
-    el.scrollBy({ left: direction === 'right' ? amount : -amount, behavior: 'smooth' });
-  };
-
-  if (!loading && movies.length === 0) return null;
-
-  return (
-    <div
-      ref={sectionRef as React.RefObject<HTMLDivElement>}
-      className={`fade-in-section group ${isVisible ? 'visible' : ''}`}
-    >
-      <div className="section-container">
-        
-        {/* Section Header (Glass Typography & Interactions) */}
-        <div className="flex flex-col mb-3">
-          <div className="flex items-end justify-between group/header cursor-pointer">
-            <h2 className="text-[17px] md:text-[20px] font-normal tracking-wide text-[var(--text-primary)] m-0">
-              {title}
-            </h2>
-            
-            {viewAllLink && (
-              <Link 
-                to={viewAllLink} 
-                className="text-[13px] font-medium text-[var(--accent-blue)] opacity-0 md:group-hover/header:opacity-100 transition-opacity duration-300 hover:text-white flex items-center gap-1"
-              >
-                Ver tudo <ChevronRight className="w-3.5 h-3.5" />
-              </Link>
-            )}
-          </div>
-
-          {/* Position Indicators (HBO Max style) */}
-          {totalSegments > 1 && (
-            <div className="flex gap-1 mt-1.5 w-[60px] opacity-0 md:group-hover:opacity-100 transition-opacity duration-300">
-              {Array.from({ length: Math.min(totalSegments, 5) }).map((_, i) => (
-                <div
-                  key={i}
-                  className={`h-[2px] flex-1 rounded-full transition-colors duration-300 ${
-                    i === currentSegment 
-                      ? 'bg-[var(--accent-blue)]' 
-                      : 'bg-[rgba(255,255,255,0.15)]'
-                  }`}
-                />
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Carousel Container */}
-      <div className="relative carousel-container section-container">
-        {loading ? (
-          <SkeletonRow count={7} landscape={landscape} />
-        ) : (
-          <>
-            <div ref={scrollRef} className="carousel-scroll">
-              {movies.map((movie, i) => (
-                <MovieCard
-                  key={`${movie.media_type ?? 'movie'}-${movie.id}`}
-                  movie={movie}
-                  rank={ranked ? i + 1 : undefined}
-                  landscape={landscape}
-                />
-              ))}
-            </div>
-
-            {/* Nav Arrows (Hidden on mobile, Glassmorphism on Desktop) */}
-            {canScrollLeft && (
-              <button
-                onClick={() => scroll('left')}
-                className="carousel-arrow carousel-arrow-left hidden md:flex glass-icon-btn shadow-2xl !w-11 !h-11 bg-[var(--surface-0)]/90 border border-[var(--glass-separator)] hover:scale-110"
-                aria-label="Rolar para esquerda"
-              >
-                <ChevronLeft className="w-6 h-6 text-white ml-0.5" />
-              </button>
-            )}
-            
-            {canScrollRight && (
-              <button
-                onClick={() => scroll('right')}
-                className="carousel-arrow carousel-arrow-right hidden md:flex glass-icon-btn shadow-2xl !w-11 !h-11 bg-[var(--surface-0)]/90 border border-[var(--glass-separator)] hover:scale-110"
-                aria-label="Rolar para direita"
-              >
-                <ChevronRight className="w-6 h-6 text-white mr-0.5" />
-              </button>
-            )}
-          </>
-        )}
-      </div>
-    </div>
-  );
-};
+    const el = rail.current; if (!el) return;
+    const update = () => { const max = el.scrollWidth - el.clientWidth; setPosition({ left: el.scrollLeft > 3, right: el.scrollLeft < max - 3, progress: max > 0 ? el.scrollLeft / max : 1 }); };
+    const observer = new ResizeObserver(update); observer.observe(el);
+    el.addEventListener('scroll', update, { passive: true }); update();
+    return () => { observer.disconnect(); el.removeEventListener('scroll', update); };
+  }, [movies, loading]);
+  const move = (direction: number) => { const el = rail.current; if (el) el.scrollBy({ left: direction * el.clientWidth * .85, behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' }); };
+  if (!loading && !movies.length) return null;
+  return <section className="content-shelf" aria-labelledby={label}>
+    <div className="shelf-heading section-container"><div><h2 id={label}>{title}</h2></div><div className="shelf-actions">{viewAllLink && <Link to={viewAllLink}>Ver tudo <ArrowUpRight size={15} /></Link>}<button className="glass-icon-btn" onClick={() => move(-1)} disabled={!position.left || loading} aria-label={`Anteriores em ${title}`}><ChevronLeft size={18} /></button><button className="glass-icon-btn" onClick={() => move(1)} disabled={!position.right || loading} aria-label={`Próximos em ${title}`}><ChevronRight size={18} /></button></div></div>
+    {loading && !movies.length ? <div className="section-container"><SkeletonRow count={6} landscape={landscape} /></div> : <div ref={rail} className={`shelf-rail ${landscape ? 'landscape-rail' : ''}`} tabIndex={0} aria-label={`${title}. Use as setas ou arraste para navegar.`}
+      onKeyDown={event => { if (event.target === event.currentTarget && ['ArrowLeft', 'ArrowRight'].includes(event.key)) { event.preventDefault(); move(event.key === 'ArrowLeft' ? -1 : 1); } }}
+      onDragStart={event => event.preventDefault()}
+      onPointerDown={event => { if (event.pointerType !== 'mouse' || event.button !== 0) return; drag.current = { start: event.clientX, scroll: event.currentTarget.scrollLeft, active: true, moved: false }; }}
+      onPointerMove={event => { const state = drag.current; if (!state.active) return; const delta = event.clientX - state.start; if (Math.abs(delta) > 7) { state.moved = true; event.currentTarget.setPointerCapture(event.pointerId); event.currentTarget.classList.add('dragging'); event.currentTarget.scrollLeft = state.scroll - delta; } }}
+      onPointerUp={event => { drag.current.active = false; event.currentTarget.classList.remove('dragging'); if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId); }}
+      onPointerCancel={event => { drag.current.active = false; event.currentTarget.classList.remove('dragging'); }}
+      onPointerLeave={() => { if (!drag.current.moved) drag.current.active = false; }}
+      onClickCapture={event => { if (drag.current.moved) { event.preventDefault(); event.stopPropagation(); drag.current.moved = false; } }}>
+      {movies.map((movie, index) => <MovieCard key={`${movie.media_type}-${movie.id}`} movie={movie} rank={ranked ? index + 1 : undefined} landscape={landscape} />)}
+    </div>}
+    <div className="shelf-footer section-container"><span>Arraste para explorar</span><div className="shelf-progress"><i style={{ transform: `translateX(${position.progress * 300}%)` }} /></div></div>
+  </section>;
+}

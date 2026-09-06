@@ -1,4 +1,4 @@
-/* KauanFlix — usePopupBlocker hook
+/* KKMovies — usePopupBlocker hook
    Returns the blocked popup count, auto-updates on change */
 import { useState, useEffect } from 'react';
 import { popupBlocker } from '../utils/popupBlocker';

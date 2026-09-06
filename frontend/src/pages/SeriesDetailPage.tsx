@@ -6,8 +6,9 @@ import { usePlayerStore } from '../store/usePlayerStore';
 import { useAppStore } from '../store/useAppStore';
 import { myListService } from '../services/myListService';
 import { watchHistoryService } from '../services/watchHistoryService';
-import { SkeletonRow } from '../components/ui/Skeleton';
+import { SkeletonDetail } from '../components/ui/Skeleton';
 import { TrailerModal } from '../components/TrailerModal';
+import { Artwork } from '../components/Artwork';
 import type { Series, Season, Episode, Video } from '../types/movie';
 
 const SeriesDetailPage: React.FC = () => {
@@ -22,6 +23,11 @@ const SeriesDetailPage: React.FC = () => {
   const [episodes, setEpisodes] = useState<Episode[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingEpisodes, setLoadingEpisodes] = useState(false);
+  const [episodeError, setEpisodeError] = useState<string | null>(null);
+  const [episodeRetry, setEpisodeRetry] = useState(0);
+  const [episodeQuery, setEpisodeQuery] = useState('');
+  const [reverseEpisodes, setReverseEpisodes] = useState(false);
+  const [retry, setRetry] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [inList, setInList] = useState(false);
   const [videos, setVideos] = useState<Video[]>([]);
@@ -31,11 +37,13 @@ const SeriesDetailPage: React.FC = () => {
   /* Fetch series details */
   useEffect(() => {
     if (!id) return;
+    let cancelled = false;
     setLoading(true);
+    setSeries(null); setSeasons([]); setEpisodes([]); setVideos([]); setShowFullOverview(false);
     setError(null);
 
     getSeriesDetails(Number(id))
-      .then((data: any) => {
+      .then((data: any) => { if (cancelled) return;
         setSeries(data);
         const allSeasons: Season[] = data.seasons || [];
         const filtered = allSeasons.filter((s: Season) => s.season_number > 0 || s.episode_count > 0);
@@ -44,37 +52,32 @@ const SeriesDetailPage: React.FC = () => {
         const firstSeason = filtered.find((s: Season) => s.season_number === 1) || filtered[0];
         if (firstSeason) setSelectedSeason(firstSeason.season_number);
         
-        setInList(myListService.isInList(Number(id)));
-        document.title = `${data.name || data.title || 'Série'} — KauanFlix`;
+        setInList(myListService.isInList(Number(id), 'tv'));
+        document.title = `${data.name || data.title || 'Série'} — KKMovies`;
       })
-      .catch((err: any) => setError(err.message || 'Erro ao carregar série'))
-      .finally(() => setLoading(false));
+      .catch((err: any) => { if (!cancelled) setError(err.message || 'Erro ao carregar série'); })
+      .finally(() => { if (!cancelled) setLoading(false); });
 
     getSeriesVideos(Number(id))
-      .then((vids) => setVideos(vids))
-      .catch(() => setVideos([]));
+      .then((vids) => { if (!cancelled) setVideos(vids); })
+      .catch(() => { if (!cancelled) setVideos([]); });
 
-    return () => { document.title = 'KauanFlix — Seu cinema, do seu jeito'; };
-  }, [id]);
+    return () => { cancelled = true; document.title = 'KKMovies — Seu cinema, do seu jeito'; };
+  }, [id, retry]);
 
-  /* Fetch season episodes */
-  const fetchEpisodes = useCallback(async (seasonNum: number) => {
-    if (!id) return;
-    setLoadingEpisodes(true);
-    try {
-      const data = await getSeriesSeasonDetails(Number(id), seasonNum);
-      setEpisodes(data.episodes || []);
-    } catch {
-      setEpisodes([]);
-    } finally {
-      setLoadingEpisodes(false);
-    }
-  }, [id]);
-
+  /* Ignore stale responses when switching seasons or series. */
   useEffect(() => {
-    if (selectedSeason > 0) fetchEpisodes(selectedSeason);
-  }, [selectedSeason, fetchEpisodes]);
-
+    if (!series || series.id !== Number(id) || !id || !seasons.some(season => season.season_number === selectedSeason)) return;
+    let cancelled = false;
+    setLoadingEpisodes(true);
+    setEpisodeError(null);
+    setEpisodes([]);
+    getSeriesSeasonDetails(Number(id), selectedSeason)
+      .then(data => { if (!cancelled) setEpisodes(data.episodes || []); })
+      .catch(() => { if (!cancelled) setEpisodeError('Não foi possível carregar os episódios desta temporada.'); })
+      .finally(() => { if (!cancelled) setLoadingEpisodes(false); });
+    return () => { cancelled = true; };
+  }, [id, series, seasons, selectedSeason, episodeRetry]);
   const handlePlayEpisode = (season: number, episodeNum: number) => {
     if (!series) return;
     const ep = episodes.find((e) => e.episode_number === episodeNum && e.season_number === season)
@@ -116,25 +119,19 @@ const SeriesDetailPage: React.FC = () => {
     addToast(added ? 'Adicionado à sua lista ✓' : 'Removido da sua lista', added ? 'success' : 'info');
   };
 
-  if (loading) {
-    return (
-      <main className="min-h-screen pt-24 section-container bg-[var(--surface-0)]">
-        <SkeletonRow count={6} />
-      </main>
-    );
-  }
+  if (loading) return <SkeletonDetail />;
 
   if (error || !series) {
     return (
       <main className="min-h-screen flex flex-col items-center justify-center section-container text-center bg-[var(--surface-0)]">
         <p className="text-[var(--text-secondary)] text-lg mb-4">{error || 'Série não encontrada'}</p>
-        <button onClick={() => navigate(-1)} className="glass-button">Voltar</button>
+        <button onClick={() => setRetry(value => value + 1)} className="glass-button">Tentar novamente</button>
       </main>
     );
   }
 
   const backdropUrl = getBackdropUrl(series.backdrop_path);
-  const posterUrl = getImageUrl(series.poster_path, 'w500');
+
 
   return (
     <main className="min-h-screen bg-[var(--surface-0)] page-enter pb-24">
@@ -165,15 +162,10 @@ const SeriesDetailPage: React.FC = () => {
         <div className="flex flex-col md:flex-row gap-8 lg:gap-12 items-start">
           
           {/* Poster (Glass Card) */}
-          {posterUrl && (
+          {(
             <div className="flex-shrink-0 hidden md:block">
               <div className="glass-card p-1 rounded-2xl">
-                <img
-                  src={posterUrl}
-                  alt={series.name}
-                  className="w-48 lg:w-64 rounded-xl object-cover shadow-2xl"
-                  loading="lazy"
-                />
+                <Artwork paths={[series.poster_path, series.backdrop_path]} title={series.name} className="w-48 lg:w-64 aspect-[2/3] rounded-xl object-cover shadow-2xl" />
               </div>
             </div>
           )}
@@ -242,11 +234,11 @@ const SeriesDetailPage: React.FC = () => {
                 }
                 return (
                   <button
-                    onClick={() => handlePlayEpisode(1, 1)}
+                    onClick={() => document.getElementById('episode-panel')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
                     className="glass-button primary text-[15px] px-6 py-2.5"
                   >
                     <Play className="w-4 h-4 mr-2" fill="currentColor" />
-                    Assistir S01E01
+                    Escolher episódio
                   </button>
                 );
               })()}
@@ -258,10 +250,10 @@ const SeriesDetailPage: React.FC = () => {
                 {inList ? 'Na lista' : 'Minha Lista'}
               </button>
               
-              <button onClick={() => setTrailerOpen(true)} className="glass-button text-[14px] px-5 py-2.5">
+              {videos.some(video => video.site === 'YouTube') && <button onClick={() => setTrailerOpen(true)} className="glass-button text-[14px] px-5 py-2.5">
                 <Film className="w-4 h-4 mr-2" />
                 Trailer
-              </button>
+              </button>}
             </div>
 
             {/* Genres */}
@@ -279,15 +271,16 @@ const SeriesDetailPage: React.FC = () => {
       </div>
 
       {/* Season Selector & Episodes Grid */}
-      <div className="section-container mt-12 lg:mt-16">
+      <div id="episode-panel" className="section-container episode-panel mt-12 lg:mt-16">
         
         {/* Header with Custom iOS Select */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
           <h2 className="text-xl md:text-2xl font-light tracking-wide text-white m-0">Episódios</h2>
           <div className="relative">
             <select
+              aria-label="Selecionar temporada"
               value={selectedSeason}
-              onChange={(e) => setSelectedSeason(Number(e.target.value))}
+              onChange={(e) => { setSelectedSeason(Number(e.target.value)); setEpisodeQuery(''); }}
               className="w-full sm:w-auto min-w-[200px] h-11 pl-4 pr-10 text-sm font-medium bg-[rgba(118,118,128,0.12)] rounded-xl border-none text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-[var(--accent-blue-glow)] transition-all appearance-none cursor-pointer shadow-sm"
             >
               {seasons.map((s) => (
@@ -300,6 +293,8 @@ const SeriesDetailPage: React.FC = () => {
           </div>
         </div>
 
+        <div className="episode-toolbar"><p>{seasons.find(season => season.season_number === selectedSeason)?.overview || 'Escolha um episódio para assistir.'}</p><div><input aria-label="Buscar episódio nesta temporada" placeholder="Nome ou número do episódio" value={episodeQuery} onChange={event => setEpisodeQuery(event.target.value)}/><button className="glass-button" onClick={() => setReverseEpisodes(value => !value)}>{reverseEpisodes ? 'Mais recentes primeiro' : 'Ordem dos episódios'}</button></div></div>
+
         {/* Episode Grid */}
         {loadingEpisodes ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
@@ -311,6 +306,8 @@ const SeriesDetailPage: React.FC = () => {
               </div>
             ))}
           </div>
+        ) : episodeError ? (
+          <div className="collection-empty" role="alert"><p>{episodeError}</p><button className="glass-button" onClick={() => setEpisodeRetry(value => value + 1)}>Tentar novamente</button></div>
         ) : episodes.length === 0 ? (
           <div className="glass-card flex flex-col items-center justify-center py-16 px-4 text-center mt-4">
             <Tv className="w-12 h-12 text-[var(--text-hint)] mb-4" />
@@ -318,29 +315,18 @@ const SeriesDetailPage: React.FC = () => {
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
-            {episodes.map((ep) => (
+            {[...episodes].filter(ep => `${ep.episode_number} ${ep.name}`.toLocaleLowerCase('pt-BR').includes(episodeQuery.toLocaleLowerCase('pt-BR'))).sort((a,b) => reverseEpisodes ? b.episode_number - a.episode_number : a.episode_number - b.episode_number).map((ep) => (
               <div
                 key={ep.id}
-                className="group cursor-pointer flex flex-col gap-2.5"
+                className="episode-card group cursor-pointer flex flex-col gap-2.5"
                 onClick={() => handlePlayEpisode(selectedSeason, ep.episode_number)}
                 role="button"
                 tabIndex={0}
-                onKeyDown={(e) => e.key === 'Enter' && handlePlayEpisode(selectedSeason, ep.episode_number)}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handlePlayEpisode(selectedSeason, ep.episode_number); } }}
               >
                 {/* Thumbnail Card (Glass Style) */}
                 <div className="relative aspect-video rounded-xl overflow-hidden bg-[var(--surface-1)] border border-[var(--glass-separator)] group-hover:border-[var(--accent-blue-border)] shadow-sm group-hover:shadow-[0_8px_30px_rgba(0,0,0,0.5)] transition-all duration-300">
-                  {ep.still_path ? (
-                    <img
-                      src={getImageUrl(ep.still_path, 'w500')}
-                      alt={ep.name}
-                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                      loading="lazy"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center bg-[var(--surface-2)]">
-                      <Tv className="w-8 h-8 text-[var(--text-hint)]" />
-                    </div>
-                  )}
+                  <Artwork key={`${series.id}-${selectedSeason}-${ep.episode_number}`} paths={[ep.still_path, series.backdrop_path, seasons.find(season => season.season_number === selectedSeason)?.poster_path, series.poster_path]} title={`${series.name} — ${ep.name || `Episódio ${ep.episode_number}`}`} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" size="w780"/>
 
                   <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors duration-300" />
 
@@ -367,10 +353,10 @@ const SeriesDetailPage: React.FC = () => {
                 {/* Details Below Card */}
                 <div className="px-1">
                   <h3 className="text-[14px] font-medium text-[var(--text-primary)] line-clamp-1 mb-1 tracking-tight">
-                    {ep.name}
+                    {ep.episode_number}. {ep.name || `Episódio ${ep.episode_number}`}
                   </h3>
                   <p className="text-[12px] text-[var(--text-muted)] line-clamp-2 leading-snug mb-2">
-                    {ep.overview || 'Sem descrição.'}
+                    {ep.overview || 'A sinopse deste episódio ainda não foi disponibilizada.'}
                   </p>
                   
                   <div className="flex items-center gap-2.5 text-[11px] text-[var(--text-hint)] font-medium">
@@ -387,6 +373,7 @@ const SeriesDetailPage: React.FC = () => {
             ))}
           </div>
         )}
+        {!loadingEpisodes && !episodeError && episodes.length > 0 && !episodes.some(ep => `${ep.episode_number} ${ep.name}`.toLocaleLowerCase('pt-BR').includes(episodeQuery.toLocaleLowerCase('pt-BR'))) && <div className="collection-empty"><p>Nenhum episódio encontrado nesta temporada.</p><button className="glass-button" onClick={() => setEpisodeQuery('')}>Limpar busca</button></div>}
       </div>
 
       {/* Trailer Modal */}

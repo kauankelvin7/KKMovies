@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Play, Plus, Check, Info } from 'lucide-react';
 import { getImageUrl, getStreamingUrl, getSeriesStreamingUrl } from '../services/movieService';
 import { getYear, isNewRelease } from '../utils/helpers';
@@ -24,13 +24,19 @@ const MovieCard: React.FC<Props> = ({
 }) => {
   const [imgLoaded, setImgLoaded] = useState(false);
   const [imgError, setImgError] = useState(false);
-  const [inList, setInList] = useState(() => watchlistService.isInList(movie.id));
+  const [inList, setInList] = useState(() => watchlistService.isInList(movie.id, movie.media_type === 'tv' ? 'tv' : 'movie'));
 
   const openPlayer = usePlayerStore((s) => s.openPlayer);
   const openDetails = useAppStore((s) => s.openDetails);
   const addToast = useAppStore((s) => s.addToast);
 
   const isSeries = movie.media_type === 'tv';
+  useEffect(() => {
+    const refresh = () => setInList(watchlistService.isInList(movie.id, isSeries ? 'tv' : 'movie'));
+    window.addEventListener('kkm-storage', refresh);
+    window.addEventListener('storage', refresh);
+    return () => { window.removeEventListener('kkm-storage', refresh); window.removeEventListener('storage', refresh); };
+  }, [movie.id, isSeries]);
 
   /* Width by size */
   const widthMap = { sm: 120, md: 160, lg: 200 };
@@ -96,29 +102,24 @@ const MovieCard: React.FC<Props> = ({
     openDetails(movie.id, isSeries ? 'tv' : 'movie');
   };
 
-  /* Priority badge: TOP10 > NOVO */
+  /* Ranked shelves use the large number; regular cards may show the release badge. */
   const badge = (() => {
-    if (rank && rank <= 10) return <span className="badge badge-top10">TOP {rank}</span>;
+    if (rank && rank <= 10) return null;
     if (isNewRelease(movie.release_date)) return <span className="badge badge-new">NOVO</span>;
     return null;
   })();
 
   return (
-    <div className="relative flex-shrink-0 group" style={{ width: cardWidth }}>
+    <div className={`media-card relative flex-shrink-0 group ${landscape ? 'landscape' : ''}`}>
       {/* Rank number (large outline behind card for top-10 style) */}
       {rank && rank <= 10 && (
         <div
-          className="absolute -left-5 bottom-12 z-10 pointer-events-none select-none"
+          className="home-ranking-number pointer-events-none select-none"
           aria-hidden="true"
         >
           <span
             style={{
-              fontFamily: 'Inter, sans-serif',
-              fontWeight: 700,
-              fontSize: 90,
-              lineHeight: 1,
-              color: 'transparent',
-              WebkitTextStroke: '1.5px var(--accent-blue-border)',
+              fontFamily: 'var(--font-display)',
             }}
           >
             {rank}
@@ -133,10 +134,10 @@ const MovieCard: React.FC<Props> = ({
         tabIndex={0}
         aria-label={`${movie.title || movie.name}`}
         onClick={handleDetails}
-        onKeyDown={(e) => e.key === 'Enter' && handleDetails(e as unknown as React.MouseEvent)}
+        onKeyDown={(e) => { if (e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); handleDetails(e as unknown as React.MouseEvent); } }}
       >
         {/* Skeleton while loading */}
-        {!imgLoaded && !imgError && <div className="skeleton absolute inset-0 rounded-none" />}
+        {imgSrc && !imgLoaded && !imgError && <div className="skeleton absolute inset-0 rounded-none" />}
 
         {/* Poster image */}
         {imgSrc && !imgError ? (
@@ -145,13 +146,16 @@ const MovieCard: React.FC<Props> = ({
             alt={movie.title || movie.name}
             loading="lazy"
             decoding="async"
+            width={landscape ? 780 : 500}
+            height={landscape ? 439 : 750}
             onLoad={() => setImgLoaded(true)}
             onError={() => setImgError(true)}
             className={`img-blur-load ${imgLoaded ? 'loaded' : ''}`}
           />
         ) : (
-          <div className="absolute inset-0 flex items-center justify-center bg-[var(--surface-1)]">
-            <Play className="w-8 h-8 opacity-30 text-white" />
+          <div className="poster-fallback">
+            <Play className="w-8 h-8 opacity-40" />
+            <span>{movie.title || movie.name}</span>
           </div>
         )}
 
@@ -223,6 +227,8 @@ const MovieCard: React.FC<Props> = ({
           </div>
         )}
       </div>
+      <p className="poster-caption">{movie.title || movie.name}</p>
+      <div className="poster-meta"><span>{isSeries ? 'Série' : 'Filme'}</span><span>{getYear(movie.release_date || movie.first_air_date || '')}</span></div>
     </div>
   );
 };

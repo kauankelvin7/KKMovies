@@ -1,4 +1,4 @@
-/* KauanFlix — useIntersectionObserver hook
+/* KKMovies — useIntersectionObserver hook
    Used for lazy loading sections and fade-in animations. */
 import { useEffect, useRef, useState, type RefObject } from 'react';
 

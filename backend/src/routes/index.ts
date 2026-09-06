@@ -1,16 +1,14 @@
 import { Router, Response } from 'express';
 
-import movieRoutes from './movie.routes';
-import seriesRoutes from './series.routes';
-import streamingRoutes from './streaming.routes';
-import tmdbEmbedApiRoutes from './tmdbEmbedApi.routes';
+import { contentRouter } from './catalog.routes';
+
+
 
 const router = Router();
 
-router.use('/movies', movieRoutes);
-router.use('/series', seriesRoutes);
-router.use('/streaming', streamingRoutes);
-router.use('/tmdb-embed', tmdbEmbedApiRoutes);
+router.use('/movies', contentRouter('movie'));
+router.use('/series', contentRouter('tv'));
+router.use('/streaming', contentRouter('streaming'));
 
 router.get('/health', (_req, res: Response) => {
   res.json({

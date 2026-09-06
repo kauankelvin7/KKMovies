@@ -1,6 +1,6 @@
 {
-  "name": "KauanFlix",
-  "short_name": "KauanFlix",
+  "name": "KKMovies",
+  "short_name": "KKMovies",
   "description": "Seu cinema, do seu jeito. Assista filmes e séries online.",
   "start_url": "/",
   "display": "standalone",

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
-  Play, Plus, Check, ThumbsUp, Share2, Clock, Calendar,
+  Play, Plus, Check, Share2, Clock, Calendar,
   ChevronLeft, Film as FilmIcon,
 } from 'lucide-react';
 import * as movieService from '../services/movieService';
@@ -14,6 +14,7 @@ import { useAppStore } from '../store/useAppStore';
 import { StarRating } from '../components/ui/StarRating';
 import { ContentCarousel } from '../components/ContentCarousel';
 import { TrailerModal } from '../components/TrailerModal';
+import { Artwork } from '../components/Artwork';
 import { SkeletonDetail } from '../components/ui/Skeleton';
 import { ErrorMessage } from '../components/ui/ErrorBoundary';
 import type { Movie, CastMember, Video } from '../types/movie';
@@ -29,6 +30,7 @@ const MovieDetailsPage: React.FC = () => {
   const [similar, setSimilar] = useState<Movie[]>([]);
   const [videos, setVideos] = useState<Video[]>([]);
   const [loading, setLoading] = useState(true);
+  const [retry, setRetry] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [inList, setInList] = useState(false);
   const [showFullOverview, setShowFullOverview] = useState(false);
@@ -39,6 +41,8 @@ const MovieDetailsPage: React.FC = () => {
   useEffect(() => {
     if (!id) return;
     const movieId = Number(id);
+    let cancelled = false;
+    setShowFullOverview(false); setMovie(null); setCast([]); setSimilar([]); setVideos([]);
     setLoading(true);
     setError(null);
 
@@ -47,11 +51,11 @@ const MovieDetailsPage: React.FC = () => {
       movieService.getMovieCredits(movieId),
       movieService.getSimilarMovies(movieId),
       movieService.getMovieVideos(movieId),
-    ]).then(([detailRes, creditRes, similarRes, videoRes]) => {
+    ]).then(([detailRes, creditRes, similarRes, videoRes]) => { if (cancelled) return;
       if (detailRes.status === 'fulfilled') {
         setMovie(detailRes.value);
         setInList(myListService.isInList(movieId));
-        document.title = `${detailRes.value.title} — KauanFlix`;
+        document.title = `${detailRes.value.title} — KKMovies`;
       } else {
         setError('Filme não encontrado.');
       }
@@ -69,8 +73,8 @@ const MovieDetailsPage: React.FC = () => {
 
     window.scrollTo({ top: 0, behavior: 'smooth' });
 
-    return () => { document.title = 'KauanFlix — Seu cinema, do seu jeito'; };
-  }, [id]);
+    return () => { cancelled = true; document.title = 'KKMovies — Seu cinema, do seu jeito'; };
+  }, [id, retry]);
 
   const handlePlay = () => {
     if (!movie) return;
@@ -92,24 +96,22 @@ const MovieDetailsPage: React.FC = () => {
     addToast(added ? 'Adicionado à sua lista ✓' : 'Removido da sua lista', added ? 'success' : 'info');
   };
 
-  const handleShare = () => {
-    if (navigator.share && movie) {
-      navigator.share({ title: movie.title, url: window.location.href });
-    } else {
-      navigator.clipboard.writeText(window.location.href);
-      addToast('Link copiado!', 'info');
-    }
+  const handleShare = async () => {
+    try {
+      if (navigator.share && movie) await navigator.share({ title: movie.title, url: window.location.href });
+      else { await navigator.clipboard.writeText(window.location.href); addToast('Link copiado!', 'success'); }
+    } catch (error) { if (!(error instanceof DOMException && error.name === 'AbortError')) addToast('Não foi possível compartilhar o link.', 'error'); }
   };
 
   if (loading) return <SkeletonDetail />;
-  if (error || !movie) return <ErrorMessage message={error || 'Filme não encontrado'} onRetry={() => navigate(-1)} />;
+  if (error || !movie) return <ErrorMessage message={error || 'Filme não encontrado'} onRetry={() => setRetry(value => value + 1)} />;
 
   const backdropUrl = getImageUrl(movie.backdrop_path, 'original');
-  const posterUrl = getImageUrl(movie.poster_path, 'w500');
+
 
   return (
     <main className="min-h-screen bg-[var(--surface-0)] page-enter pb-24">
-      
+
       {/* Backdrop (Cinematographic Glass Gradients) */}
       <div className="relative w-full h-[55vh] min-h-[400px] overflow-hidden">
         {backdropUrl && (
@@ -134,17 +136,12 @@ const MovieDetailsPage: React.FC = () => {
       {/* Content Area */}
       <div className="section-container -mt-32 md:-mt-48 relative z-10">
         <div className="flex flex-col md:flex-row gap-8 lg:gap-12">
-          
+
           {/* Poster (Glass Card style) */}
-          {posterUrl && (
+          {(
             <div className="flex-shrink-0 hidden md:block">
               <div className="glass-card p-1 rounded-2xl">
-                <img
-                  src={posterUrl}
-                  alt={movie.title}
-                  className="w-64 lg:w-72 rounded-xl object-cover shadow-2xl"
-                  loading="lazy"
-                />
+                <Artwork paths={[movie.poster_path, movie.backdrop_path]} title={movie.title} className="w-64 lg:w-72 aspect-[2/3] rounded-xl object-cover shadow-2xl" />
               </div>
             </div>
           )}
@@ -210,22 +207,20 @@ const MovieDetailsPage: React.FC = () => {
                 <Play className="w-4 h-4 mr-2" fill="currentColor" />
                 {watchProgress && watchProgress.progress > 5 ? 'Continuar' : 'Assistir'}
               </button>
-              
-              <button onClick={() => setTrailerOpen(true)} className="glass-button text-[15px] px-6 py-2.5">
+
+              {videos.some(video => video.site === 'YouTube') && <button onClick={() => setTrailerOpen(true)} className="glass-button text-[15px] px-6 py-2.5">
                 <FilmIcon className="w-4 h-4 mr-2" />
                 Trailer
-              </button>
-              
+              </button>}
+
               <div className="w-[1px] h-8 bg-[var(--glass-separator)] mx-1" />
-              
+
               <button onClick={handleToggleList} className={`glass-icon-btn ${inList ? 'text-[var(--accent-blue)] bg-[var(--accent-blue-dim)]' : ''}`} aria-label={inList ? 'Remover da lista' : 'Adicionar à lista'}>
                 {inList ? <Check className="w-5 h-5" /> : <Plus className="w-5 h-5" />}
               </button>
-              
-              <button onClick={() => addToast('Gostei! ✓', 'success')} className="glass-icon-btn" aria-label="Gostei">
-                <ThumbsUp className="w-4 h-4" />
-              </button>
-              
+
+
+
               <button onClick={handleShare} className="glass-icon-btn" aria-label="Compartilhar">
                 <Share2 className="w-4 h-4" />
               </button>
@@ -235,7 +230,7 @@ const MovieDetailsPage: React.FC = () => {
             <div className="mb-10 max-w-3xl">
               <p className="text-[15px] md:text-base text-[var(--text-secondary)] font-light leading-relaxed">
                 {showFullOverview || (movie.overview || '').length <= 250
-                  ? movie.overview
+                  ? movie.overview || 'Sinopse ainda não disponível.'
                   : `${(movie.overview || '').slice(0, 250)}…`}
               </p>
               {(movie.overview || '').length > 250 && (

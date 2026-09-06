@@ -67,6 +67,7 @@ export const GlassModal: React.FC<GlassModalProps> = React.memo(({
       });
       document.body.style.overflow = 'hidden';
     } else {
+      setMounted(false);
       document.body.style.overflow = '';
     }
     return () => {

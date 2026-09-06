@@ -1,4 +1,4 @@
-/* KauanFlix — Error Boundary & Error Message */
+/* KKMovies — Error Boundary & Error Message */
 import React, { Component, type ErrorInfo, type ReactNode } from 'react';
 import { AlertTriangle, RefreshCw } from 'lucide-react';
 
@@ -52,9 +52,10 @@ export const ErrorMessage: React.FC<{ message?: string; onRetry?: () => void }> 
   message = 'Erro ao carregar dados.',
   onRetry,
 }) => (
-  <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
-    <AlertTriangle className="w-10 h-10 text-kf-danger mb-3" />
-    <p className="text-kf-text-secondary mb-4">{message}</p>
+  <div role="alert" className="min-h-[60vh] flex flex-col items-center justify-center pt-32 pb-16 px-4 text-center">
+    <div className="rounded-2xl border border-white/10 bg-white/5 p-5 mb-6"><AlertTriangle className="w-8 h-8 text-violet-300" /></div>
+    <h1 className="text-2xl font-medium mb-3">Vamos tentar mais uma vez?</h1>
+    <p className="text-kf-text-secondary mb-6 max-w-md text-sm leading-relaxed">{message}</p>
     {onRetry && (
       <button onClick={onRetry} className="btn-secondary text-sm px-4 py-2">
         <RefreshCw className="w-4 h-4 mr-1 inline" />

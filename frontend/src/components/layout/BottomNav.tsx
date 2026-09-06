@@ -1,4 +1,4 @@
-/* KauanFlix — Bottom Navigation (iOS Tab Bar) */
+/* KKMovies — Bottom Navigation (iOS Tab Bar) */
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Home, Search, Heart, Clock } from 'lucide-react';
@@ -7,7 +7,7 @@ const NAV_ITEMS = [
   { to: '/', label: 'Início', icon: Home },
   { to: '/buscar', label: 'Buscar', icon: Search },
   { to: '/minha-lista', label: 'Minha Lista', icon: Heart },
-  { to: '/explorar', label: 'Recentes', icon: Clock },
+  { to: '/explorar', label: 'Explorar', icon: Clock },
 ];
 
 export const BottomNav: React.FC = () => {

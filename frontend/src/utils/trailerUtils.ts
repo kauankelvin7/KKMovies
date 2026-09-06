@@ -1,4 +1,4 @@
-/* KauanFlix — Trailer Utilities
+/* KKMovies — Trailer Utilities
    Helper functions for YouTube trailer embedding and search fallback. */
 
 import type { Video } from '../types/movie';

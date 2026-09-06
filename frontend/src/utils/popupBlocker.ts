@@ -1,4 +1,4 @@
-/* KauanFlix — Popup Blocker
+/* KKMovies — Popup Blocker
    Cross-origin iframes cannot have window.open intercepted from the parent.
    Sandbox without allow-popups / allow-same-origin is what actually stops
    the embed from opening ads. Parent-level window.open is a second layer. */

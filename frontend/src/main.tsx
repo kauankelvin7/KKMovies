@@ -2,10 +2,7 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import App from './App.tsx'
 import './index.css'
-import { popupBlocker } from './utils/popupBlocker'
-
-/* Activate popup blocker before rendering */
-popupBlocker.activate();
+import './design-system.css'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
@@ -14,7 +11,7 @@ createRoot(document.getElementById('root')!).render(
 )
 
 /* Register Service Worker (produced by vite-plugin-pwa) */
-if ('serviceWorker' in navigator) {
+if (import.meta.env.PROD && 'serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/sw.js').catch(() => {
       // SW registration failed — offline features won't work

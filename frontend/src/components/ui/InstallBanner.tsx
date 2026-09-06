@@ -1,4 +1,4 @@
-/* KauanFlix — PWA Install Banner
+/* KKMovies — PWA Install Banner
    Shows a bottom banner prompting the user to install the app.
    Uses the beforeinstallprompt event to trigger native install dialog. */
 
@@ -59,7 +59,7 @@ export const InstallBanner: React.FC = () => {
           <Download className="w-5 h-5 text-white" />
         </div>
         <div className="min-w-0">
-          <p className="text-sm font-semibold text-white">Instalar KauanFlix</p>
+          <p className="text-sm font-semibold text-white">Instalar KKMovies</p>
           <p className="text-xs text-kf-text-secondary truncate">Acesso rápido direto da sua tela inicial</p>
         </div>
       </div>

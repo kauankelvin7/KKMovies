@@ -1,7 +1,7 @@
 {
   "name": "kkmovies",
   "version": "1.0.0",
-  "description": "KKMovies - Streaming Platform with TMDb and 111movies integration",
+  "description": "KKMovies - Catalogo de filmes e series com metadados TMDB e player unico",
   "private": true,
   "engines": {
     "node": "24.x"
@@ -11,11 +11,12 @@
     "dev:backend": "cd backend && npm run dev",
     "dev:frontend": "cd frontend && npm run dev",
     "install:all": "npm install && cd backend && npm install && cd ../frontend && npm install",
-    "build": "cd frontend && npm install --no-audit --no-fund --loglevel=error && npm run build",
+    "build": "npm run build --prefix frontend",
     "build:backend": "cd backend && npm run build",
     "build:all": "npm run build:backend && npm run build",
     "start": "cd backend && npm start",
-    "deploy:help": "type DEPLOY_VERCEL.md"
+    "deploy:help": "node -e \"console.log('Consulte README.md para configuracao e publicacao.')\"",
+    "check": "npm run build:backend && tsc -p tsconfig.api.json && node --test backend/tests/*.test.cjs && tsc -p frontend/tsconfig.json --pretty false"
   },
   "dependencies": {
     "axios": "^1.6.0",

@@ -1,4 +1,4 @@
-/* KauanFlix — API Status Bar (iOS Dynamic Island style) */
+/* KKMovies — API Status Bar (iOS Dynamic Island style) */
 import React, { useState, useEffect } from 'react';
 import { AlertTriangle } from 'lucide-react';
 import { onRateLimitChange } from '../services/api';

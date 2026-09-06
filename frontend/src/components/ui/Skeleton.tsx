@@ -1,5 +1,11 @@
 import React from 'react';
 
+export const SkeletonGrid: React.FC<{ count?: number }> = ({ count = 12 }) => (
+  <div className="catalog-grid" aria-busy="true" aria-label="Carregando catálogo">
+    {Array.from({ length: count }, (_, index) => <SkeletonCard key={index} />)}
+  </div>
+);
+
 export const SkeletonCard: React.FC<{ landscape?: boolean }> = ({ landscape }) => (
   <div
     className="skeleton flex-shrink-0 border border-[var(--glass-separator)] shadow-sm"

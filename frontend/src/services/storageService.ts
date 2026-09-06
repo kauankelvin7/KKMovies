@@ -1,4 +1,4 @@
-/* KauanFlix — Centralized Storage Service
+/* KKMovies — Centralized Storage Service
    All localStorage operations go through here.
    try/catch everywhere — silent fallback if storage is full or blocked.
 
@@ -13,6 +13,7 @@
 /* ---- Types ---- */
 
 export interface WatchlistItem {
+  status?: 'planned' | 'watching' | 'watched';
   id: number;
   type: 'movie' | 'tv';
   title: string;
@@ -74,6 +75,7 @@ function read<T>(key: string): T | null {
 function write(key: string, value: unknown): void {
   try {
     localStorage.setItem(key, JSON.stringify(value));
+    window.dispatchEvent(new Event('kkm-storage'));
   } catch {
     // Storage full or blocked — silently skip
   }
@@ -91,30 +93,40 @@ function remove(key: string): void {
 
 export const watchlistService = {
   getAll(): WatchlistItem[] {
-    return read<WatchlistItem[]>(KEYS.watchlist) ?? [];
+    const saved = read<WatchlistItem[]>(KEYS.watchlist);
+    if (Array.isArray(saved)) return saved;
+    const legacy = read<Array<{ movieId: number; title: string; posterPath: string | null; backdropPath: string | null; addedAt: number }>>('kauanflix_my_list');
+    if (!Array.isArray(legacy)) return [];
+    const migrated = legacy.filter(item => Number.isSafeInteger(item.movieId)).map(item => ({ ...item, id: item.movieId, type: 'movie' as const }));
+    write(KEYS.watchlist, migrated);
+    return migrated;
   },
 
-  isInList(id: number): boolean {
-    return this.getAll().some((item) => item.id === id);
+  isInList(id: number, type: 'movie' | 'tv' = 'movie'): boolean {
+    return this.getAll().some((item) => item.id === id && item.type === type);
   },
 
   add(item: Omit<WatchlistItem, 'addedAt'>): void {
-    const current = this.getAll().filter((i) => i.id !== item.id);
+    const current = this.getAll().filter((i) => i.id !== item.id || i.type !== item.type);
     write(KEYS.watchlist, [{ ...item, addedAt: Date.now() }, ...current]);
   },
 
-  remove(id: number): void {
-    write(KEYS.watchlist, this.getAll().filter((i) => i.id !== id));
+  remove(id: number, type: 'movie' | 'tv' = 'movie'): void {
+    write(KEYS.watchlist, this.getAll().filter((i) => i.id !== id || i.type !== type));
   },
 
   toggle(item: Omit<WatchlistItem, 'addedAt'>): boolean {
-    if (this.isInList(item.id)) {
-      this.remove(item.id);
+    if (this.isInList(item.id, item.type)) {
+      this.remove(item.id, item.type);
       return false;
     } else {
       this.add(item);
       return true;
     }
+  },
+  setStatus(id: number, type: 'movie' | 'tv', status: 'planned' | 'watching' | 'watched'): void {
+    if (!['planned', 'watching', 'watched'].includes(status)) return;
+    write(KEYS.watchlist, this.getAll().map(item => item.id === id && item.type === type ? { ...item, status } : item));
   },
 };
 
@@ -130,7 +142,7 @@ export const historyService = {
   },
 
   add(item: Omit<HistoryItem, 'watchedAt'>): void {
-    const current = this.getAll().filter((i) => i.id !== item.id);
+    const current = this.getAll().filter((i) => i.id !== item.id || i.type !== item.type);
     const updated = [{ ...item, watchedAt: Date.now() }, ...current].slice(0, MAX_HISTORY);
     write(KEYS.history, updated);
   },
@@ -141,6 +153,9 @@ export const historyService = {
 
   getRecent(n = 10): HistoryItem[] {
     return this.getAll().slice(0, n);
+  },
+  remove(id: number, type: 'movie' | 'tv'): void {
+    write(KEYS.history, this.getAll().filter(item => item.id !== id || item.type !== type));
   },
 };
 

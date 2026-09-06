@@ -1,4 +1,4 @@
-/* KauanFlix — TMDB Movie Service
+/* KKMovies — TMDB Movie Service
    Centralized service for all TMDB API calls via backend proxy.
    Dual-layer cache: memory (fast) + localStorage (persistent across reloads).
    Configurable TTLs per content type. */
@@ -9,7 +9,7 @@ import axios from 'axios';
 
 
 /* ---- Dual-Layer Cache ---- */
-const LS_PREFIX = 'kf_cache_';
+const LS_PREFIX = 'kk_catalog_v2_';
 const DEFAULT_TTL = 5 * 60 * 1000;
 
 const TTL_MAP: Record<string, number> = {
@@ -33,6 +33,7 @@ function getTTL(key: string): number {
 
 
 const memCache = new Map<string, { data: unknown; timestamp: number }>();
+const inFlight = new Map<string, Promise<unknown>>();
 
 
 function isRetryableError(err: unknown): boolean {
@@ -106,9 +107,10 @@ function setCache(key: string, data: unknown) {
 async function fetchCached<T>(key: string, fetcher: () => Promise<T>): Promise<T> {
   const cached = getCached<T>(key);
   if (cached) return cached;
-  const data = await fetcher();
-  setCache(key, data);
-  return data;
+  if (inFlight.has(key)) return inFlight.get(key) as Promise<T>;
+  const task = retryWithBackoff(fetcher, { retries: 0 }).then(data => { setCache(key, data); return data; });
+  inFlight.set(key, task);
+  try { return await task; } finally { inFlight.delete(key); }
 }
 
 export function clearApiCache() {
@@ -123,7 +125,8 @@ const TMDB_IMAGE_BASE = 'https://image.tmdb.org/t/p';
 
 export function getImageUrl(path: string | null, size: 'w200' | 'w300' | 'w500' | 'w780' | 'w1280' | 'original' = 'w500'): string {
   if (!path) return '';
-  if (path.startsWith('http')) return path;
+  if (path.startsWith('https://image.tmdb.org/t/p/')) return path.replace(/\/t\/p\/[^/]+\//, `/t/p/${size}/`);
+  if (/^https?:\/\//.test(path)) return path;
   return `${TMDB_IMAGE_BASE}/${size}${path}`;
 }
 
@@ -241,9 +244,9 @@ export async function getSeriesCredits(id: number): Promise<Credits> {
   });
 }
 
-export async function getGenres(): Promise<Genre[]> {
-  return fetchCached('genres', async () => {
-    const { data } = await api.get('/api/movies/genres');
+export async function getGenres(type: 'movie' | 'tv' = 'movie'): Promise<Genre[]> {
+  return fetchCached(`genres-${type}`, async () => {
+    const { data } = await api.get(`/api/${type === 'tv' ? 'series' : 'movies'}/genres`);
     return Array.isArray(data) ? data : data.genres || [];
   });
 }
@@ -304,163 +307,18 @@ export async function searchSeries(query: string, page = 1) {
 }
 
 /* ---- Streaming URLs ---- */
+export type StreamingEmbedServer = 'warezcdn';
+const PLAYER_BASE = (import.meta.env.VITE_WAREZCDN_BASE_URL || 'https://warezcdn.sbs').replace(/\/+$/, '');
 
-export type StreamingEmbedServer = '111movies' | 'vidsrc' | 'vidking';
-
-const BASE_URLS: Record<StreamingEmbedServer, string> = {
-  '111movies': import.meta.env.VITE_111movies_BASE || 'https://111movies.net',
-  vidsrc: import.meta.env.VITE_VIDSRC_BASE || 'https://vidsrc.to',
-  vidking: import.meta.env.VITE_VIDKING_BASE || 'https://vidking.xyz',
-};
-
-function isImdbId(id: string | number | undefined | null): boolean {
-  if (!id) return false;
-  return /^tt\d{7,}$/.test(String(id));
+export function getStreamingUrl(movieId: number, imdbId?: string): string {
+  const id = imdbId && /^tt\d{7,}$/.test(imdbId) ? imdbId : String(movieId);
+  if (!/^(?:tt\d{7,}|[1-9]\d*)$/.test(id)) throw new Error('ID de filme inválido');
+  return `${PLAYER_BASE}/filme/${id}#color:a78bfa`;
 }
 
-export function getStreamingUrl(movieId: number, imdbId?: string, server: StreamingEmbedServer = '111movies'): string {
-  const base = BASE_URLS[server];
-  const id = isImdbId(imdbId) ? imdbId! : movieId;
-  switch (server) {
-    case 'vidsrc':
-      return `${base}/embed/movie/${id}`;
-    case 'vidking':
-      return `${base}/embed/movie/${id}`;
-    case '111movies':
-    default:
-      return `${base}/movie/${id}`;
-  }
+export function getSeriesStreamingUrl(id: number, season?: number, episode?: number): string {
+  if (!Number.isSafeInteger(id) || id <= 0) throw new Error('ID de série inválido');
+  if (season !== undefined && (!Number.isInteger(season) || season < 0)) throw new Error('Temporada inválida');
+  if (episode !== undefined && (season === undefined || !Number.isInteger(episode) || episode < 1)) throw new Error('Episódio inválido');
+  return `${PLAYER_BASE}/serie/${id}${season !== undefined ? `/${season}${episode !== undefined ? `/${episode}` : ''}` : ''}#color:a78bfa`;
 }
-
-export function getSeriesStreamingUrl(tmdbId: number, season: number, episode: number, server: StreamingEmbedServer = '111movies'): string {
-  const base = BASE_URLS[server];
-  switch (server) {
-    case 'vidsrc':
-      return `${base}/embed/tv/${tmdbId}/${season}/${episode}`;
-    case 'vidking':
-      return `${base}/embed/tv/${tmdbId}/${season}/${episode}`;
-    case '111movies':
-    default:
-      return `${base}/tv/${tmdbId}/${season}/${episode}`;
-  }
-}
-
-export interface StreamDiagnostics {
-  status?: number;
-  captcha?: boolean;
-  unavailable?: boolean;
-  server?: string;
-  cloudflare?: boolean;
-  ray?: string;
-}
-
-export interface ResolvedStream {
-  streamUrl: string;
-  directUrl: string;
-  mode: 'iframe-direct' | 'iframe-captcha-required' | 'unavailable';
-  server?: StreamingEmbedServer;
-  diagnostics?: StreamDiagnostics;
-  warning?: string;
-}
-
-async function resolveFromProxy(
-  path: string,
-  params?: Record<string, unknown>,
-): Promise<ResolvedStream> {
-  try {
-    const { data } = await api.get(path, { params, timeout: 15000 });
-    return data as ResolvedStream;
-  } catch {
-    return {
-      streamUrl: '',
-      directUrl: '',
-      mode: 'iframe-direct',
-      warning: 'Proxy indisponível, tentando conexão direta',
-    };
-  }
-}
-
-export async function resolveMovieStream(
-  movieId: number,
-  imdbId?: string,
-  options?: {
-    server?: StreamingEmbedServer;
-    noLink?: boolean;
-    color?: string;
-    transparent?: boolean;
-    noBackground?: boolean;
-  },
-): Promise<ResolvedStream> {
-  const server = options?.server || '111movies';
-  const hasValidImdb = isImdbId(imdbId);
-  const id = hasValidImdb ? imdbId! : String(movieId);
-
-  const proxy = await resolveFromProxy(`/api/streaming/movie/${id}`, {
-    server,
-    noLink: true,
-    ...(options || {}),
-  });
-
-  if (proxy.streamUrl) {
-    if (!hasValidImdb && server === 'vidking') {
-      proxy.warning = proxy.warning || '⚠️ VidKing requer IMDB ID — Player pode não carregar. Tente outro servidor.';
-    } else if (!hasValidImdb && server !== 'vidsrc') {
-      proxy.warning = proxy.warning || '⚠️ Filme sem IMDB ID — Player pode não carregar. Tente abrir em nova aba.';
-    }
-    return proxy;
-  }
-
-  return {
-    streamUrl: getStreamingUrl(movieId, imdbId, server),
-    directUrl: getStreamingUrl(movieId, imdbId, server),
-    mode: 'iframe-direct',
-    server,
-    warning: hasValidImdb ? undefined : '⚠️ Filme sem IMDB ID — Player pode não carregar.',
-  };
-}
-
-export async function resolveSeriesStream(
-  tmdbId: number,
-  season: number,
-  episode: number,
-  options?: {
-    server?: StreamingEmbedServer;
-    noEpList?: boolean;
-    noLink?: boolean;
-    color?: string;
-    transparent?: boolean;
-    noBackground?: boolean;
-  },
-): Promise<ResolvedStream> {
-  const server = options?.server || '111movies';
-  const params: Record<string, unknown> = {
-    server,
-    noLink: true,
-    noEpList: true,
-    ...(options || {}),
-  };
-  const proxy = await resolveFromProxy(
-    `/api/streaming/series/${tmdbId}/${season}/${episode}`,
-    params,
-  );
-
-  if (proxy.streamUrl) return proxy;
-
-  return {
-    streamUrl: getSeriesStreamingUrl(tmdbId, season, episode, server),
-    directUrl: getSeriesStreamingUrl(tmdbId, season, episode, server),
-    mode: 'iframe-direct',
-    server,
-  };
-}
-
-export const EMBED_SERVERS: Array<{
-  id: StreamingEmbedServer;
-  name: string;
-  description: string;
-  icon: string;
-}> = [
-  { id: '111movies', name: '111movies', description: 'Player oficial com anúncios mínimos', icon: '🎬' },
-  { id: 'vidsrc', name: 'VidSrc', description: 'Fonte principal do Streambert - estável e rápido', icon: '💎' },
-  { id: 'vidking', name: 'VidKing', description: 'Fonte alternativa - grande acervo', icon: '👑' },
-];

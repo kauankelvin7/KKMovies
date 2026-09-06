@@ -1,4 +1,4 @@
-/* KauanFlix — Details Modal v4 (HBO Max style)
+/* KKMovies — Details Modal v4 (HBO Max style)
    Slides from bottom on desktop, fade-in on mobile.
    Tabs: Episódios (TV only) · Similares · Detalhes
    - Backdrop 45vh with same triple gradient as hero

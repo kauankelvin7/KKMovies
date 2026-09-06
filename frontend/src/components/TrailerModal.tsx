@@ -1,4 +1,4 @@
-/* KauanFlix — Trailer Modal (iOS Sheet) */
+/* KKMovies — Trailer Modal (iOS Sheet) */
 import React, { useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { X, Film, ExternalLink } from 'lucide-react';

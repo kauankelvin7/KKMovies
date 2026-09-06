@@ -1,4 +1,4 @@
-/* KauanFlix — Helper Utilities */
+/* KKMovies — Helper Utilities */
 
 export function formatRuntime(minutes: number | undefined): string {
   if (!minutes) return '';
