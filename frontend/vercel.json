@@ -4,8 +4,8 @@
   "installCommand": "npm install",
   "framework": "vite",
   "rewrites": [
+    { "source": "/watch/:path*", "destination": "/watch.html" },
     { "source": "/((?!api/).*)", "destination": "/index.html" }
   ]
 }
-
 
