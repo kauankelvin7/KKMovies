@@ -1,7 +1,7 @@
 import { memo } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { Play, X, Clock } from 'lucide-react';
 import { useWatchHistory } from '@/hooks/useWatchHistory';
+import { watchPath } from '@/player/policy';
 import ProgressiveImage from './ProgressiveImage';
 
 /**
@@ -9,7 +9,6 @@ import ProgressiveImage from './ProgressiveImage';
  * Exibe filmes/séries em progresso com sync cross-device
  */
 const ContinueWatchingSection = memo(() => {
-  const navigate = useNavigate();
   const { continueWatching, removeItem } = useWatchHistory();
 
   if (continueWatching.length === 0) {
@@ -83,7 +82,15 @@ const ContinueWatchingSection = memo(() => {
                   {/* Hover Overlay with Glass Play Button */}
                   <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center z-20">
                     <button
-                      onClick={() => navigate(`/watch/${item.videoId}`)}
+                      onClick={() => {
+                        const path = watchPath({
+                          id: item.videoId,
+                          type: item.type === 'series' ? 'tv' : 'movie',
+                          season: item.type === 'series' ? item.season : undefined,
+                          episode: item.type === 'series' ? item.episode : undefined,
+                        });
+                        window.location.assign(path);
+                      }}
                       className="w-14 h-14 rounded-full bg-[var(--glass-bg)] backdrop-blur-md border border-[var(--glass-separator)] flex items-center justify-center transform scale-90 group-hover:scale-100 transition-transform duration-300 shadow-xl"
                       aria-label="Assistir"
                     >
