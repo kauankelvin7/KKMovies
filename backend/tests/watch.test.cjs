@@ -42,6 +42,8 @@ test('watch permissions do not grant powerful device access', () => {
 test('dedicated document has the same security headers in preview and production', () => {
   const { watchHeaders, isolatedWatchRoute } = load('frontend/watch-security.ts');
   const config = JSON.parse(fs.readFileSync(path.join(root, 'vercel.json'), 'utf8'));
+  const frontendConfig = JSON.parse(fs.readFileSync(path.join(root, 'frontend/vercel.json'), 'utf8'));
+  assert.ok(frontendConfig.rewrites.some(rule => rule.source === '/watch/:path*' && rule.destination === '/watch.html'));
   const deployed = config.headers.find(rule => rule.source === '/watch/:path*');
   assert.ok(watchHeaders['Content-Security-Policy'].split('; ').includes("manifest-src 'self'"));
   const direct = config.headers.find(rule => rule.source === '/watch.html');
