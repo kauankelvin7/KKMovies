@@ -1,5 +1,5 @@
 import { BrowserRouter as Router, Routes, Route, useLocation, Link, useNavigate } from 'react-router-dom';
-import { useEffect, useRef, lazy, Suspense } from 'react';
+import { useEffect, useRef, lazy, Suspense, useState } from 'react';
 import { Header } from './components/layout/Header';
 import { Footer } from './components/layout/Footer';
 import { BottomNav } from './components/layout/BottomNav';
@@ -13,6 +13,7 @@ import { SkeletonCard } from './components/ui/Skeleton';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import * as movieService from './services/movieService';
 import { useAppStore } from './store/useAppStore';
+import { parseWatchTarget, watchDocumentPath } from './player/policy';
 
 /* Lazy-loaded pages */
 const MovieDetailsPage = lazy(() => import('./pages/MovieDetailsPage'));
@@ -99,6 +100,7 @@ function AppShell() {
               <Route path="/minha-lista" element={<MyListPage />} />
               <Route path="/top10" element={<Top10Page />} />
               {/* Legacy routes redirect to modal via HomePage */}
+              <Route path="/watch/:id" element={<WatchFallbackPage />} />
               <Route path="/filme/:id" element={<MovieDetailsPage />} />
               <Route path="*" element={<NotFoundPage />} />
             </Routes>
@@ -122,5 +124,20 @@ function AppShell() {
 
 function NotFoundPage() {
   return <main className="section-container min-h-[70vh] flex flex-col items-start justify-center gap-5 pt-24"><p className="eyebrow">404 · PÁGINA NÃO ENCONTRADA</p><h1 className="hero-title">Essa cena não existe.</h1><p className="text-white/60">O endereço pode ter mudado. Encontre filmes e séries no catálogo.</p><Link to="/explorar" className="glass-button primary">Explorar catálogo</Link></main>;
+}
+
+function WatchFallbackPage() {
+  const location = useLocation();
+  const [error, setError] = useState('');
+  useEffect(() => {
+    try {
+      const target = parseWatchTarget(location.pathname, location.search);
+      window.location.replace(watchDocumentPath(target));
+    } catch {
+      setError('Endereço de reprodução inválido.');
+    }
+  }, [location.pathname, location.search]);
+  if (error) return <main className="section-container min-h-[70vh] flex flex-col items-start justify-center gap-5 pt-24"><p className="eyebrow">REPRODUÇÃO</p><h1 className="hero-title">Não foi possível abrir o player.</h1><p className="text-white/60">{error}</p><Link to="/explorar" className="glass-button primary">Explorar catálogo</Link></main>;
+  return <main className="section-container min-h-[70vh] flex flex-col items-start justify-center gap-5 pt-24"><p className="eyebrow">REPRODUÇÃO</p><h1 className="hero-title">Abrindo player…</h1><p className="text-white/60">Redirecionando para o ambiente seguro de reprodução.</p></main>;
 }
 export default App;
