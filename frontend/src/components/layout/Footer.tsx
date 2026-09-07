@@ -1,4 +1,6 @@
 import React from 'react';
+import { Brand } from './Brand';
+import { Link } from 'react-router-dom';
 import { Github, Heart } from 'lucide-react';
 
 export const Footer: React.FC = () => (
@@ -7,9 +9,7 @@ export const Footer: React.FC = () => (
 
       {/* Brand */}
       <div className="flex items-center gap-2">
-        <span className="ios-nav-logo-text text-lg tracking-widest font-light">
-          KKMOVIES
-        </span>
+        <Link to="/" className="brand-link" aria-label="KKMovies, início"><Brand /></Link>
         <span className="text-[var(--text-muted)] hidden sm:inline">—</span>
         <span className="text-[var(--text-secondary)] text-xs sm:text-sm">
           Seu cinema, do seu jeito.
@@ -19,7 +19,7 @@ export const Footer: React.FC = () => (
       {/* Author & Repository */}
       <div className="flex items-center gap-4 text-xs sm:text-sm">
         <span className="flex items-center gap-1.5 text-[var(--text-secondary)]">
-          Feito com <Heart className="w-3.5 h-3.5 text-red-500 fill-red-500 animate-pulse" /> por Kauan
+          Feito com <Heart className="w-3.5 h-3.5 text-red-500 fill-red-500" /> por Kauan
         </span>
 
         <span className="w-1 h-1 rounded-full bg-[var(--text-hint)]" />

@@ -13,6 +13,7 @@ import MovieCard from '../components/MovieCard';
 import { SkeletonGrid } from '../components/ui/Skeleton';
 import * as movieService from '../services/movieService';
 import type { Movie, Genre } from '../types/movie';
+import { readCatalogFilters } from '../utils/catalogFilters';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -69,25 +70,21 @@ const movieKey = (m: Pick<Movie, 'id' | 'media_type'>): string =>
 const CatalogPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
 
-  // ── Filter state — seeded from URL so the page is bookmarkable ────────────
-  const [contentType, setContentType] = useState<ContentType>(
-    searchParams.get('type') === 'tv' ? 'tv' : 'movie',
-  );
-  const [selectedGenre, setSelectedGenre] = useState<string>(
-    searchParams.get('genre') ?? '',
-  );
-  const [selectedYear, setSelectedYear] = useState<string>(
-    searchParams.get('year') ?? '',
-  );
-  const [minRating, setMinRating] = useState<string>(
-    searchParams.get('rating') ?? '',
-  );
-  const [sortBy, setSortBy] = useState<SortValue>(
-    (searchParams.get('sort') as SortValue) ?? 'popularity.desc',
-  );
-  const [language, setLanguage] = useState<string>(
-    searchParams.get('lang') ?? '',
-  );
+  const { type: contentType, genre: selectedGenre, year: selectedYear, rating: minRating, sort: sortBy, language } = readCatalogFilters(searchParams);
+  const updateFilters = useCallback((changes: Record<string, string>) => {
+    setSearchParams(previous => {
+      const next = new URLSearchParams(previous);
+      for (const [key, value] of Object.entries(changes)) {
+        if (value) next.set(key, value); else next.delete(key);
+      }
+      return next;
+    });
+  }, [setSearchParams]);
+  const setSelectedGenre = (value: string) => updateFilters({ genre: value });
+  const setSelectedYear = (value: string) => updateFilters({ year: value });
+  const setMinRating = (value: string) => updateFilters({ rating: value });
+  const setSortBy = (value: string) => updateFilters({ sort: value });
+  const setLanguage = (value: string) => updateFilters({ lang: value });
 
   // ── UI state ──────────────────────────────────────────────────────────────
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
@@ -113,16 +110,6 @@ const CatalogPage: React.FC = () => {
     [selectedGenre, selectedYear, minRating, language],
   );
 
-  // ── URL sync: state → URL (replace so back-button still works) ────────────
-  useEffect(() => {
-    const p: Record<string, string> = { type: contentType };
-    if (selectedGenre) p.genre = selectedGenre;
-    if (selectedYear) p.year = selectedYear;
-    if (minRating) p.rating = minRating;
-    if (language) p.lang = language;
-    if (sortBy !== 'popularity.desc') p.sort = sortBy;
-    setSearchParams(p, { replace: true });
-  }, [contentType, selectedGenre, selectedYear, minRating, language, sortBy, setSearchParams]);
 
   // ── Genres: reload when content type changes ──────────────────────────────
   useEffect(() => {
@@ -240,17 +227,12 @@ const CatalogPage: React.FC = () => {
    * by resetting genre inside a separate useEffect.
    */
   const handleContentTypeChange = useCallback((type: ContentType) => {
-    setContentType(type);
-    setSelectedGenre('');
-  }, []);
+    updateFilters({ type, genre: '' });
+  }, [updateFilters]);
 
   const clearFilters = useCallback(() => {
-    setSelectedGenre('');
-    setSelectedYear('');
-    setMinRating('');
-    setLanguage('');
-    setSortBy('popularity.desc');
-  }, []);
+    updateFilters({ genre: '', year: '', rating: '', lang: '', sort: '' });
+  }, [updateFilters]);
 
   const handleRetry = useCallback(() => {
     fetchMovies(movies.length > 0 ? page + 1 : 1, movies.length === 0);

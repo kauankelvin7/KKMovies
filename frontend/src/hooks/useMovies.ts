@@ -5,6 +5,7 @@ const loaders = {
   trending: () => movieService.getTrending(),
   popular: () => movieService.getPopular(),
   series: () => movieService.getPopularSeries(),
+  trendingSeries: () => movieService.getTrendingSeries(),
   nowPlaying: () => movieService.getNowPlaying(),
   topRated: () => movieService.getTopRated(),
   actionMovies: () => movieService.getMoviesByGenre(28),
@@ -12,7 +13,7 @@ const loaders = {
 };
 type Section = keyof typeof loaders;
 const keys = Object.keys(loaders) as Section[];
-const empty: Record<Section, Movie[]> = { trending: [], popular: [], series: [], nowPlaying: [], topRated: [], actionMovies: [], comedyMovies: [] };
+const empty: Record<Section, Movie[]> = { trending: [], popular: [], series: [], trendingSeries: [], nowPlaying: [], topRated: [], actionMovies: [], comedyMovies: [] };
 export function useHomeMovies() {
   const [data, setData] = useState(empty);
   const [pending, setPending] = useState<Section[]>(keys);

@@ -24,6 +24,7 @@ const MovieCard: React.FC<Props> = ({
 }) => {
   const [imgLoaded, setImgLoaded] = useState(false);
   const [imgError, setImgError] = useState(false);
+  const [useAlternate, setUseAlternate] = useState(false);
   const [inList, setInList] = useState(() => watchlistService.isInList(movie.id, movie.media_type === 'tv' ? 'tv' : 'movie'));
 
   const openPlayer = usePlayerStore((s) => s.openPlayer);
@@ -43,9 +44,11 @@ const MovieCard: React.FC<Props> = ({
   const widthLandscape = { sm: 200, md: 260, lg: 320 };
   const cardWidth = landscape ? widthLandscape[size] : widthMap[size];
 
-  const imgSrc = landscape
-    ? getImageUrl(movie.backdrop_path, 'w780')
-    : getImageUrl(movie.poster_path, 'w500');
+  const primaryPath = landscape ? movie.backdrop_path : movie.poster_path;
+  const alternatePath = landscape ? movie.poster_path : movie.backdrop_path;
+  const imagePath = useAlternate ? alternatePath : primaryPath || alternatePath;
+  const imgSrc = getImageUrl(imagePath, landscape ? 'w780' : 'w500');
+  useEffect(() => { setImgLoaded(false); setImgError(false); setUseAlternate(false); }, [movie.id, primaryPath, alternatePath]);
 
   /* Progress */
   const progressPercent = progressService.getPercentage(
@@ -58,13 +61,12 @@ const MovieCard: React.FC<Props> = ({
     e.stopPropagation();
     if (isSeries) {
       openPlayer({
-        streamUrl: getSeriesStreamingUrl(movie.id, 1, 1),
+        streamUrl: getSeriesStreamingUrl(movie.id),
         movieId: movie.id,
         movieTitle: movie.title || movie.name || '',
         posterPath: movie.poster_path || '',
         backdropPath: movie.backdrop_path || '',
         mediaType: 'tv',
-        episodeInfo: { season: 1, episode: 1, name: 'Piloto', still_path: null },
       });
     } else {
       openPlayer({
@@ -110,11 +112,11 @@ const MovieCard: React.FC<Props> = ({
   })();
 
   return (
-    <div className={`media-card relative flex-shrink-0 group ${landscape ? 'landscape' : ''}`}>
+    <div className={`media-card relative flex-shrink-0 group ${landscape ? 'landscape' : ''} ${rank && rank <= 10 ? 'ranked-card' : ''} ${rank === 10 ? 'ranked-card-ten' : ''}`}>
       {/* Rank number (large outline behind card for top-10 style) */}
       {rank && rank <= 10 && (
         <div
-          className="home-ranking-number pointer-events-none select-none"
+          className={`home-ranking-number pointer-events-none select-none ${rank === 10 ? 'ranking-double' : ''}`}
           aria-hidden="true"
         >
           <span
@@ -132,7 +134,7 @@ const MovieCard: React.FC<Props> = ({
         className={`card-movie ${landscape ? 'card-landscape' : ''}`}
         role="button"
         tabIndex={0}
-        aria-label={`${movie.title || movie.name}`}
+        aria-label={`${rank ? `${rank}. ` : ''}${movie.title || movie.name}`}
         onClick={handleDetails}
         onKeyDown={(e) => { if (e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); handleDetails(e as unknown as React.MouseEvent); } }}
       >
@@ -149,7 +151,7 @@ const MovieCard: React.FC<Props> = ({
             width={landscape ? 780 : 500}
             height={landscape ? 439 : 750}
             onLoad={() => setImgLoaded(true)}
-            onError={() => setImgError(true)}
+            onError={() => { if (!useAlternate && alternatePath && alternatePath !== imagePath) { setUseAlternate(true); setImgLoaded(false); } else setImgError(true); }}
             className={`img-blur-load ${imgLoaded ? 'loaded' : ''}`}
           />
         ) : (

@@ -1,5 +1,5 @@
 import { BrowserRouter as Router, Routes, Route, useLocation, Link, useNavigate } from 'react-router-dom';
-import { useEffect, lazy, Suspense } from 'react';
+import { useEffect, useRef, lazy, Suspense } from 'react';
 import { Header } from './components/layout/Header';
 import { Footer } from './components/layout/Footer';
 import { BottomNav } from './components/layout/BottomNav';
@@ -9,7 +9,6 @@ import { ToastContainer } from './components/ui/Toast';
 import { ErrorBoundary } from './components/ui/ErrorBoundary';
 import { ApiStatusBar } from './components/ApiStatusBar';
 import { InstallBanner } from './components/ui/InstallBanner';
-import { UpdateToast } from './components/ui/UpdateToast';
 import { SkeletonCard } from './components/ui/Skeleton';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import * as movieService from './services/movieService';
@@ -63,7 +62,13 @@ function AppShell() {
   const navigate = useNavigate();
   const details = useAppStore(state => state.detailsModal);
   const closeDetails = useAppStore(state => state.closeDetails);
-  useEffect(() => { window.scrollTo(0, 0); }, [location.pathname]);
+  const previousPath = useRef(location.pathname);
+  useEffect(() => {
+    if (previousPath.current === location.pathname) return;
+    previousPath.current = location.pathname;
+    window.scrollTo(0, 0);
+    if (!location.state?.focusSearch) document.getElementById('page-content')?.focus({ preventScroll: true });
+  }, [location.pathname, location.state]);
   useEffect(() => {
     if (details.isOpen && details.contentId) {
       navigate(`/${details.mediaType === 'tv' ? 'series' : 'filme'}/${details.contentId}`);
@@ -80,8 +85,9 @@ function AppShell() {
         <a className="skip-link glass-button primary" href="#page-content">Pular para o conteúdo</a>
         <Header />
 
+        <div id="page-content" tabIndex={-1}>
         <Suspense fallback={<PageLoader />}>
-          <div id="page-content" tabIndex={-1}><AnimatedPage>
+          <AnimatedPage>
             <Routes>
               <Route path="/" element={<HomePage />} />
               <Route path="/filmes" element={<FilmesPage />} />
@@ -96,8 +102,9 @@ function AppShell() {
               <Route path="/filme/:id" element={<MovieDetailsPage />} />
               <Route path="*" element={<NotFoundPage />} />
             </Routes>
-          </AnimatedPage></div>
+          </AnimatedPage>
         </Suspense>
+        </div>
 
         <Footer />
         <BottomNav />
@@ -109,7 +116,6 @@ function AppShell() {
       <ToastContainer />
       <ApiStatusBar />
       <InstallBanner />
-      <UpdateToast />
     </>
   );
 }

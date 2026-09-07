@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Tv } from 'lucide-react';
 import { ContentCarousel } from '../components/ContentCarousel';
+import { CatalogCollections } from '../components/CatalogCollections';
+import { CatalogSpotlight } from '../components/CatalogSpotlight';
 import { HeroBanner } from '../components/HeroBanner';
 import { ErrorMessage } from '../components/ui/ErrorBoundary';
 import * as movieService from '../services/movieService';
@@ -67,9 +69,11 @@ const SeriesPage: React.FC = () => {
         <div className="section-container"><SkeletonRow count={12} /></div>
       ) : (
         <div className="movies-curation">
-          <ContentCarousel title="Séries em alta" movies={trending} loading={loading} landscape />
-          <ContentCarousel title="Favoritas do público" movies={popular} loading={loading} />
-          <ContentCarousel title="Mais bem avaliadas" movies={rated} loading={loading} />
+          <ContentCarousel title="Séries em alta" description="Dez destaques para sua próxima maratona" movies={trending.slice(0, 10)} ranked viewAllLink="/explorar?type=tv" />
+          <ContentCarousel title="Favoritas do público" movies={popular} viewAllLink="/explorar?type=tv" />
+          <CatalogCollections type="tv" />
+          <CatalogSpotlight movie={rated.find(item => item.backdrop_path && item.overview)} label="Sua próxima história" />
+          <ContentCarousel title="Mais bem avaliadas" movies={rated} viewAllLink="/explorar?type=tv&rating=8&sort=vote_average.desc" />
         </div>
       )}
     </main>

@@ -1,8 +1,10 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import App from './App.tsx'
+import { startAppUpdates } from './services/appUpdates'
 import './index.css'
 import './design-system.css'
+import './layout-refinements.css'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
@@ -10,11 +12,4 @@ createRoot(document.getElementById('root')!).render(
   </StrictMode>,
 )
 
-/* Register Service Worker (produced by vite-plugin-pwa) */
-if (import.meta.env.PROD && 'serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js').catch(() => {
-      // SW registration failed — offline features won't work
-    });
-  });
-}
+if (import.meta.env.PROD) startAppUpdates(__APP_VERSION__);

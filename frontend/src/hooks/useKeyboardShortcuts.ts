@@ -17,6 +17,8 @@ export function useKeyboardShortcuts() {
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
+      if (e.defaultPrevented || e.ctrlKey || e.metaKey || e.altKey || e.isComposing || e.repeat) return;
+      if (document.querySelector('[aria-modal="true"], dialog[open]')) return;
       const target = e.target as HTMLElement;
       // Don't trigger shortcuts if user is typing in an input/textarea/select
       if (
@@ -33,12 +35,7 @@ export function useKeyboardShortcuts() {
         case 's':
         case 'S':
           e.preventDefault();
-          navigate('/buscar');
-          // Focus search input after navigation
-          requestAnimationFrame(() => {
-            const input = document.querySelector<HTMLInputElement>('input[aria-label="Buscar"]');
-            input?.focus();
-          });
+          navigate('/buscar', { state: { focusSearch: true } });
           break;
 
         case 'h':

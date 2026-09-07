@@ -8,7 +8,7 @@ export const SkeletonGrid: React.FC<{ count?: number }> = ({ count = 12 }) => (
 
 export const SkeletonCard: React.FC<{ landscape?: boolean }> = ({ landscape }) => (
   <div
-    className="skeleton flex-shrink-0 border border-[var(--glass-separator)] shadow-sm"
+    className={`skeleton skeleton-poster ${landscape ? 'skeleton-landscape' : ''} flex-shrink-0 border border-[var(--glass-separator)] shadow-sm`}
     style={{
       width: landscape ? 'min(75vw, 280px)' : 'min(40vw, 160px)',
       aspectRatio: landscape ? '16/9' : '2/3',
@@ -21,7 +21,7 @@ export const SkeletonRow: React.FC<{ count?: number; landscape?: boolean }> = ({
   count = 6,
   landscape,
 }) => (
-  <div className="flex gap-4 sm:gap-6 overflow-hidden">
+  <div className="skeleton-shelf" aria-busy="true" aria-label="Carregando seleção">
     {Array.from({ length: count }).map((_, i) => (
       <SkeletonCard key={i} landscape={landscape} />
     ))}

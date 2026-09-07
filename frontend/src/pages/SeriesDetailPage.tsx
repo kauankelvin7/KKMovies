@@ -8,6 +8,7 @@ import { myListService } from '../services/myListService';
 import { watchHistoryService } from '../services/watchHistoryService';
 import { SkeletonDetail } from '../components/ui/Skeleton';
 import { TrailerModal } from '../components/TrailerModal';
+import { Synopsis } from '../components/Synopsis';
 import { Artwork } from '../components/Artwork';
 import type { Series, Season, Episode, Video } from '../types/movie';
 
@@ -32,14 +33,20 @@ const SeriesDetailPage: React.FC = () => {
   const [inList, setInList] = useState(false);
   const [videos, setVideos] = useState<Video[]>([]);
   const [trailerOpen, setTrailerOpen] = useState(false);
-  const [showFullOverview, setShowFullOverview] = useState(false);
+
+  useEffect(() => {
+    const update = () => setInList(myListService.isInList(Number(id), 'tv'));
+    update(); window.addEventListener('kkm-storage', update); window.addEventListener('storage', update);
+    return () => { window.removeEventListener('kkm-storage', update); window.removeEventListener('storage', update); };
+  }, [id]);
 
   /* Fetch series details */
   useEffect(() => {
     if (!id) return;
     let cancelled = false;
     setLoading(true);
-    setSeries(null); setSeasons([]); setEpisodes([]); setVideos([]); setShowFullOverview(false);
+    setSeries(null); setSeasons([]); setEpisodes([]); setVideos([]);
+    setEpisodeQuery(''); setReverseEpisodes(false);
     setError(null);
 
     getSeriesDetails(Number(id))
@@ -200,22 +207,7 @@ const SeriesDetailPage: React.FC = () => {
               <span>{series.number_of_episodes} Episódios</span>
             </div>
 
-            {/* Overview */}
-            <div className="mb-8 max-w-3xl">
-              <p className="text-[15px] md:text-base text-[var(--text-secondary)] font-light leading-relaxed">
-                {showFullOverview || (series.overview || '').length <= 250
-                  ? series.overview
-                  : `${(series.overview || '').slice(0, 250)}…`}
-              </p>
-              {(series.overview || '').length > 250 && (
-                <button
-                  onClick={() => setShowFullOverview(!showFullOverview)}
-                  className="text-[var(--accent-blue)] text-sm mt-2 font-medium hover:text-white transition-colors"
-                >
-                  {showFullOverview ? 'Ocultar sinopse' : 'Ler mais'}
-                </button>
-              )}
-            </div>
+            <Synopsis text={series.overview} />
 
             {/* Action buttons (Glassmorphism) */}
             <div className="flex flex-wrap items-center gap-3">

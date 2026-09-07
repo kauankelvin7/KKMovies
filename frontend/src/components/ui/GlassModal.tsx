@@ -4,7 +4,6 @@ import React, {
   useState,
   useCallback,
   ReactNode,
-  KeyboardEvent,
 } from 'react';
 import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
@@ -58,35 +57,63 @@ export const GlassModal: React.FC<GlassModalProps> = React.memo(({
 }) => {
   const panelRef = useRef<HTMLDivElement | null>(null);
   const [mounted, setMounted] = useState(false);
+  const closeTimer = useRef<ReturnType<typeof setTimeout>>();
 
   useEffect(() => {
+    clearTimeout(closeTimer.current);
     if (isOpen) {
       setMounted(true);
       requestAnimationFrame(() => {
         panelRef.current?.classList.add('is-open');
       });
-      document.body.style.overflow = 'hidden';
     } else {
       setMounted(false);
-      document.body.style.overflow = '';
     }
     return () => {
-      document.body.style.overflow = '';
+      clearTimeout(closeTimer.current);
     };
   }, [isOpen]);
 
+  useEffect(() => {
+    if (!mounted) return;
+    const previousFocus = document.activeElement as HTMLElement | null;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    const panel = panelRef.current;
+    const focusable = () => Array.from(panel?.querySelectorAll<HTMLElement>('button:not([disabled]), a[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex="0"]') || []).filter(element => element.getClientRects().length > 0);
+    const frame = requestAnimationFrame(() => (focusable()[0] || panel)?.focus());
+    const trap = (event: globalThis.KeyboardEvent) => {
+      if (event.key !== 'Tab') return;
+      const dialogs = document.querySelectorAll('[data-glass-dialog]');
+      if (dialogs[dialogs.length - 1] !== panel?.parentElement) return;
+      const targets = focusable();
+      const first = targets[0]; const last = targets[targets.length - 1];
+      if (!first) { event.preventDefault(); panel?.focus(); return; }
+      if (!panel?.contains(document.activeElement) || (!event.shiftKey && document.activeElement === last)) { event.preventDefault(); first.focus(); }
+      else if (event.shiftKey && (document.activeElement === first || document.activeElement === panel)) { event.preventDefault(); last.focus(); }
+    };
+    document.addEventListener('keydown', trap);
+    return () => {
+      cancelAnimationFrame(frame); document.removeEventListener('keydown', trap);
+      document.body.style.overflow = previousOverflow;
+      if (previousFocus?.isConnected) previousFocus.focus({ preventScroll: true });
+    };
+  }, [mounted]);
+
   const handleClose = useCallback(() => {
+    clearTimeout(closeTimer.current);
     panelRef.current?.classList.remove('is-open');
-    setTimeout(() => {
+    closeTimer.current = setTimeout(() => {
       setMounted(false);
       onClose();
-    }, 180);
+    }, window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 180);
   }, [onClose]);
 
   useEffect(() => {
     if (!closeOnEsc || !mounted) return;
     const handler = (e: globalThis.KeyboardEvent) => {
-      if (e.key === 'Escape') handleClose();
+      const dialogs = document.querySelectorAll('[data-glass-dialog]');
+      if (e.key === 'Escape' && dialogs[dialogs.length - 1] === panelRef.current?.parentElement) { e.preventDefault(); handleClose(); }
     };
     document.addEventListener('keydown', handler);
     return () => document.removeEventListener('keydown', handler);
@@ -110,8 +137,9 @@ export const GlassModal: React.FC<GlassModalProps> = React.memo(({
       className="fixed inset-0 z-[9995] flex justify-center p-4 md:p-8"
       style={{ paddingBottom: position === 'bottom' ? 0 : undefined }}
       role="dialog"
+      data-glass-dialog
       aria-modal="true"
-      aria-label={ariaLabel}
+      aria-label={ariaLabel || (typeof title === 'string' ? title : 'Janela de diálogo')}
     >
       {/* Backdrop */}
       <div
@@ -128,6 +156,7 @@ export const GlassModal: React.FC<GlassModalProps> = React.memo(({
       {/* Panel */}
       <div
         ref={panelRef}
+        tabIndex={-1}
         className={[
           'relative z-10 glass-modal w-full',
           SIZE_MAP[size],
@@ -136,9 +165,6 @@ export const GlassModal: React.FC<GlassModalProps> = React.memo(({
           'animate-spring-in',
           className,
         ].join(' ')}
-        onKeyDown={(e: KeyboardEvent<HTMLDivElement>) => {
-          if (e.key === 'Escape' && closeOnEsc) handleClose();
-        }}
       >
         {/* Header */}
         {(header || title || showCloseButton) && (

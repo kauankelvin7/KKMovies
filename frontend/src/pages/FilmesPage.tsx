@@ -4,6 +4,8 @@ import { ArrowDown, ArrowUpRight, Clapperboard, Sparkles } from 'lucide-react';
 import MovieCard from '../components/MovieCard';
 import { HeroBanner } from '../components/HeroBanner';
 import { ContentCarousel } from '../components/ContentCarousel';
+import { CatalogCollections } from '../components/CatalogCollections';
+import { CatalogSpotlight } from '../components/CatalogSpotlight';
 import { SkeletonGrid } from '../components/ui/Skeleton';
 import { ErrorMessage } from '../components/ui/ErrorBoundary';
 import * as movieService from '../services/movieService';
@@ -101,9 +103,12 @@ const FilmesPage: React.FC = () => {
       </section>
 
       <div className="movies-curation">
-        <ContentCarousel title="Em cartaz agora" movies={nowPlaying} loading={highlightsLoading} landscape />
-        <ContentCarousel title="Mais bem avaliados" movies={topRated} loading={highlightsLoading} />
-        <ContentCarousel title="Próximos lançamentos" movies={upcoming} loading={highlightsLoading} landscape />
+        <ContentCarousel title="Em cartaz agora" description="Os títulos desta temporada" movies={nowPlaying} loading={highlightsLoading} />
+        <CatalogCollections />
+        <ContentCarousel title="Favoritos do público" description="Dez filmes populares para descobrir" movies={movies.slice(0, 10)} loading={loading} ranked />
+        <CatalogSpotlight movie={topRated.find(item => item.backdrop_path && item.overview)} />
+        <ContentCarousel title="Mais bem avaliados" movies={topRated} loading={highlightsLoading} viewAllLink="/explorar?rating=8&sort=vote_average.desc" />
+        <ContentCarousel title="No horizonte" description="Próximos lançamentos — consulte os detalhes de cada título" movies={upcoming} loading={highlightsLoading} />
       </div>
 
       <section id="catalogo" className="movies-catalog section-container" aria-labelledby="catalog-title">

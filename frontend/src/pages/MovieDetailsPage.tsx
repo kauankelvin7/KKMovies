@@ -14,6 +14,7 @@ import { useAppStore } from '../store/useAppStore';
 import { StarRating } from '../components/ui/StarRating';
 import { ContentCarousel } from '../components/ContentCarousel';
 import { TrailerModal } from '../components/TrailerModal';
+import { Synopsis } from '../components/Synopsis';
 import { Artwork } from '../components/Artwork';
 import { SkeletonDetail } from '../components/ui/Skeleton';
 import { ErrorMessage } from '../components/ui/ErrorBoundary';
@@ -28,12 +29,12 @@ const MovieDetailsPage: React.FC = () => {
   const [movie, setMovie] = useState<Movie | null>(null);
   const [cast, setCast] = useState<CastMember[]>([]);
   const [similar, setSimilar] = useState<Movie[]>([]);
+  const [recommendationsLoading, setRecommendationsLoading] = useState(true);
   const [videos, setVideos] = useState<Video[]>([]);
   const [loading, setLoading] = useState(true);
   const [retry, setRetry] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [inList, setInList] = useState(false);
-  const [showFullOverview, setShowFullOverview] = useState(false);
   const [trailerOpen, setTrailerOpen] = useState(false);
 
   const watchProgress = id ? watchHistoryService.get(Number(id)) : undefined;
@@ -42,34 +43,37 @@ const MovieDetailsPage: React.FC = () => {
     if (!id) return;
     const movieId = Number(id);
     let cancelled = false;
-    setShowFullOverview(false); setMovie(null); setCast([]); setSimilar([]); setVideos([]);
+    setMovie(null); setCast([]); setSimilar([]); setVideos([]);
     setLoading(true);
     setError(null);
 
-    Promise.allSettled([
-      movieService.getMovieDetails(movieId),
-      movieService.getMovieCredits(movieId),
-      movieService.getSimilarMovies(movieId),
-      movieService.getMovieVideos(movieId),
-    ]).then(([detailRes, creditRes, similarRes, videoRes]) => { if (cancelled) return;
-      if (detailRes.status === 'fulfilled') {
-        setMovie(detailRes.value);
-        setInList(myListService.isInList(movieId));
-        document.title = `${detailRes.value.title} — KKMovies`;
-      } else {
-        setError('Filme não encontrado.');
-      }
-      if (creditRes.status === 'fulfilled') {
-        setCast((creditRes.value.cast || []).slice(0, 15));
-      }
-      if (similarRes.status === 'fulfilled') {
-        setSimilar(similarRes.value);
-      }
-      if (videoRes.status === 'fulfilled') {
-        setVideos(videoRes.value);
-      }
-      setLoading(false);
-    });
+    movieService.getMovieDetails(movieId).then(details => {
+      if (cancelled) return;
+      setMovie(details); setInList(myListService.isInList(movieId));
+      document.title = `${details.title} — KKMovies`;
+    }).catch(() => { if (!cancelled) setError('Não foi possível carregar os detalhes deste filme.'); })
+      .finally(() => { if (!cancelled) setLoading(false); });
+
+    movieService.getMovieCredits(movieId).then(credits => {
+      if (!cancelled) setCast((credits.cast || []).slice(0, 15));
+    }).catch(() => {});
+    movieService.getMovieVideos(movieId).then(items => {
+      if (!cancelled) setVideos(items);
+    }).catch(() => {});
+
+    setRecommendationsLoading(true);
+    const filterSuggestions = (items: Movie[]) => items.filter((item, index) =>
+      item.id !== movieId && (item.media_type || 'movie') === 'movie' && items.findIndex(other => other.id === item.id) === index
+    ).slice(0, 20);
+    async function loadRecommendations() {
+      try {
+        let items = filterSuggestions(await movieService.getRecommendedMovies(movieId).catch(() => []));
+        if (!items.length && !cancelled) items = filterSuggestions(await movieService.getSimilarMovies(movieId));
+        if (!cancelled) setSimilar(items);
+      } catch { if (!cancelled) setSimilar([]); }
+      finally { if (!cancelled) setRecommendationsLoading(false); }
+    }
+    void loadRecommendations();
 
     window.scrollTo({ top: 0, behavior: 'smooth' });
 
@@ -226,22 +230,7 @@ const MovieDetailsPage: React.FC = () => {
               </button>
             </div>
 
-            {/* Overview */}
-            <div className="mb-10 max-w-3xl">
-              <p className="text-[15px] md:text-base text-[var(--text-secondary)] font-light leading-relaxed">
-                {showFullOverview || (movie.overview || '').length <= 250
-                  ? movie.overview || 'Sinopse ainda não disponível.'
-                  : `${(movie.overview || '').slice(0, 250)}…`}
-              </p>
-              {(movie.overview || '').length > 250 && (
-                <button
-                  onClick={() => setShowFullOverview(!showFullOverview)}
-                  className="text-[var(--accent-blue)] text-sm mt-2 font-medium hover:text-white transition-colors"
-                >
-                  {showFullOverview ? 'Ocultar sinopse' : 'Ler mais'}
-                </button>
-              )}
-            </div>
+            <Synopsis text={movie.overview} />
 
             {/* Cast */}
             {cast.length > 0 && (
@@ -276,11 +265,12 @@ const MovieDetailsPage: React.FC = () => {
       </div>
 
       {/* Similar movies */}
-      {similar.length > 0 && (
+      {(recommendationsLoading || similar.length > 0) && (
         <div className="mt-4">
           <ContentCarousel
-            title="Filmes Similares"
+            title="Filmes recomendados"
             movies={similar}
+              loading={recommendationsLoading}
           />
         </div>
       )}
