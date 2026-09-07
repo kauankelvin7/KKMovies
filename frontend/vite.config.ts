@@ -1,7 +1,7 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
-import { fileURLToPath, URL } from 'node:url'
+import { resolve } from 'node:path'
 import { isolatedWatchRoute } from './watch-security'
 import { randomUUID } from 'node:crypto'
 import { releasePlugin } from './release'
@@ -64,7 +64,8 @@ export default defineConfig({
   ],
   resolve: {
     alias: {
-      '@': fileURLToPath(new URL('./src', import.meta.url)),
+      // Resolve from Vite's project root so preview works reliably on Windows.
+      '@': resolve(process.cwd(), 'src'),
     },
   },
   server: {
@@ -82,8 +83,8 @@ export default defineConfig({
     // Code splitting para melhor caching
     rollupOptions: {
       input: {
-        main: fileURLToPath(new URL('./index.html', import.meta.url)),
-        watch: fileURLToPath(new URL('./watch.html', import.meta.url)),
+        main: resolve(process.cwd(), 'index.html'),
+        watch: resolve(process.cwd(), 'watch.html'),
       },
       output: {
         manualChunks: {

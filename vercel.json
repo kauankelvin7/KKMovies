@@ -57,7 +57,7 @@
         },
         {
           "key": "Permissions-Policy",
-          "value": "camera=(), microphone=(), geolocation=(), payment=(), usb=(), clipboard-write=(), fullscreen=(self \"https://warezcdn.sbs\"), autoplay=(self \"https://warezcdn.sbs\"), encrypted-media=(self \"https://warezcdn.sbs\"), picture-in-picture=(self \"https://warezcdn.sbs\")"
+          "value": "camera=(), microphone=(), geolocation=(), payment=(), usb=(), clipboard-write=(self \"https://warezcdn.sbs\"), accelerometer=(self \"https://warezcdn.sbs\"), gyroscope=(self \"https://warezcdn.sbs\"), web-share=(self \"https://warezcdn.sbs\"), fullscreen=(self \"https://warezcdn.sbs\"), autoplay=(self \"https://warezcdn.sbs\"), encrypted-media=(self \"https://warezcdn.sbs\"), picture-in-picture=(self \"https://warezcdn.sbs\")"
         },
         {
           "key": "Referrer-Policy",
@@ -90,7 +90,7 @@
         },
         {
           "key": "Permissions-Policy",
-          "value": "camera=(), microphone=(), geolocation=(), payment=(), usb=(), clipboard-write=(), fullscreen=(self \"https://warezcdn.sbs\"), autoplay=(self \"https://warezcdn.sbs\"), encrypted-media=(self \"https://warezcdn.sbs\"), picture-in-picture=(self \"https://warezcdn.sbs\")"
+          "value": "camera=(), microphone=(), geolocation=(), payment=(), usb=(), clipboard-write=(self \"https://warezcdn.sbs\"), accelerometer=(self \"https://warezcdn.sbs\"), gyroscope=(self \"https://warezcdn.sbs\"), web-share=(self \"https://warezcdn.sbs\"), fullscreen=(self \"https://warezcdn.sbs\"), autoplay=(self \"https://warezcdn.sbs\"), encrypted-media=(self \"https://warezcdn.sbs\"), picture-in-picture=(self \"https://warezcdn.sbs\")"
         },
         {
           "key": "Referrer-Policy",

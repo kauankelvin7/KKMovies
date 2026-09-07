@@ -43,7 +43,7 @@ function WatchPage() {
       {!frameLoaded && <p className="watch-loading" role="status">Carregando player…</p>}
       <iframe key={`${src}-${revision}`} src={src} title={`Player de ${title}`} allow={PLAYER_PERMISSIONS} referrerPolicy="strict-origin-when-cross-origin" onLoad={() => setFrameLoaded(true)} />
     </section>
-    <footer className="watch-help"><p role="status">{!online ? 'Você está sem conexão. Reconecte-se e recarregue o player.' : !frameLoaded && delayed ? 'O player está demorando para responder. Você pode recarregar ou voltar aos detalhes.' : 'Idioma, servidor e tela cheia estão nos controles do player.'}</p><p>O player externo pode exibir anúncios.</p></footer>
+    <footer className="watch-help"><p role="status">{!online ? 'Você está sem conexão. Reconecte-se e recarregue o player.' : !frameLoaded && delayed ? 'O player está demorando para responder. Você pode recarregar ou voltar aos detalhes.' : 'Idioma, servidor e tela cheia estão nos controles do player.'}</p><p>O player externo pode exibir anúncios. Se aparecer “Acesso bloqueado para este site”, a origem de reprodução não foi autorizada pelo provedor.</p></footer>
   </main>;
 }
 

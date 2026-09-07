@@ -1,6 +1,7 @@
 /** Only identifiers enter the watch route. Never accept an iframe URL from input. */
 export const PLAYER_ORIGIN = 'https://warezcdn.sbs';
-export const PLAYER_PERMISSIONS = 'autoplay; encrypted-media; picture-in-picture; fullscreen';
+// Permissions documented by WarezCDN's integration snippet. The parent CSP remains the final boundary.
+export const PLAYER_PERMISSIONS = 'autoplay *; encrypted-media *; picture-in-picture *; fullscreen *; clipboard-write *; accelerometer *; gyroscope *; web-share *';
 export interface WatchTarget { id: number; type: 'movie' | 'tv'; season?: number; episode?: number }
 
 function integer(value: string, minimum: number): number {

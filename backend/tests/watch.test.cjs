@@ -33,8 +33,10 @@ test('watch rejects malformed IDs, invalid episodes, duplicate parameters and op
 });
 
 test('watch permissions do not grant powerful device access', () => {
-  assert.ok(!policy.PLAYER_PERMISSIONS.includes('clipboard'));
+  assert.ok(policy.PLAYER_PERMISSIONS.includes('autoplay *'));
+  assert.ok(policy.PLAYER_PERMISSIONS.includes('clipboard-write *'));
   assert.ok(!policy.PLAYER_PERMISSIONS.includes('camera'));
+  assert.ok(!policy.PLAYER_PERMISSIONS.includes('microphone'));
 });
 
 test('dedicated document has the same security headers in preview and production', () => {

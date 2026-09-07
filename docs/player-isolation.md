@@ -22,7 +22,7 @@ O modal local continua como ponto de entrada. Na versão encontrada do projeto, 
 <iframe
   src={embedUrl(target)}
   title={`Player de ${title}`}
-  allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
+  allow="autoplay *; encrypted-media *; picture-in-picture *; fullscreen *; clipboard-write *; accelerometer *; gyroscope *; web-share *"
   referrerPolicy="strict-origin-when-cross-origin"
 />
 ```
@@ -31,7 +31,7 @@ O embed não recebe sandbox e não há seletor de modo. A reprodução mantém o
 
 O iframe continua em outra origem. A página pai limita `frame-src` ao domínio externo fixo; não recebe HTML remoto na origem do catálogo.
 
-Permissions-Policy restringe funcionalidades sensíveis. Fullscreen é permitido pelo atributo `allow` e pelo cabeçalho HTTP.
+As permissões seguem o snippet oficial de incorporação do provedor para permitir os controles de mídia, copiar link e tela cheia. A CSP/Permissions-Policy da resposta continua impedindo câmera, microfone, geolocalização e USB. Fullscreen é permitido pelo atributo `allow` e pelo cabeçalho HTTP.
 
 O referrer transmite somente a origem nas solicitações entre origens. Isso reduz exposição de URLs sem remover completamente o referer, que pode ser usado pelo provedor para validar incorporações. Não substitui autorizações ou verificações legítimas.
 
