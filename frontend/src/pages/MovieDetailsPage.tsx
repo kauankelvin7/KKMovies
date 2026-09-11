@@ -114,10 +114,10 @@ const MovieDetailsPage: React.FC = () => {
 
 
   return (
-    <main className="min-h-screen bg-[var(--surface-0)] page-enter pb-24">
+    <main className="detail-page min-h-screen bg-[var(--surface-0)] page-enter pb-24">
 
       {/* Backdrop (Cinematographic Glass Gradients) */}
-      <div className="relative w-full h-[55vh] min-h-[400px] overflow-hidden">
+      <div className="detail-backdrop relative w-full h-[55vh] min-h-[400px] overflow-hidden">
         {backdropUrl && (
           <div
             className="absolute inset-0 bg-cover bg-top"
@@ -130,7 +130,7 @@ const MovieDetailsPage: React.FC = () => {
         {/* Back button */}
         <button
           onClick={() => navigate(-1)}
-          className="absolute top-24 left-4 md:left-8 z-20 glass-icon-btn bg-black/20 backdrop-blur-md"
+          className="detail-back absolute top-24 left-4 md:left-8 z-20 glass-icon-btn bg-black/20 backdrop-blur-md"
           aria-label="Voltar"
         >
           <ChevronLeft className="w-6 h-6 text-white" />
@@ -138,12 +138,12 @@ const MovieDetailsPage: React.FC = () => {
       </div>
 
       {/* Content Area */}
-      <div className="section-container -mt-32 md:-mt-48 relative z-10">
-        <div className="flex flex-col md:flex-row gap-8 lg:gap-12">
+      <div className="detail-overview section-container -mt-32 md:-mt-48 relative z-10">
+        <div className="detail-summary flex flex-col md:flex-row gap-8 lg:gap-12">
 
           {/* Poster (Glass Card style) */}
           {(
-            <div className="flex-shrink-0 hidden md:block">
+            <div className="detail-poster flex-shrink-0 hidden md:block">
               <div className="glass-card p-1 rounded-2xl">
                 <Artwork paths={[movie.poster_path, movie.backdrop_path]} title={movie.title} className="w-64 lg:w-72 aspect-[2/3] rounded-xl object-cover shadow-2xl" />
               </div>
@@ -151,7 +151,7 @@ const MovieDetailsPage: React.FC = () => {
           )}
 
           {/* Info */}
-          <div className="flex-1 max-w-4xl pt-4">
+          <div className="detail-copy flex-1 max-w-4xl pt-4">
             <h1 className="text-3xl md:text-5xl lg:text-6xl font-light tracking-tight text-white mb-2 lg:mb-3">
               {movie.title}
             </h1>

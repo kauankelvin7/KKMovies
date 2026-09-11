@@ -141,10 +141,10 @@ const SeriesDetailPage: React.FC = () => {
 
 
   return (
-    <main className="min-h-screen bg-[var(--surface-0)] page-enter pb-24">
+    <main className="detail-page min-h-screen bg-[var(--surface-0)] page-enter pb-24">
       
       {/* Hero Backdrop (Cinematographic Glass Gradients) */}
-      <div className="relative w-full h-[55vh] min-h-[400px] overflow-hidden">
+      <div className="detail-backdrop relative w-full h-[55vh] min-h-[400px] overflow-hidden">
         {backdropUrl && (
           <div
             className="absolute inset-0 bg-cover bg-top"
@@ -157,7 +157,7 @@ const SeriesDetailPage: React.FC = () => {
         {/* Back button */}
         <button
           onClick={() => navigate(-1)}
-          className="absolute top-24 left-4 md:left-8 z-20 glass-icon-btn bg-black/20 backdrop-blur-md"
+          className="detail-back absolute top-24 left-4 md:left-8 z-20 glass-icon-btn bg-black/20 backdrop-blur-md"
           aria-label="Voltar"
         >
           <ChevronLeft className="w-6 h-6 text-white" />
@@ -165,19 +165,19 @@ const SeriesDetailPage: React.FC = () => {
       </div>
 
       {/* Series Info Container */}
-      <div className="section-container -mt-32 md:-mt-48 relative z-10">
-        <div className="flex flex-col md:flex-row gap-8 lg:gap-12 items-start">
+      <div className="detail-overview section-container -mt-32 md:-mt-48 relative z-10">
+        <div className="detail-summary flex flex-col md:flex-row gap-8 lg:gap-12 items-start">
           
           {/* Poster (Glass Card) */}
           {(
-            <div className="flex-shrink-0 hidden md:block">
+            <div className="detail-poster flex-shrink-0 hidden md:block">
               <div className="glass-card p-1 rounded-2xl">
                 <Artwork paths={[series.poster_path, series.backdrop_path]} title={series.name} className="w-48 lg:w-64 aspect-[2/3] rounded-xl object-cover shadow-2xl" />
               </div>
             </div>
           )}
 
-          <div className="flex-1 max-w-4xl pt-4">
+          <div className="detail-copy flex-1 max-w-4xl pt-4">
             <span className="badge badge-category mb-3">
               <Tv className="w-3.5 h-3.5 mr-1.5" /> SÉRIE
             </span>
@@ -226,7 +226,11 @@ const SeriesDetailPage: React.FC = () => {
                 }
                 return (
                   <button
-                    onClick={() => document.getElementById('episode-panel')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+                    onClick={() => {
+                      const panel = document.getElementById('episode-panel');
+                      panel?.scrollIntoView({ behavior: 'auto', block: 'start' });
+                      panel?.querySelector<HTMLSelectElement>('select')?.focus({ preventScroll: true });
+                    }}
                     className="glass-button primary text-[15px] px-6 py-2.5"
                   >
                     <Play className="w-4 h-4 mr-2" fill="currentColor" />
@@ -289,7 +293,7 @@ const SeriesDetailPage: React.FC = () => {
 
         {/* Episode Grid */}
         {loadingEpisodes ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
+          <div className="episode-grid grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
             {Array.from({ length: 8 }).map((_, i) => (
               <div key={i} className="flex flex-col gap-2">
                 <div className="skeleton aspect-video rounded-xl" />
@@ -306,7 +310,7 @@ const SeriesDetailPage: React.FC = () => {
             <p className="text-[var(--text-secondary)] text-sm">Nenhum episódio disponível para esta temporada.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
+          <div className="episode-grid grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
             {[...episodes].filter(ep => `${ep.episode_number} ${ep.name}`.toLocaleLowerCase('pt-BR').includes(episodeQuery.toLocaleLowerCase('pt-BR'))).sort((a,b) => reverseEpisodes ? b.episode_number - a.episode_number : a.episode_number - b.episode_number).map((ep) => (
               <div
                 key={ep.id}

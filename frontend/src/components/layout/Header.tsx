@@ -1,13 +1,14 @@
 import { useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { Link, useLocation } from 'react-router-dom';
-import { Search, Menu, X, ArrowUpRight, Bookmark } from 'lucide-react';
+import { Search, Menu, X, ArrowUpRight, Bookmark, Settings } from 'lucide-react';
 import { useAppStore } from '../../store/useAppStore';
 import { Brand } from './Brand';
 const links = [{ to: '/', label: 'Início' }, { to: '/filmes', label: 'Filmes' }, { to: '/series', label: 'Séries' }, { to: '/explorar', label: 'Explorar' }, { to: '/minha-lista', label: 'Minha Lista' }];
 export function Header() {
   const { isMobileMenuOpen, toggleMobileMenu, closeMobileMenu } = useAppStore();
   const location = useLocation();
+  const openSettings = useAppStore(state => state.openSettings);
   const dialog = useRef<HTMLDialogElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
   const active = (path: string) => path === '/' ? location.pathname === '/' : location.pathname.startsWith(path);
@@ -23,6 +24,7 @@ export function Header() {
   }, [isMobileMenuOpen, closeMobileMenu]);
   return <>
     <header className="site-header"><div className="site-header-inner">
+      <button className="glass-icon-btn" onClick={openSettings} aria-label="Preferências de exibição"><Settings size={19}/></button>
       <Link to="/" className="brand-link" aria-label="KKMovies, início"><Brand /></Link>
       <nav className="desktop-links" aria-label="Navegação principal">{links.map(link => <Link key={link.to} to={link.to} className={active(link.to) ? 'active' : ''} aria-current={active(link.to) ? 'page' : undefined}>{link.label}</Link>)}</nav>
       <div className="header-actions"><Link className="glass-icon-btn" to="/buscar" aria-label="Buscar filmes e séries"><Search size={19} /></Link><button ref={trigger} className="glass-icon-btn mobile-menu-trigger" aria-label="Abrir menu" aria-expanded={isMobileMenuOpen} aria-controls="mobile-navigation" onClick={toggleMobileMenu}><Menu size={21} /></button></div>

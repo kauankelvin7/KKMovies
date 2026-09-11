@@ -1,5 +1,5 @@
 /* KKMovies — Trailer Modal (iOS Sheet) */
-import React, { useEffect, useCallback } from 'react';
+import React, { useEffect, useCallback, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { X, Film, ExternalLink } from 'lucide-react';
 import type { Video } from '../types/movie';
@@ -15,24 +15,30 @@ interface Props {
 
 export const TrailerModal: React.FC<Props> = ({ isOpen, videos, title, year, onClose }) => {
   const trailer = pickBestTrailer(videos);
+  const closeButton = useRef<HTMLButtonElement>(null);
 
   const handleKeyDown = useCallback((e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); }, [onClose]);
 
   useEffect(() => {
+    if (!isOpen) return;
+    const previousFocus = document.activeElement as HTMLElement | null;
+    const overflow = document.body.style.overflow;
+    closeButton.current?.focus();
     if (isOpen) {
       document.addEventListener('keydown', handleKeyDown);
       document.body.style.overflow = 'hidden';
     }
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
-      document.body.style.overflow = '';
+      document.body.style.overflow = overflow;
+      if (previousFocus?.isConnected) previousFocus.focus({ preventScroll: true });
     };
   }, [isOpen, handleKeyDown]);
 
   if (!isOpen) return null;
 
   return createPortal(
-    <div className="fixed inset-0 z-[300] flex items-center justify-center p-0 md:p-6" onClick={onClose} role="dialog" aria-label={`Trailer: ${title}`}>
+    <div className="fixed inset-0 z-[300] flex items-center justify-center p-0 md:p-6" onClick={onClose} role="dialog" aria-modal="true" aria-label={`Trailer: ${title}`}>
       <div className="absolute inset-0 bg-black/70" style={{ backdropFilter: 'blur(6px)' }} />
 
       <div
@@ -52,7 +58,7 @@ export const TrailerModal: React.FC<Props> = ({ isOpen, videos, title, year, onC
               {title} {trailer ? `— ${trailer.name}` : ''}
             </span>
           </div>
-          <button onClick={onClose} className="ios-nav-icon-btn flex-shrink-0" aria-label="Fechar trailer">
+          <button ref={closeButton} onClick={onClose} className="ios-nav-icon-btn flex-shrink-0" aria-label="Fechar trailer">
             <X className="w-4 h-4" />
           </button>
         </div>

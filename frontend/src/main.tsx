@@ -5,6 +5,7 @@ import { startAppUpdates } from './services/appUpdates'
 import './index.css'
 import './design-system.css'
 import './layout-refinements.css'
+import './tv.css'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

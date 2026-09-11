@@ -1,5 +1,8 @@
 import { BrowserRouter as Router, Routes, Route, useLocation, Link, useNavigate } from 'react-router-dom';
-import { useEffect, useRef, lazy, Suspense, useState } from 'react';
+import { useEffect, useRef, lazy, Suspense, useState, useCallback } from 'react';
+import { useTVMode } from './hooks/useTVMode';
+import { useTVNavigation } from './hooks/useTVNavigation';
+import { TVSidebar } from './components/layout/TVSidebar';
 import { Header } from './components/layout/Header';
 import { Footer } from './components/layout/Footer';
 import { BottomNav } from './components/layout/BottomNav';
@@ -61,6 +64,16 @@ function AppShell() {
   useKeyboardShortcuts();
   const location = useLocation();
   const navigate = useNavigate();
+  const { isTV } = useTVMode();
+  const [tvMenuOpen, setTVMenuOpen] = useState(false);
+  const openTVMenu = useCallback(() => setTVMenuOpen(true), []);
+  const closeTVMenu = useCallback(() => setTVMenuOpen(false), []);
+  const tvBack = useCallback(() => {
+    if (window.history.state?.idx > 0) navigate(-1);
+    else if (location.pathname !== '/') navigate('/');
+    else setTVMenuOpen(true);
+  }, [navigate, location.pathname]);
+  useTVNavigation(isTV, location.pathname, tvBack, openTVMenu);
   const details = useAppStore(state => state.detailsModal);
   const closeDetails = useAppStore(state => state.closeDetails);
   const previousPath = useRef(location.pathname);
@@ -84,7 +97,7 @@ function AppShell() {
         style={{ background: 'var(--surface-0)', color: 'white' }}
       >
         <a className="skip-link glass-button primary" href="#page-content">Pular para o conteúdo</a>
-        <Header />
+        {isTV ? <TVSidebar open={tvMenuOpen} onOpen={openTVMenu} onClose={closeTVMenu} /> : <Header />}
 
         <div id="page-content" tabIndex={-1}>
         <Suspense fallback={<PageLoader />}>
@@ -108,8 +121,8 @@ function AppShell() {
         </Suspense>
         </div>
 
-        <Footer />
-        <BottomNav />
+        {!isTV && <Footer />}
+        {!isTV && <BottomNav />}
       </div>
 
       {/* Global overlays */}
@@ -117,7 +130,7 @@ function AppShell() {
       <PlayerModal />
       <ToastContainer />
       <ApiStatusBar />
-      <InstallBanner />
+      {!isTV && <InstallBanner />}
     </>
   );
 }
